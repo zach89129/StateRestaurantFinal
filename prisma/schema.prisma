@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// Your existing products table
+model Product {
+  id            BigInt         @id @map("trx_product_id")
+  sku           String         @unique
+  title         String
+  description   String?
+  manufacturer  String?
+  category      String?
+  uom           String?
+  qtyAvailable  Int?          @map("qty_available")
+  tags          String?
+  imageSrc      String?       @map("image_src")
+  venueProducts VenueProduct[] 
+
+  @@map("products")
+}
+
+model Venue {
+  id           Int           @id @default(autoincrement())
+  trxVenueId   Int          @unique @map("trx_venue_id")
+  venueName    String       @map("venue_name")
+  customers    Customer[]    // Many-to-many relationship
+  venueProduct VenueProduct?
+
+  @@map("venues")
+}
+
+model Customer {
+  id            Int      @id @default(autoincrement())
+  email         String   @unique
+  phone         String?   @unique
+  trxCustomerId Int      @unique @map("trx_customer_id")
+  seePrices     Boolean  @default(false)
+  venues        Venue[]  // Many-to-many relationship
+  updatedAt     DateTime  @updatedAt
+
+  @@map("customers")
+}
+
+model VenueProduct {
+  id          Int       @id @default(autoincrement())
+  trxVenueId  Int       @map("trx_venue_id")
+  products    Product[] 
+  venue       Venue     @relation(fields: [trxVenueId], references: [trxVenueId])
+
+  @@map("venue_products")
+  @@unique([trxVenueId])
+}
+
+model otp {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  code      String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@map("otps")
+}
