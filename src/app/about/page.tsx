@@ -14,25 +14,18 @@ export default function AboutPage() {
     { name: "Boyd Gaming", image: "/StateBoyd.webp" },
   ];
 
-  // Duplicate the array to create a seamless loop
   const duplicatedClients = [...clients, ...clients];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
       <div className="max-w-6xl mx-auto px-4 py-12">
-        {/* Main Title with subtle animation */}
-        <h1 className="text-4xl font-bold text-center mb-16 text-gray-900 relative">
-          <span className="relative inline-block after:content-[''] after:absolute after:w-1/3 after:h-1 after:bg-blue-600 after:bottom-0 after:left-1/3">
-            About Us
-          </span>
+        <h1 className="text-4xl font-bold text-center mb-16 text-gray-900">
+          <span className="relative inline-block">About Us</span>
         </h1>
 
-        {/* Content Container with subtle shadow */}
         <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm p-8">
-          {/* Sections with more spacing */}
           <div className="space-y-16">
-            {/* Reputation Section */}
-            <section className="transform hover:scale-[1.02] transition-transform duration-300">
+            <section>
               <h3 className="text-2xl font-bold mb-4 text-gray-900 flex items-center">
                 <span className="inline-block w-2 h-8 bg-blue-600 mr-3"></span>
                 Reputation
@@ -45,8 +38,7 @@ export default function AboutPage() {
               </p>
             </section>
 
-            {/* National Partnership Section */}
-            <section className="transform hover:scale-[1.02] transition-transform duration-300">
+            <section>
               <h3 className="text-2xl font-bold mb-4 text-gray-900 flex items-center">
                 <span className="inline-block w-2 h-8 bg-blue-600 mr-3"></span>
                 National Partnership
@@ -60,7 +52,6 @@ export default function AboutPage() {
               </p>
             </section>
 
-            {/* Store Image Section with parallax effect */}
             <section className="relative h-[400px] w-full my-20 group">
               <div className="relative h-full w-full overflow-hidden rounded-lg shadow-lg bg-gray-100">
                 <Image
@@ -70,7 +61,6 @@ export default function AboutPage() {
                   className="object-contain transition-transform duration-700 group-hover:scale-105"
                   priority
                 />
-                {/* Overlay with caption that appears on hover */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                   <div className="absolute bottom-0 left-0 right-0 p-6 transform translate-y-6 group-hover:translate-y-0 transition-transform duration-500">
                     <h4 className="text-white text-xl font-semibold mb-2">
@@ -86,8 +76,7 @@ export default function AboutPage() {
               </div>
             </section>
 
-            {/* Our Organization Section */}
-            <section className="transform hover:scale-[1.02] transition-transform duration-300">
+            <section>
               <h3 className="text-2xl font-bold mb-4 text-gray-900 flex items-center">
                 <span className="inline-block w-2 h-8 bg-blue-600 mr-3"></span>
                 Our Organization
@@ -103,15 +92,14 @@ export default function AboutPage() {
             {/* Gradient Separator */}
             <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
 
-            {/* Call to Action Section */}
-            <section className="text-center space-y-6 bg-gray-50 p-8 rounded-lg transform hover:scale-[1.02] transition-transform duration-300">
+            <section className="text-center space-y-6 bg-gray-50 p-8 rounded-lg">
               <p className="text-gray-800 leading-relaxed">
                 Let us put our proven reputation for quality, service and value
                 to work for you. Whether you're remodeling or opening a new
                 facility, State Restaurant Equipment Company is your link to
                 success.
               </p>
-              <div className="font-bold text-2xl text-gray-900 hover:text-blue-600 transition-colors duration-300">
+              <div className="font-bold text-xl sm:text-2xl text-gray-900 whitespace-nowrap">
                 CALL NOW (702) 733-1515
               </div>
               <p className="text-gray-800">
@@ -144,19 +132,3 @@ export default function AboutPage() {
     </div>
   );
 }
-
-// Add this to your globals.css file
-/*
-@keyframes scroll {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
-.animate-scroll {
-  animation: scroll 30s linear infinite;
-}
-*/

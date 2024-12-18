@@ -144,13 +144,14 @@ export default function VenuePage({
   return (
     <div className="min-h-screen bg-white">
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-6 text-gray-900">
+        <h1 className="text-xl sm:text-2xl font-bold mb-6 text-gray-900">
           {venue.venueName} Products
         </h1>
 
-        {/* Excel-like table */}
+        {/* Desktop Table / Mobile Cards */}
         <div className="bg-white shadow-md rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Desktop Table - Hidden on Mobile */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -245,6 +246,91 @@ export default function VenuePage({
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-4">
+            {venue.products.map((product) => (
+              <div
+                key={product.id}
+                className="bg-white border rounded-lg p-4 space-y-3"
+              >
+                {/* Product Header */}
+                <div className="flex gap-4">
+                  <div className="relative h-20 w-20 flex-shrink-0">
+                    {product.imageSrc ? (
+                      <img
+                        src={product.imageSrc}
+                        alt={product.title}
+                        className="h-full w-full object-contain"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = "/placeholder-product.png";
+                        }}
+                      />
+                    ) : (
+                      <img
+                        src="/placeholder-product.png"
+                        alt="No image available"
+                        className="h-full w-full object-contain"
+                      />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-medium text-gray-900 truncate">
+                      {product.title}
+                    </h3>
+                    <p className="text-sm text-gray-500">SKU: {product.sku}</p>
+                    {product.manufacturer && (
+                      <p className="text-sm text-gray-500">
+                        {product.manufacturer}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Product Details */}
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-gray-500">UOM:</span>{" "}
+                    <span className="text-gray-900">{product.uom || "-"}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Available:</span>{" "}
+                    <span className="text-gray-900">
+                      {product.qtyAvailable || 0}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Price:</span>{" "}
+                    <span className="text-gray-900">
+                      {product.price ? `$${product.price.toFixed(2)}` : "-"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Add to Cart Section */}
+                {session?.user && (
+                  <div className="flex items-center gap-2 pt-2">
+                    <div className="flex-1">
+                      <QuantityInput
+                        onQuantityChange={(quantity) =>
+                          handleQuantityChange(product.id, quantity)
+                        }
+                        initialQuantity={quantities[product.id] || 1}
+                        max={product.qtyAvailable || 9999}
+                      />
+                    </div>
+                    <button
+                      onClick={() => handleAddToCart(product)}
+                      className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap text-sm font-medium"
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </div>

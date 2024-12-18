@@ -4,22 +4,22 @@ import Link from "next/link";
 export default function VideoTutorialPage() {
   return (
     <div className="min-h-screen bg-white">
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 py-8 sm:py-16">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-2xl font-bold mb-6 text-gray-900">
+          <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-900 text-center">
             State Restaurant Video Tutorials
           </h1>
 
           {/* Main Tutorial Video */}
-          <div className="bg-zinc-50 rounded-2xl p-8 shadow-lg mb-12">
-            <h2 className="text-2xl font-bold mb-6 text-gray-900">
+          <div className="bg-zinc-50 rounded-xl sm:rounded-2xl p-4 sm:p-8 shadow-lg mb-8 sm:mb-12 text-center">
+            <h2 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-6 text-gray-900">
               How to use the search, filter and more like this functionality
             </h2>
-            <p className="text-lg text-gray-700 mb-8">
+            <p className="text-base sm:text-lg text-gray-700 mb-4 sm:mb-8">
               Learn how to effectively use our website's features to find
               exactly what you're looking for.
             </p>
-            <div className="relative rounded-xl overflow-hidden shadow-2xl">
+            <div className="relative rounded-lg sm:rounded-xl overflow-hidden shadow-lg sm:shadow-2xl">
               <div className="aspect-w-16 aspect-h-9">
                 <iframe
                   src="https://www.youtube.com/embed/M0HMtk82mN4"
@@ -33,15 +33,15 @@ export default function VideoTutorialPage() {
           </div>
 
           {/* Key Features Section */}
-          <div className="mb-12">
-            <h2 className="text-xl font-bold mb-6 text-gray-900">
+          <div className="mb-8 sm:mb-12">
+            <h2 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6 text-gray-900">
               Key Features Covered
             </h2>
-            <div className="grid md:grid-cols-3 gap-6">
-              <div className="bg-white p-6 rounded-lg shadow-md">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
                 <div className="text-blue-600 mb-2">
                   <svg
-                    className="w-6 h-6"
+                    className="w-5 h-5 sm:w-6 sm:h-6"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -54,17 +54,17 @@ export default function VideoTutorialPage() {
                     />
                   </svg>
                 </div>
-                <h3 className="text-gray-900 font-semibold mb-2">
+                <h3 className="text-gray-900 font-semibold mb-2 text-sm sm:text-base">
                   Advanced Search
                 </h3>
-                <p className="text-gray-600 text-sm">
+                <p className="text-gray-600 text-xs sm:text-sm">
                   Learn how to use filters and search to find products quickly
                 </p>
               </div>
-              <div className="bg-white p-6 rounded-lg shadow-md">
+              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
                 <div className="text-blue-600 mb-2">
                   <svg
-                    className="w-6 h-6"
+                    className="w-5 h-5 sm:w-6 sm:h-6"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -77,17 +77,17 @@ export default function VideoTutorialPage() {
                     />
                   </svg>
                 </div>
-                <h3 className="text-gray-900 font-semibold mb-2">
+                <h3 className="text-gray-900 font-semibold mb-2 text-sm sm:text-base">
                   Similar Products
                 </h3>
-                <p className="text-gray-600 text-sm">
+                <p className="text-gray-600 text-xs sm:text-sm">
                   Discover related items using our "More Like This" feature
                 </p>
               </div>
-              <div className="bg-white p-6 rounded-lg shadow-md">
+              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
                 <div className="text-blue-600 mb-2">
                   <svg
-                    className="w-6 h-6"
+                    className="w-5 h-5 sm:w-6 sm:h-6"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -100,10 +100,10 @@ export default function VideoTutorialPage() {
                     />
                   </svg>
                 </div>
-                <h3 className="text-gray-900 font-semibold mb-2">
+                <h3 className="text-gray-900 font-semibold mb-2 text-sm sm:text-base">
                   Product Categories
                 </h3>
-                <p className="text-gray-600 text-sm">
+                <p className="text-gray-600 text-xs sm:text-sm">
                   Navigate through our organized product categories
                 </p>
               </div>
@@ -111,14 +111,14 @@ export default function VideoTutorialPage() {
           </div>
 
           {/* Additional Resources */}
-          <div className="bg-zinc-50 rounded-lg p-6 mb-8">
-            <h2 className="text-xl font-bold mb-4 text-gray-900">
+          <div className="bg-zinc-50 rounded-lg p-4 sm:p-6 mb-6 sm:mb-8">
+            <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 text-gray-900">
               Additional Resources
             </h2>
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <Link
                 href="/products"
-                className="text-blue-600 hover:text-blue-800 flex items-center gap-2"
+                className="text-blue-600 hover:text-blue-800 flex items-center gap-2 text-sm sm:text-base"
               >
                 <span>Browse Products</span>
                 <svg
@@ -137,7 +137,7 @@ export default function VideoTutorialPage() {
               </Link>
               <Link
                 href="/showroom"
-                className="text-blue-600 hover:text-blue-800 flex items-center gap-2"
+                className="text-blue-600 hover:text-blue-800 flex items-center gap-2 text-sm sm:text-base"
               >
                 <span>Visit Our Showroom</span>
                 <svg
@@ -157,8 +157,8 @@ export default function VideoTutorialPage() {
             </div>
           </div>
 
-          <div className="mt-8 text-center">
-            <p className="text-gray-600">
+          <div className="mt-6 sm:mt-8 text-center">
+            <p className="text-gray-600 text-sm sm:text-base">
               Need more help? Don't hesitate to{" "}
               <a href="/contact" className="text-blue-600 hover:text-blue-800">
                 contact us

@@ -1,6 +1,5 @@
 /* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @next/next/no-img-element */
-
 const vendors = [
   {
     name: "Arc Cardinal",
@@ -134,21 +133,21 @@ export default function ChinaAndFlatwarePage() {
           <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
             Our Trusted Partners
           </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8">
             {vendors.map((vendor) => (
               <div
                 key={vendor.name}
-                className="group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                className="group bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300"
               >
-                <div className="aspect-w-20 aspect-h-12 bg-white p-2">
+                <div className="h-24 sm:h-32 lg:h-40 bg-white p-3 sm:p-4 flex items-center justify-center">
                   <img
                     src={vendor.logo}
                     alt={vendor.name}
-                    className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
+                    className="max-h-full w-auto object-contain transition-transform duration-300 group-hover:scale-105"
                   />
                 </div>
-                <div className="p-6 bg-gradient-to-b from-zinc-50 to-white">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4 text-center">
+                <div className="p-3 sm:p-6 bg-gradient-to-b from-zinc-50 to-white">
+                  <h3 className="text-sm sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4 text-center truncate px-1">
                     {vendor.name}
                   </h3>
                   <div className="flex justify-center">
@@ -156,11 +155,11 @@ export default function ChinaAndFlatwarePage() {
                       href={vendor.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="bg-[#B87B5C] text-white px-6 py-3 rounded-lg hover:bg-[#A66D4F] transition-all duration-300 inline-flex items-center gap-2 shadow-md hover:shadow-lg"
+                      className="bg-[#B87B5C] text-white px-3 sm:px-6 py-2 sm:py-3 rounded-lg hover:bg-[#A66D4F] transition-all duration-300 inline-flex items-center gap-1 sm:gap-2 shadow-md hover:shadow-lg text-xs sm:text-base w-full sm:w-auto justify-center"
                     >
                       <span>View Catalog</span>
                       <svg
-                        className="w-4 h-4 transform transition-transform duration-300 group-hover:translate-x-1"
+                        className="w-3 h-3 sm:w-4 sm:h-4"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"

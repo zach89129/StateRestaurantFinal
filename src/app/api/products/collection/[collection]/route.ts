@@ -18,15 +18,36 @@ export async function GET(
     const page = parseInt(searchParams.get("page") || "1");
     const pageSize = parseInt(searchParams.get("pageSize") || "24");
     const sort = searchParams.get("sort") || "";
-    const categories = searchParams.get("category")?.split(",") || [];
-    const manufacturers = searchParams.get("manufacturer")?.split(",") || [];
-    const tags = searchParams.get("tags")?.split(",") || [];
 
-    // Calculate offset
+    // Calculate offset for pagination
     const offset = (page - 1) * pageSize;
 
+    // Decode categories properly
+    const categories =
+      searchParams
+        .get("category")
+        ?.split(",")
+        .map((c) => {
+          try {
+            // Try double decode first
+            return decodeURIComponent(decodeURIComponent(c.trim()));
+          } catch {
+            // If that fails, try single decode
+            return decodeURIComponent(c.trim());
+          }
+        })
+        .filter(Boolean) || [];
+
+    const manufacturers =
+      searchParams
+        .get("manufacturer")
+        ?.split(",")
+        .map((m) => decodeURIComponent(m)) || [];
+    const tags = searchParams.get("tags")?.split(",") || [];
+
     // Build where clause
-    const whereClause: any = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let whereClause: any = {
       tags: {
         contains: `COLLECTION_${collection.toLowerCase()}`,
       },
@@ -34,16 +55,44 @@ export async function GET(
 
     // Add category filter if present
     if (categories.length > 0) {
-      whereClause.category = {
-        in: categories,
+      whereClause = {
+        AND: [
+          {
+            tags: {
+              contains: `COLLECTION_${collection.toLowerCase()}`,
+            },
+          },
+          {
+            OR: categories.map((category) => ({
+              category: {
+                contains: category,
+              },
+            })),
+          },
+        ],
       };
     }
 
     // Add manufacturer filter if present
     if (manufacturers.length > 0) {
-      whereClause.manufacturer = {
-        in: manufacturers.map((m) => decodeURIComponent(m)),
-      };
+      if (!whereClause.AND) {
+        whereClause = {
+          AND: [
+            whereClause,
+            {
+              manufacturer: {
+                in: manufacturers,
+              },
+            },
+          ],
+        };
+      } else {
+        whereClause.AND.push({
+          manufacturer: {
+            in: manufacturers,
+          },
+        });
+      }
     }
 
     // Add tags filter if present
@@ -61,6 +110,7 @@ export async function GET(
     });
 
     // Build order by clause
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let orderBy: any = { title: "asc" };
     if (sort === "price-asc") {
       orderBy = { price: "asc" };
@@ -70,7 +120,7 @@ export async function GET(
       orderBy = { title: "desc" };
     }
 
-    // Fetch products
+    // Fetch products with offset
     const products = await prisma.product.findMany({
       where: whereClause,
       orderBy,

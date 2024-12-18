@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-// import { useRouter } from "next/navigation";
 
 const featuredCollections = [
   {
@@ -48,50 +47,42 @@ const featuredCollections = [
 ];
 
 export default function CategoryGrid() {
-  // const router = useRouter();
-  // const handleNavigate = (collectionName: string) => {
-  //   router.push(`/products/${collectionName}?collection=${collectionName}`);
-  // };
   return (
-    <section className="py-16 bg-white">
-      <div className="container mx-auto px-4">
-        {/* <button
-          onClick={() => handleNavigate("glassware")}
-          className="zinc-500 text-sm"
-        >
-          testnav
-        </button> */}
-        <div className="grid grid-cols-8 gap-8">
+    <section className="py-4 sm:py-8 md:py-16 bg-white">
+      <div className="container mx-auto px-2 sm:px-4">
+        <div className="grid grid-cols-1 md:grid-cols-8 gap-3 sm:gap-4 md:gap-8">
           {featuredCollections.map((collection, index) => (
             <div
               key={collection.title}
-              className={`relative h-[300px] overflow-hidden rounded-lg ${
+              className={`relative h-[300px] sm:h-[275px] md:h-[300px] overflow-hidden rounded-lg ${
                 index === 0 || index === 3
-                  ? "col-span-5"
+                  ? "md:col-span-5"
                   : index === 4 || index === 5
-                  ? "col-span-4"
-                  : "col-span-3"
+                  ? "md:col-span-4"
+                  : "md:col-span-3"
               }`}
             >
-              <div className="relative w-full h-full">
+              <div className="relative w-full h-full group">
                 <Image
                   src={collection.image}
                   alt={collection.title}
                   fill
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw"
-                  className="object-cover"
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
                   priority={index === 0}
                 />
-                <div className="absolute inset-0 bg-black/40 p-6 flex flex-col justify-center">
-                  <h3 className="text-white text-2xl font-bold mb-2">
+                <div className="absolute inset-0 bg-black/40 p-5 sm:p-4 md:p-6 flex flex-col justify-center transition-colors group-hover:bg-black/50">
+                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-2 text-white">
                     {collection.title}
                   </h3>
-                  <p className="text-white mb-4">{collection.body}</p>
+                  <p className="text-sm md:text-base text-white mb-4 line-clamp-3">
+                    {collection.body}
+                  </p>
                   {collection.href && (
                     <div className="mt-auto">
                       <Link
                         href={collection.href}
-                        className="inline-block bg-[#B87B5C] text-white px-6 py-2 rounded hover:bg-[#A66D4F] transition-colors"
+                        className="inline-block bg-[#B87B5C] text-white px-4 md:px-6 py-2 rounded hover:bg-[#A66D4F] transition-colors text-sm md:text-base"
                       >
                         {collection.buttonText}
                       </Link>

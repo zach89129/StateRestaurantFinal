@@ -278,101 +278,85 @@ function ProductsContent() {
           {/* Main Content */}
           <div className="flex-1">
             <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-bold text-gray-900">Products</h1>
-              <div className="flex items-center gap-4">
-                <div className="text-sm text-gray-900">Sort by:</div>
-                <SortOptions
-                  onSortChange={(sort) => {
-                    const params = new URLSearchParams(searchParams.toString());
-                    if (sort) {
-                      params.set("sort", sort);
-                    } else {
-                      params.delete("sort");
-                    }
-                    params.set("page", "1"); // Reset to first page on sort change
-                    router.push(`/products?${params.toString()}`);
-                  }}
-                  currentSort={searchParams.get("sort") || ""}
-                  onClear={() => {
-                    const params = new URLSearchParams(searchParams.toString());
-                    params.delete("sort");
-                    router.push(`/products?${params.toString()}`);
-                  }}
-                />
-                <div className="text-sm text-gray-900 ml-4">
+              <h1 className="text-2xl font-bold text-gray-900">All Products</h1>
+              {!loading && (
+                <div className="text-sm text-gray-900">
                   {pagination.total} Products
                 </div>
-              </div>
+              )}
             </div>
 
-            {loading ? (
-              <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-300 border-t-black"></div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {products.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            )}
+            {/* Add min-height and proper spacing */}
+            <div className="min-h-screen pb-16">
+              {loading ? (
+                <div className="flex justify-center items-center h-64">
+                  <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-300 border-t-black"></div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-6 mb-8">
+                  {products.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+              )}
 
-            {/* Pagination */}
-            {pagination.totalPages > 1 && (
-              <div className="mt-8 mb-4 flex justify-center">
-                <nav className="flex items-center gap-1">
-                  {/* Previous button */}
-                  <button
-                    onClick={() =>
-                      handlePageChange(Math.max(1, pagination.page - 1))
-                    }
-                    disabled={pagination.page === 1}
-                    className={`px-2 py-1 rounded border ${
-                      pagination.page === 1
-                        ? "border-gray-200 text-gray-400 cursor-not-allowed"
-                        : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    ‹
-                  </button>
-
-                  {/* Page numbers */}
-                  {Array.from(
-                    { length: pagination.totalPages },
-                    (_, i) => i + 1
-                  ).map((page) => (
+              {/* Pagination */}
+              {!loading && pagination.totalPages > 1 && (
+                <div className="mt-8 mb-4 flex justify-center">
+                  <nav className="flex items-center gap-1">
+                    {/* Previous button */}
                     <button
-                      key={page}
-                      onClick={() => handlePageChange(page)}
-                      className={`px-3 py-1 rounded border ${
-                        page === pagination.page
-                          ? "bg-zinc-900 text-white border-zinc-900"
+                      onClick={() =>
+                        handlePageChange(Math.max(1, pagination.page - 1))
+                      }
+                      disabled={pagination.page === 1}
+                      className={`px-2 py-1 rounded border ${
+                        pagination.page === 1
+                          ? "border-gray-200 text-gray-400 cursor-not-allowed"
                           : "border-gray-300 text-gray-700 hover:bg-gray-50"
                       }`}
                     >
-                      {page}
+                      ‹
                     </button>
-                  ))}
 
-                  {/* Next button */}
-                  <button
-                    onClick={() =>
-                      handlePageChange(
-                        Math.min(pagination.totalPages, pagination.page + 1)
-                      )
-                    }
-                    disabled={pagination.page === pagination.totalPages}
-                    className={`px-2 py-1 rounded border ${
-                      pagination.page === pagination.totalPages
-                        ? "border-gray-200 text-gray-400 cursor-not-allowed"
-                        : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    ›
-                  </button>
-                </nav>
-              </div>
-            )}
+                    {/* Page numbers */}
+                    {Array.from(
+                      { length: pagination.totalPages },
+                      (_, i) => i + 1
+                    ).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        className={`px-3 py-1 rounded border ${
+                          page === pagination.page
+                            ? "bg-zinc-900 text-white border-zinc-900"
+                            : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+
+                    {/* Next button */}
+                    <button
+                      onClick={() =>
+                        handlePageChange(
+                          Math.min(pagination.totalPages, pagination.page + 1)
+                        )
+                      }
+                      disabled={pagination.page === pagination.totalPages}
+                      className={`px-2 py-1 rounded border ${
+                        pagination.page === pagination.totalPages
+                          ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                          : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      ›
+                    </button>
+                  </nav>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

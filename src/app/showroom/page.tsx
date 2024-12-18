@@ -68,13 +68,13 @@ export default function ShowroomPage() {
               Experience our showroom in person and let our experts help you
               find the perfect solutions for your business.
             </p>
-            <div className="inline-flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
               <a
                 href="tel:+17027331515"
-                className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center gap-2"
+                className="w-full sm:w-auto bg-blue-600 text-white px-6 sm:px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center justify-center gap-2 whitespace-nowrap h-12"
               >
                 <svg
-                  className="w-5 h-5"
+                  className="w-5 h-5 flex-shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -86,16 +86,16 @@ export default function ShowroomPage() {
                     d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
                   />
                 </svg>
-                (702) 733-1515
+                <span>(702) 733-1515</span>
               </a>
               <a
                 href="https://www.google.com/maps/place/State+Restaurant+Equipment+Co/@36.1327486,-115.1790044,17z/data=!3m1!4b1!4m6!3m5!1s0x80c8c4101d7d23a7:0xc05df23572882a06!8m2!3d36.1327486!4d-115.1764295!16s%2Fg%2F1tf3p5bb?entry=ttu&g_ep=EgoyMDI0MTIxMS4wIKXMDSoASAFQAw%3D%3D"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-zinc-800 text-white px-8 py-3 rounded-lg hover:bg-zinc-700 transition-colors font-semibold flex items-center gap-2"
+                className="w-full sm:w-auto bg-zinc-800 text-white px-6 sm:px-8 py-3 rounded-lg hover:bg-zinc-700 transition-colors font-semibold flex items-center justify-center gap-2 h-12"
               >
                 <svg
-                  className="w-5 h-5"
+                  className="w-5 h-5 flex-shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

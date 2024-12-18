@@ -1,10 +1,11 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import { Suspense, useEffect, useState, useMemo } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ProductCard from "@/components/products/ProductCard";
 import FilterSidebar from "@/components/products/FilterSidebar";
-import Pagination from "@/components/ui/Pagination";
+// import Pagination from "@/components/ui/Pagination";
 import Link from "next/link";
 
 interface Product {
@@ -35,6 +36,7 @@ function SearchContent() {
   const searchTerm = searchParams.get("q") || "";
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [pagination, setPagination] = useState<PaginationInfo>({
     total: 0,
@@ -111,6 +113,7 @@ function SearchContent() {
     };
 
     fetchSearchResults();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]); // Depend on all searchParams to refetch when any parameter changes
 
   // Remove the filtering effect since filtering will be handled by the server
@@ -291,74 +294,77 @@ function SearchContent() {
               </div>
             </div>
 
-            {loading ? (
-              <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-300 border-t-black"></div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {products.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            )}
+            {/* Add min-height and proper spacing */}
+            <div className="min-h-screen pb-16">
+              {loading ? (
+                <div className="flex justify-center items-center h-64">
+                  <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-300 border-t-black"></div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-6 mb-8">
+                  {products.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+              )}
 
-            {/* Pagination */}
-            {!loading && pagination.totalPages > 1 && (
-              <div className="mt-8 mb-4 flex justify-center">
-                <nav className="flex items-center gap-1">
-                  {/* Previous button */}
-                  <button
-                    onClick={() =>
-                      handlePageChange(Math.max(1, pagination.page - 1))
-                    }
-                    disabled={pagination.page === 1}
-                    className={`px-2 py-1 rounded border ${
-                      pagination.page === 1
-                        ? "border-gray-200 text-gray-400 cursor-not-allowed"
-                        : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    ‹
-                  </button>
-
-                  {/* Page numbers */}
-                  {Array.from(
-                    { length: pagination.totalPages },
-                    (_, i) => i + 1
-                  ).map((page) => (
+              {/* Pagination */}
+              {!loading && pagination.totalPages > 1 && (
+                <div className="mt-8 mb-4 flex justify-center">
+                  <nav className="flex items-center gap-1">
+                    {/* Previous button */}
                     <button
-                      key={page}
-                      onClick={() => handlePageChange(page)}
-                      className={`px-3 py-1 rounded border ${
-                        page === pagination.page
-                          ? "bg-zinc-900 text-white border-zinc-900"
+                      onClick={() =>
+                        handlePageChange(Math.max(1, pagination.page - 1))
+                      }
+                      disabled={pagination.page === 1}
+                      className={`px-2 py-1 rounded border ${
+                        pagination.page === 1
+                          ? "border-gray-200 text-gray-400 cursor-not-allowed"
                           : "border-gray-300 text-gray-700 hover:bg-gray-50"
                       }`}
                     >
-                      {page}
+                      ‹
                     </button>
-                  ))}
 
-                  {/* Next button */}
-                  <button
-                    onClick={() =>
-                      handlePageChange(
-                        Math.min(pagination.totalPages, pagination.page + 1)
-                      )
-                    }
-                    disabled={pagination.page === pagination.totalPages}
-                    className={`px-2 py-1 rounded border ${
-                      pagination.page === pagination.totalPages
-                        ? "border-gray-200 text-gray-400 cursor-not-allowed"
-                        : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    ›
-                  </button>
-                </nav>
-              </div>
-            )}
+                    {/* Page numbers */}
+                    {Array.from(
+                      { length: pagination.totalPages },
+                      (_, i) => i + 1
+                    ).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        className={`px-3 py-1 rounded border ${
+                          page === pagination.page
+                            ? "bg-zinc-900 text-white border-zinc-900"
+                            : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+
+                    {/* Next button */}
+                    <button
+                      onClick={() =>
+                        handlePageChange(
+                          Math.min(pagination.totalPages, pagination.page + 1)
+                        )
+                      }
+                      disabled={pagination.page === pagination.totalPages}
+                      className={`px-2 py-1 rounded border ${
+                        pagination.page === pagination.totalPages
+                          ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                          : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      ›
+                    </button>
+                  </nav>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

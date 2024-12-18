@@ -12,6 +12,8 @@ export default function Header() {
   const { data: session } = useSession();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isVenuesOpen, setIsVenuesOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
   const router = useRouter();
   const { itemCount } = useCart();
 
@@ -22,21 +24,14 @@ export default function Header() {
   const handleNavigate = (collectionName: string) => {
     router.push(`/products/${collectionName}?collection=${collectionName}`);
     setIsDropdownOpen(false);
+    setIsMobileMenuOpen(false);
   };
 
   return (
     <header className="bg-zinc-800">
-      {/* Top bar with contact info */}
+      {/* Top bar */}
       <div className="bg-zinc-800 py-2 text-sm">
-        <div className="container mx-auto px-4 flex justify-between items-center">
-          <div>
-            <a
-              href="tel:+18002517900"
-              className="text-gray-100 hover:text-white"
-            >
-              1-702-733-1515
-            </a>
-          </div>
+        <div className="container mx-auto px-4 flex justify-end items-center">
           <div className="flex gap-4">
             {session ? (
               <>
@@ -55,15 +50,12 @@ export default function Header() {
               </>
             ) : (
               <>
-                <Link
-                  href="/login"
-                  className="text-gray-100 hover:text-gray-900"
-                >
+                <Link href="/login" className="text-gray-100 hover:text-white">
                   Login
                 </Link>
                 <Link
                   href="/register"
-                  className="text-gray-100 hover:text-gray-900"
+                  className="text-gray-100 hover:text-white"
                 >
                   Register
                 </Link>
@@ -74,10 +66,10 @@ export default function Header() {
       </div>
 
       {/* Main header */}
-      <div className="container mx-auto px-4 py-0 bg-zinc-800">
+      <div className="container mx-auto px-4 py-4 bg-zinc-800">
         <div className="flex bg-zinc-800 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex-shrink-0">
+          <Link href="/" className="flex-shrink-0 -mt-4">
             <Image
               src="/StateLogoHeader.webp"
               alt="State Restaurant Equipment & Supply"
@@ -87,14 +79,58 @@ export default function Header() {
             />
           </Link>
 
-          {/* Search */}
-          <div className="flex-grow mx-12">
+          {/* Mobile Menu Button */}
+          <div className="flex items-center gap-4 lg:hidden">
+            <button
+              onClick={() => setIsSearchVisible(!isSearchVisible)}
+              className="text-white p-2"
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </button>
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="text-white p-2"
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d={
+                    isMobileMenuOpen
+                      ? "M6 18L18 6M6 6l12 12"
+                      : "M4 6h16M4 12h16M4 18h16"
+                  }
+                />
+              </svg>
+            </button>
+          </div>
+
+          {/* Desktop Search */}
+          <div className="hidden lg:flex flex-grow mx-12">
             <SearchBar />
           </div>
 
-          {/* Cart */}
+          {/* Cart - Always visible */}
           <div className="flex-shrink-0">
-            {session?.user ? (
+            {session?.user && (
               <Link
                 href="/cart"
                 className="flex items-center gap-2 text-gray-100 hover:text-white"
@@ -118,15 +154,25 @@ export default function Header() {
                   </span>
                 )}
               </Link>
-            ) : null}
+            )}
           </div>
+        </div>
+
+        {/* Mobile Search - Collapsible */}
+        <div
+          className={`lg:hidden transition-all duration-300 overflow-hidden ${
+            isSearchVisible ? "max-h-20 py-4" : "max-h-0"
+          }`}
+        >
+          <SearchBar />
         </div>
       </div>
 
       {/* Navigation */}
       <nav className="bg-zinc-800 text-white">
         <div className="container mx-auto px-4">
-          <ul className="flex gap-8 py-4">
+          {/* Desktop Navigation */}
+          <ul className="hidden lg:flex gap-8 py-4">
             <li className="relative">
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -224,6 +270,94 @@ export default function Header() {
               </li>
             )}
           </ul>
+
+          {/* Mobile Navigation */}
+          <div
+            className={`lg:hidden transition-all duration-300 overflow-hidden ${
+              isMobileMenuOpen ? "max-h-screen" : "max-h-0"
+            }`}
+          >
+            <div className="py-4 space-y-4">
+              <div className="border-b border-zinc-700 pb-2">
+                <button
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="w-full text-left px-4 py-2 hover:bg-zinc-700 rounded"
+                >
+                  Products
+                </button>
+                {isDropdownOpen && (
+                  <div className="pl-8 space-y-2 mt-2">
+                    <Link
+                      href="/products"
+                      className="block py-2 hover:bg-zinc-700 rounded px-4"
+                      onClick={() => {
+                        setIsDropdownOpen(false);
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
+                      All Products
+                    </Link>
+                    <button
+                      onClick={() => handleNavigate("glassware")}
+                      className="block w-full text-left py-2 hover:bg-zinc-700 rounded px-4"
+                    >
+                      Glassware
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <Link
+                href="/about"
+                className="block px-4 py-2 hover:bg-zinc-700 rounded"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                About Us
+              </Link>
+              <Link
+                href="/showroom"
+                className="block px-4 py-2 hover:bg-zinc-700 rounded"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Showroom
+              </Link>
+              <Link
+                href="/contact"
+                className="block px-4 py-2 hover:bg-zinc-700 rounded"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Contact
+              </Link>
+
+              {session?.user?.venues && session.user.venues.length > 0 && (
+                <div className="border-t border-zinc-700 pt-2">
+                  <button
+                    onClick={() => setIsVenuesOpen(!isVenuesOpen)}
+                    className="w-full text-left px-4 py-2 hover:bg-zinc-700 rounded"
+                  >
+                    Your Venues
+                  </button>
+                  {isVenuesOpen && (
+                    <div className="pl-8 space-y-2 mt-2">
+                      {session.user.venues.map((venue) => (
+                        <Link
+                          key={venue.venueName}
+                          href={`/venues/${venue.trxVenueId}`}
+                          className="block py-2 hover:bg-zinc-700 rounded px-4"
+                          onClick={() => {
+                            setIsVenuesOpen(false);
+                            setIsMobileMenuOpen(false);
+                          }}
+                        >
+                          {venue.venueName}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </nav>
     </header>
