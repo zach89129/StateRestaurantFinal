@@ -205,23 +205,26 @@ export default function AboutPage() {
 
               <div
                 ref={scrollContainerRef}
-                className={`flex items-center gap-12 whitespace-nowrap overflow-x-hidden ${
+                className={`flex items-center gap-12 whitespace-nowrap overflow-x-hidden w-full ${
                   !isHovered ? "animate-scroll" : ""
                 }`}
+                style={{ WebkitOverflowScrolling: "touch" }}
               >
-                {duplicatedClients.map((client, index) => (
-                  <div
-                    key={`${client.name}-${index}`}
-                    className="relative h-20 w-40 flex-shrink-0 hover:scale-110 transition-transform duration-300"
-                  >
-                    <Image
-                      src={client.image}
-                      alt={client.name}
-                      fill
-                      className="object-contain"
-                    />
-                  </div>
-                ))}
+                <div className="flex items-center gap-12 min-w-full">
+                  {duplicatedClients.map((client, index) => (
+                    <div
+                      key={`${client.name}-${index}`}
+                      className="relative h-20 w-40 flex-shrink-0 hover:scale-110 transition-transform duration-300"
+                    >
+                      <Image
+                        src={client.image}
+                        alt={client.name}
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
             </section>
           </div>

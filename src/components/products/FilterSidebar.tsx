@@ -216,8 +216,8 @@ export default function FilterSidebar({
 
       {/* Desktop Sidebar */}
       <div className="hidden lg:block w-64 flex-shrink-0">
-        <div className="sticky top-[144px] overflow-y-auto max-h-[calc(100vh-144px)]">
-          <div className="bg-white rounded-lg shadow p-4">
+        <div className="sticky top-[120px]">
+          <div className="bg-white rounded-lg shadow-lg p-4 overflow-y-auto max-h-[calc(100vh-140px)]">
             <FilterContent />
           </div>
         </div>

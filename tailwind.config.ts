@@ -14,12 +14,25 @@ const config: Config = {
       },
       animation: {
         "subtle-zoom": "subtle-zoom 20s infinite alternate",
+        scroll: "scroll 40s linear infinite",
       },
       keyframes: {
         "subtle-zoom": {
           "0%": { transform: "scale(1)" },
           "100%": { transform: "scale(1.1)" },
         },
+        scroll: {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(calc(-100% / 3))" },
+        },
+      },
+      screens: {
+        xs: "375px", // iPhone 14
+        sm: "640px", // Small tablets
+        md: "768px", // iPads
+        lg: "1024px", // Large tablets/small laptops
+        xl: "1280px", // Laptops
+        "2xl": "1536px", // Large screens
       },
     },
   },
