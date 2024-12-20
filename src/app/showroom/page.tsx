@@ -33,11 +33,11 @@ export default function ShowroomPage() {
             </h2>
             <p className="text-lg text-gray-700 leading-relaxed">
               Our showrooms have been hailed as the "best in the industry" and
-              are regularly visited by Chefs, VP's of Food and Beverage, and
-              executives from major casinos and restaurants. With four distinct
-              areas, each one captures trendsetting tabletop items from leading
-              manufacturers where you are sure to find just the right product to
-              fit your needs.
+              are regularly visited by Chefs, VP's of Food and Beverage,
+              executives from major casinos and restaurants, and even
+              celebrities. With five distinct areas, each one captures
+              trendsetting tabletop items from leading manufacturers where you
+              are sure to find just the right product to fit your needs.
             </p>
           </div>
 

@@ -19,8 +19,7 @@ export default function Footer() {
             </div>
             <div className="space-y-2">
               <p className="text-sm">
-                Serving the Food Service Industry with quality equipment and
-                supplies since 1951.
+                Serving the Food Service Industry since 1967.
               </p>
             </div>
           </div>
@@ -50,8 +49,8 @@ export default function Footer() {
                   />
                 </svg>
                 <div>
-                  <p>3570 S Valley View Blvd</p>
-                  <p>Las Vegas, NV 89103</p>
+                  <p>3163 S. Highland Drive</p>
+                  <p>Las Vegas, NV 89109</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -73,27 +72,6 @@ export default function Footer() {
                   className="hover:text-white transition-colors"
                 >
                   1-702-733-1515
-                </a>
-              </div>
-              <div className="flex items-center gap-3">
-                <svg
-                  className="w-5 h-5 text-[#B87B5C]"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                  />
-                </svg>
-                <a
-                  href="mailto:sales@staterestaurant.com"
-                  className="hover:text-white transition-colors"
-                >
-                  sales@staterestaurant.com
                 </a>
               </div>
             </div>
@@ -187,27 +165,6 @@ export default function Footer() {
                   </svg>
                 </Link>
               </li>
-              <li>
-                <Link
-                  href="/privacy"
-                  className="hover:text-white transition-colors flex items-center gap-2 group"
-                >
-                  <span>Privacy Policy</span>
-                  <svg
-                    className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
-                </Link>
-              </li>
             </ul>
           </div>
 
@@ -217,7 +174,7 @@ export default function Footer() {
             <div className="space-y-2 text-sm">
               <p className="flex justify-between">
                 <span>Monday - Friday</span>
-                <span>8:00 AM - 4:00 PM</span>
+                <span>8:00 AM - 4:30 PM</span>
               </p>
               <p className="flex justify-between">
                 <span>Saturday - Sunday</span>

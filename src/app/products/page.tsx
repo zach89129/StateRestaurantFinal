@@ -65,6 +65,7 @@ function ProductsContent() {
     totalPages: 0,
     hasMore: false,
   });
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // Fetch products with current filters and pagination
   useEffect(() => {
@@ -137,7 +138,7 @@ function ProductsContent() {
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", newPage.toString());
-    router.push(`/products?${params}`);
+    router.push(`/products?${params}`, { scroll: false });
   };
 
   const handleCategoryChange = (category: string) => {
@@ -167,7 +168,7 @@ function ProductsContent() {
 
     // Reset to first page when filter changes
     params.set("page", "1");
-    router.push(`/products?${params.toString()}`);
+    router.push(`/products?${params.toString()}`, { scroll: false });
   };
 
   const handleManufacturerChange = (manufacturer: string) => {
@@ -208,7 +209,7 @@ function ProductsContent() {
     }
 
     params.set("page", "1");
-    router.push(`/products?${params.toString()}`);
+    router.push(`/products?${params.toString()}`, { scroll: false });
   };
 
   const handleTagChange = (tag: string) => {
@@ -230,11 +231,15 @@ function ProductsContent() {
 
     // Reset to first page when filter changes
     params.set("page", "1");
-    router.push(`/products?${params}`);
+    router.push(`/products?${params}`, { scroll: false });
   };
 
   const clearAllFilters = () => {
-    router.push("/products");
+    router.push("/products", { scroll: false });
+  };
+
+  const toggleFilter = () => {
+    setIsFilterOpen(!isFilterOpen);
   };
 
   return (
@@ -251,32 +256,31 @@ function ProductsContent() {
 
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Left Sidebar */}
-          <div className="lg:w-64 flex-shrink-0">
-            <FilterSidebar
-              sortOptions={sortOptions}
-              selectedCategories={
-                searchParams
-                  .get("category")
-                  ?.split(",")
-                  .map((c) => decodeURIComponent(c.trim()))
-                  .filter(Boolean) || []
-              }
-              selectedManufacturers={
-                searchParams.get("manufacturer")?.split(",").filter(Boolean) ||
-                []
-              }
-              selectedTags={
-                searchParams.get("tags")?.split(",").filter(Boolean) || []
-              }
-              onCategoryChange={handleCategoryChange}
-              onManufacturerChange={handleManufacturerChange}
-              onTagChange={handleTagChange}
-              onClearAll={clearAllFilters}
-            />
-          </div>
+          <FilterSidebar
+            sortOptions={sortOptions}
+            selectedCategories={
+              searchParams
+                .get("category")
+                ?.split(",")
+                .map((c) => decodeURIComponent(c.trim()))
+                .filter(Boolean) || []
+            }
+            selectedManufacturers={
+              searchParams.get("manufacturer")?.split(",").filter(Boolean) || []
+            }
+            selectedTags={
+              searchParams.get("tags")?.split(",").filter(Boolean) || []
+            }
+            onCategoryChange={handleCategoryChange}
+            onManufacturerChange={handleManufacturerChange}
+            onTagChange={handleTagChange}
+            onClearAll={clearAllFilters}
+            isOpen={isFilterOpen}
+            onClose={() => setIsFilterOpen(false)}
+          />
 
           {/* Main Content */}
-          <div className="flex-1">
+          <div className="flex-1 min-h-0">
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-2xl font-bold text-gray-900">All Products</h1>
               {!loading && (
@@ -286,7 +290,7 @@ function ProductsContent() {
               )}
             </div>
 
-            {/* Add min-height and proper spacing */}
+            {/* Products Grid */}
             <div className="min-h-screen pb-16">
               {loading ? (
                 <div className="flex justify-center items-center h-64">
@@ -359,6 +363,27 @@ function ProductsContent() {
             </div>
           </div>
         </div>
+
+        {/* Mobile Filter Button */}
+        <button
+          onClick={toggleFilter}
+          className="fixed bottom-4 right-4 z-30 lg:hidden flex items-center gap-2 px-4 py-3 bg-white border border-gray-300 rounded-full shadow-lg hover:bg-gray-50"
+        >
+          <svg
+            className="w-5 h-5 text-gray-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+            />
+          </svg>
+          <span className="text-sm font-medium text-gray-500">Filter</span>
+        </button>
       </div>
     </div>
   );

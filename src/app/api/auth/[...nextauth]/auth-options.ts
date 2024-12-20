@@ -13,6 +13,7 @@ interface User {
     venueName: string;
   }[];
   isSuperuser: boolean;
+  trxCustomerId: string;
 }
 
 export const authOptions: AuthOptions = {
@@ -97,6 +98,7 @@ export const authOptions: AuthOptions = {
           email: customer.email,
           venues: venues,
           isSuperuser,
+          trxCustomerId: customer.id.toString(),
         } as User;
       },
     }),
@@ -110,6 +112,7 @@ export const authOptions: AuthOptions = {
       if (user) {
         token.venues = user.venues;
         token.isSuperuser = user.isSuperuser;
+        token.trxCustomerId = user.trxCustomerId;
       }
       return token;
     },
@@ -122,6 +125,7 @@ export const authOptions: AuthOptions = {
           venueName: string;
         }[];
         session.user.isSuperuser = token.isSuperuser as boolean;
+        session.user.trxCustomerId = token.trxCustomerId as string;
       }
       return session;
     },

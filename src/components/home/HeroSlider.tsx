@@ -20,10 +20,11 @@ export default function HeroSlider() {
           <div className="container mx-auto px-4">
             <div className="max-w-2xl">
               <h1 className="text-3xl md:text-5xl font-bold mb-4 text-white">
-                Commercial Kitchen Equipment & Restaurant Supplies
+                Commercial Kitchen Equipment & Restaurant Supplies, Specializing
+                in Tabletop
               </h1>
               <p className="text-lg md:text-xl mb-6 md:mb-8 text-gray-100">
-                Serving the Food Service Industry Since 1951
+                Serving the Food Service Industry Since 1967
               </p>
               <Link
                 href="/products"

@@ -1,6 +1,11 @@
+"use client";
 import Image from "next/image";
+import { useState, useRef, useEffect } from "react";
 
 export default function AboutPage() {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [isHovered, setIsHovered] = useState(false);
+
   const clients = [
     { name: "MGM Resorts", image: "/StateMGM.webp" },
     { name: "City Center", image: "/StateCityCenter.webp" },
@@ -14,7 +19,47 @@ export default function AboutPage() {
     { name: "Boyd Gaming", image: "/StateBoyd.webp" },
   ];
 
-  const duplicatedClients = [...clients, ...clients];
+  const duplicatedClients = [...clients, ...clients, ...clients];
+
+  const scroll = (direction: "left" | "right") => {
+    if (!scrollContainerRef.current) return;
+
+    const container = scrollContainerRef.current;
+    const scrollAmount = 300;
+
+    const scrollWidth = container.scrollWidth / 3;
+
+    if (direction === "left") {
+      if (container.scrollLeft <= 0) {
+        container.style.scrollBehavior = "auto";
+        container.scrollLeft = scrollWidth;
+        container.style.scrollBehavior = "smooth";
+      }
+      container.scrollLeft -= scrollAmount;
+    } else {
+      if (container.scrollLeft >= scrollWidth) {
+        container.style.scrollBehavior = "auto";
+        container.scrollLeft = 0;
+        container.style.scrollBehavior = "smooth";
+      }
+      container.scrollLeft += scrollAmount;
+    }
+  };
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const scrollWidth = container.scrollWidth / 3;
+      if (container.scrollLeft >= scrollWidth) {
+        container.scrollLeft = 0;
+      }
+    };
+
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
@@ -67,7 +112,7 @@ export default function AboutPage() {
                       Our Las Vegas Showroom
                     </h4>
                     <p className="text-gray-200">
-                      Visit our 30,000 sq ft showroom and warehouse facility in
+                      Visit our 80,000 sq ft showroom and warehouse facility in
                       Las Vegas, featuring the latest in restaurant equipment
                       and supplies.
                     </p>
@@ -109,8 +154,61 @@ export default function AboutPage() {
             </section>
 
             {/* Client Logos Carousel */}
-            <section className="relative w-full overflow-hidden py-8 before:absolute before:left-0 before:top-0 before:z-10 before:h-full before:w-20 before:bg-gradient-to-r before:from-white before:to-transparent after:absolute after:right-0 after:top-0 after:z-10 after:h-full after:w-20 after:bg-gradient-to-l after:from-white after:to-transparent">
-              <div className="animate-scroll flex items-center gap-12 whitespace-nowrap">
+            <section
+              className="relative w-full overflow-hidden py-8 before:absolute before:left-0 before:top-0 before:z-10 before:h-full before:w-20 before:bg-gradient-to-r before:from-white before:to-transparent after:absolute after:right-0 after:top-0 after:z-10 after:h-full after:w-20 after:bg-gradient-to-l after:from-white after:to-transparent"
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+            >
+              {/* Left Arrow */}
+              <button
+                onClick={() => scroll("left")}
+                className={`absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/80 shadow-lg hover:bg-white transition-opacity duration-300 ${
+                  isHovered ? "opacity-100" : "opacity-0"
+                }`}
+              >
+                <svg
+                  className="w-6 h-6 text-gray-800"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+
+              {/* Right Arrow */}
+              <button
+                onClick={() => scroll("right")}
+                className={`absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/80 shadow-lg hover:bg-white transition-opacity duration-300 ${
+                  isHovered ? "opacity-100" : "opacity-0"
+                }`}
+              >
+                <svg
+                  className="w-6 h-6 text-gray-800"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+
+              <div
+                ref={scrollContainerRef}
+                className={`flex items-center gap-12 whitespace-nowrap overflow-x-hidden ${
+                  !isHovered ? "animate-scroll" : ""
+                }`}
+              >
                 {duplicatedClients.map((client, index) => (
                   <div
                     key={`${client.name}-${index}`}

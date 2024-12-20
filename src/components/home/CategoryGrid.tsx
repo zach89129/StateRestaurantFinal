@@ -6,7 +6,7 @@ import Link from "next/link";
 const featuredCollections = [
   {
     title: "China and Flatware",
-    body: "Our vast selection of China and Flatware is not displayed in our search, but catalogs can be viewed here.",
+    body: "Click here to view full manufacturer product catalogs for items beyond our vast online selection.",
     href: "/china-and-flatware",
     buttonText: "View Catalogs",
     image: "/StatePlateCard.webp",

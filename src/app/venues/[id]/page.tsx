@@ -5,6 +5,7 @@ import { useEffect, useState, use } from "react";
 import { useSession } from "next-auth/react";
 import { useCart } from "@/contexts/CartContext";
 import QuantityInput from "@/components/products/QuantityInput";
+import VenueFilterSidebar from "@/components/venues/VenueFilterSidebar";
 
 interface VenueProduct {
   id: string;
@@ -16,6 +17,7 @@ interface VenueProduct {
   qtyAvailable: number | null;
   price: number | null;
   imageSrc: string | null;
+  tags: string | null;
 }
 
 interface VenueProductsResponse {
@@ -32,6 +34,7 @@ interface VenueProductsResponse {
     qtyAvailable: bigint | number | null;
     price: number | null;
     imageSrc: string | null;
+    tags: string | null;
   }[];
 }
 
@@ -53,6 +56,13 @@ export default function VenuePage({
   const [error, setError] = useState<string | null>(null);
   const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
   const { addItem } = useCart();
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedManufacturers, setSelectedManufacturers] = useState<string[]>(
+    []
+  );
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const fetchVenueProducts = async () => {
@@ -115,6 +125,99 @@ export default function VenuePage({
     );
   };
 
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)
+        : [...prev, category]
+    );
+  };
+
+  const handleManufacturerChange = (manufacturer: string) => {
+    setSelectedManufacturers((prev) =>
+      prev.includes(manufacturer)
+        ? prev.filter((m) => m !== manufacturer)
+        : [...prev, manufacturer]
+    );
+  };
+
+  const handleTagChange = (tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  };
+
+  const handleClearAll = () => {
+    setSelectedCategories([]);
+    setSelectedManufacturers([]);
+    setSelectedTags([]);
+  };
+
+  const getSortOptions = (products: VenueProduct[]) => {
+    const categories = new Set<string>();
+    const manufacturers = new Set<string>();
+    const tags = new Set<string>();
+    const patterns = new Set<string>();
+    const collections = new Set<string>();
+
+    products.forEach((product) => {
+      if (product.category) categories.add(product.category);
+      if (product.manufacturer) manufacturers.add(product.manufacturer);
+      if (product.tags) {
+        const tagsList = product.tags.split(",");
+        tagsList.forEach((tag) => {
+          if (tag.startsWith("PATTERN_")) {
+            patterns.add(tag.replace("PATTERN_", ""));
+          } else if (tag.startsWith("COLLECTION_")) {
+            collections.add(tag.replace("COLLECTION_", ""));
+          } else {
+            tags.add(tag);
+          }
+        });
+      }
+    });
+
+    return {
+      categories: Array.from(categories).sort(),
+      manufacturers: Array.from(manufacturers).sort(),
+      tags: Array.from(tags).sort(),
+      patterns: Array.from(patterns).sort(),
+      collections: Array.from(collections).sort(),
+      hasStockItems: products.some((p) =>
+        p.tags?.includes("Stock Item / Quick Ship")
+      ),
+    };
+  };
+
+  const filteredProducts =
+    venue?.products.filter((product) => {
+      const searchMatch =
+        !searchTerm ||
+        Object.values(product).some((value) =>
+          value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
+      const matchesCategory =
+        selectedCategories.length === 0 ||
+        selectedCategories.includes(product.category || "");
+
+      const matchesManufacturer =
+        selectedManufacturers.length === 0 ||
+        selectedManufacturers.includes(product.manufacturer || "");
+
+      const matchesTags =
+        selectedTags.length === 0 ||
+        selectedTags.some((tag) => product.tags?.includes(tag));
+
+      return (
+        searchMatch && matchesCategory && matchesManufacturer && matchesTags
+      );
+    }) || [];
+
+  const toggleFilter = () => {
+    setIsFilterOpen(!isFilterOpen);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -144,195 +247,263 @@ export default function VenuePage({
   return (
     <div className="min-h-screen bg-white">
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-xl sm:text-2xl font-bold mb-6 text-gray-900">
-          {venue.venueName} Products
-        </h1>
+        {/* Header with desktop filter button */}
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+            {venue.venueName} Products
+          </h1>
 
-        {/* Desktop Table / Mobile Cards */}
-        <div className="bg-white shadow-md rounded-lg overflow-hidden">
-          {/* Desktop Table - Hidden on Mobile */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
-                    Image
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    SKU
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Title
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Manufacturer
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    UOM
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Qty Available
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Price
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {venue.products.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="relative h-16 w-16">
-                        {product.imageSrc ? (
-                          <img
-                            src={product.imageSrc}
-                            alt={product.title}
-                            className="h-full w-full object-contain"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src = "/placeholder-product.png";
-                            }}
-                          />
-                        ) : (
-                          <img
-                            src="/placeholder-product.png"
-                            alt="No image available"
-                            className="h-full w-full object-contain"
-                          />
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {product.sku}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {product.title}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {product.manufacturer || "-"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {product.uom || "-"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {product.qtyAvailable || 0}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {product.price ? `$${product.price.toFixed(2)}` : "-"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      {session?.user && (
-                        <div className="flex items-center gap-2">
-                          <QuantityInput
-                            onQuantityChange={(quantity) =>
-                              handleQuantityChange(product.id, quantity)
-                            }
-                            initialQuantity={quantities[product.id] || 1}
-                            max={product.qtyAvailable || 9999}
-                          />
-                          <button
-                            onClick={() => handleAddToCart(product)}
-                            className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
-                          >
-                            Add
-                          </button>
-                        </div>
-                      )}
-                    </td>
+          {/* Desktop Filter Button - Hidden on Mobile */}
+          <button
+            onClick={toggleFilter}
+            className="hidden md:flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50"
+          >
+            <svg
+              className="w-5 h-5 text-gray-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+              />
+            </svg>
+            <span className="text-sm font-medium text-gray-500">Filter</span>
+          </button>
+        </div>
+
+        {/* Filter Sidebar */}
+        <VenueFilterSidebar
+          sortOptions={getSortOptions(venue.products)}
+          selectedCategories={selectedCategories}
+          selectedManufacturers={selectedManufacturers}
+          selectedTags={selectedTags}
+          onCategoryChange={handleCategoryChange}
+          onManufacturerChange={handleManufacturerChange}
+          onTagChange={handleTagChange}
+          onClearAll={handleClearAll}
+          isOpen={isFilterOpen}
+          onClose={() => setIsFilterOpen(false)}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+        />
+
+        {/* Products Grid */}
+        <div className="flex-1">
+          {/* Desktop Table / Mobile Cards */}
+          <div className="bg-white shadow-md rounded-lg overflow-hidden">
+            {/* Desktop Table - Hidden on Mobile */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+                      Image
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      SKU
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Title
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Manufacturer
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      UOM
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Qty Available
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Price
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Action
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredProducts.map((product) => (
+                    <tr key={product.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="relative h-16 w-16">
+                          {product.imageSrc ? (
+                            <img
+                              src={product.imageSrc}
+                              alt={product.title}
+                              className="h-full w-full object-contain"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = "/placeholder-product.png";
+                              }}
+                            />
+                          ) : (
+                            <img
+                              src="/placeholder-product.png"
+                              alt="No image available"
+                              className="h-full w-full object-contain"
+                            />
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {product.sku}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {product.title}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {product.manufacturer || "-"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {product.uom || "-"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {product.qtyAvailable || 0}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {product.price ? `$${product.price.toFixed(2)}` : "-"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        {session?.user && (
+                          <div className="flex items-center gap-2">
+                            <QuantityInput
+                              onQuantityChange={(quantity) =>
+                                handleQuantityChange(product.id, quantity)
+                              }
+                              initialQuantity={quantities[product.id] || 1}
+                              max={product.qtyAvailable || 9999}
+                            />
+                            <button
+                              onClick={() => handleAddToCart(product)}
+                              className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+                            >
+                              Add
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-          {/* Mobile Card View */}
-          <div className="md:hidden space-y-4">
-            {venue.products.map((product) => (
-              <div
-                key={product.id}
-                className="bg-white border rounded-lg p-4 space-y-3"
-              >
-                {/* Product Header */}
-                <div className="flex gap-4">
-                  <div className="relative h-20 w-20 flex-shrink-0">
-                    {product.imageSrc ? (
-                      <img
-                        src={product.imageSrc}
-                        alt={product.title}
-                        className="h-full w-full object-contain"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = "/placeholder-product.png";
-                        }}
-                      />
-                    ) : (
-                      <img
-                        src="/placeholder-product.png"
-                        alt="No image available"
-                        className="h-full w-full object-contain"
-                      />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-medium text-gray-900 truncate">
-                      {product.title}
-                    </h3>
-                    <p className="text-sm text-gray-500">SKU: {product.sku}</p>
-                    {product.manufacturer && (
-                      <p className="text-sm text-gray-500">
-                        {product.manufacturer}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Product Details */}
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <span className="text-gray-500">UOM:</span>{" "}
-                    <span className="text-gray-900">{product.uom || "-"}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Available:</span>{" "}
-                    <span className="text-gray-900">
-                      {product.qtyAvailable || 0}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Price:</span>{" "}
-                    <span className="text-gray-900">
-                      {product.price ? `$${product.price.toFixed(2)}` : "-"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Add to Cart Section */}
-                {session?.user && (
-                  <div className="flex items-center gap-2 pt-2">
-                    <div className="flex-1">
-                      <QuantityInput
-                        onQuantityChange={(quantity) =>
-                          handleQuantityChange(product.id, quantity)
-                        }
-                        initialQuantity={quantities[product.id] || 1}
-                        max={product.qtyAvailable || 9999}
-                      />
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4">
+              {filteredProducts.map((product) => (
+                <div
+                  key={product.id}
+                  className="bg-white border rounded-lg p-4 space-y-3"
+                >
+                  {/* Product Header */}
+                  <div className="flex gap-4">
+                    <div className="relative h-20 w-20 flex-shrink-0">
+                      {product.imageSrc ? (
+                        <img
+                          src={product.imageSrc}
+                          alt={product.title}
+                          className="h-full w-full object-contain"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "/placeholder-product.png";
+                          }}
+                        />
+                      ) : (
+                        <img
+                          src="/placeholder-product.png"
+                          alt="No image available"
+                          className="h-full w-full object-contain"
+                        />
+                      )}
                     </div>
-                    <button
-                      onClick={() => handleAddToCart(product)}
-                      className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap text-sm font-medium"
-                    >
-                      Add to Cart
-                    </button>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-medium text-gray-900 truncate">
+                        {product.title}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        SKU: {product.sku}
+                      </p>
+                      {product.manufacturer && (
+                        <p className="text-sm text-gray-500">
+                          {product.manufacturer}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                )}
-              </div>
-            ))}
+
+                  {/* Product Details */}
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-gray-500">UOM:</span>{" "}
+                      <span className="text-gray-900">
+                        {product.uom || "-"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Available:</span>{" "}
+                      <span className="text-gray-900">
+                        {product.qtyAvailable || 0}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Price:</span>{" "}
+                      <span className="text-gray-900">
+                        {product.price ? `$${product.price.toFixed(2)}` : "-"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Add to Cart Section */}
+                  {session?.user && (
+                    <div className="flex items-center gap-2 pt-2">
+                      <div className="flex-1">
+                        <QuantityInput
+                          onQuantityChange={(quantity) =>
+                            handleQuantityChange(product.id, quantity)
+                          }
+                          initialQuantity={quantities[product.id] || 1}
+                          max={product.qtyAvailable || 9999}
+                        />
+                      </div>
+                      <button
+                        onClick={() => handleAddToCart(product)}
+                        className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap text-sm font-medium"
+                      >
+                        Add to Cart
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
+
+        {/* Mobile Sticky Filter Button */}
+        <button
+          onClick={toggleFilter}
+          className="fixed bottom-4 right-4 z-30 md:hidden flex items-center gap-2 px-4 py-3 bg-white border border-gray-300 rounded-full shadow-lg hover:bg-gray-50"
+        >
+          <svg
+            className="w-5 h-5 text-gray-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+            />
+          </svg>
+          <span className="text-sm font-medium text-gray-500">Filter</span>
+        </button>
       </div>
     </div>
   );

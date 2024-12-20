@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { useState } from "react";
 import Link from "next/link";
 import QuantityInput from "@/components/products/QuantityInput";
+import { useRouter } from "next/navigation";
 
 export default function CartPage() {
   const { data: session } = useSession();
@@ -13,6 +14,16 @@ export default function CartPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [comment, setComment] = useState("");
+  const [purchaseOrder, setPurchaseOrder] = useState("");
+  const router = useRouter();
+
+  const getContinueShoppingUrl = () => {
+    if (session?.user?.venues && session.user.venues.length > 0) {
+      return `/venues/${session.user.venues[0].trxVenueId}`;
+    }
+    return "/products";
+  };
 
   const handleSubmitOrder = async () => {
     setSubmitting(true);
@@ -25,7 +36,10 @@ export default function CartPage() {
         },
         body: JSON.stringify({
           items,
-          email: session?.user?.email,
+          comment,
+          purchaseOrder,
+          venue: session?.user?.venues?.[0] || null,
+          trxCustomerId: session?.user?.trxCustomerId,
         }),
       });
 
@@ -35,6 +49,7 @@ export default function CartPage() {
 
       setSuccess(true);
       clearCart();
+      router.push("/cart/success");
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -105,109 +120,153 @@ export default function CartPage() {
         ) : (
           <div className="space-y-6">
             <div className="bg-white shadow-md rounded-lg overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
-                      Image
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Product
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Manufacturer
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      UOM
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Quantity
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Action
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {items.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="h-16 w-16">
-                          {item.imageSrc ? (
-                            <img
-                              src={item.imageSrc}
-                              alt={item.title}
-                              className="h-full w-full object-contain"
-                            />
-                          ) : (
-                            <div className="h-full w-full bg-gray-100 flex items-center justify-center">
-                              <span className="text-gray-400">No image</span>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {item.title}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          SKU: {item.sku}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {item.manufacturer || "-"}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {item.uom || "-"}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <QuantityInput
-                          onQuantityChange={(quantity) =>
-                            updateQuantity(item.id, quantity)
-                          }
-                          initialQuantity={item.quantity}
-                          min={1}
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <button
-                          onClick={() => removeItem(item.id)}
-                          className="text-red-600 hover:text-red-900 text-sm"
-                        >
-                          Remove
-                        </button>
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+                        Image
+                      </th>
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Product
+                      </th>
+                      <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Manufacturer
+                      </th>
+                      <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        UOM
+                      </th>
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Quantity
+                      </th>
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Action
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {items.map((item) => (
+                      <tr key={item.id} className="hover:bg-gray-50">
+                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                          <div className="h-12 sm:h-16 w-12 sm:w-16">
+                            {item.imageSrc ? (
+                              <img
+                                src={item.imageSrc}
+                                alt={item.title}
+                                className="h-full w-full object-contain"
+                              />
+                            ) : (
+                              <div className="h-full w-full bg-gray-100 flex items-center justify-center">
+                                <span className="text-gray-400 text-xs">
+                                  No image
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 sm:px-6 py-4">
+                          <div className="text-xs sm:text-sm font-medium text-gray-900">
+                            {item.title}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            SKU: {item.sku}
+                          </div>
+                        </td>
+                        <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {item.manufacturer || "-"}
+                        </td>
+                        <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {item.uom || "-"}
+                        </td>
+                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                          <QuantityInput
+                            onQuantityChange={(quantity) =>
+                              updateQuantity(item.id, quantity)
+                            }
+                            initialQuantity={item.quantity}
+                            min={1}
+                          />
+                        </td>
+                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                          <button
+                            onClick={() => removeItem(item.id)}
+                            className="text-red-600 hover:text-red-900 text-xs sm:text-sm"
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {error && (
               <div className="bg-red-50 text-red-600 p-4 rounded">{error}</div>
             )}
 
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
               <button
                 onClick={clearCart}
                 className="text-red-600 hover:text-red-900 text-sm"
               >
                 Clear Cart
               </button>
-              <div className="flex gap-4">
-                <Link
-                  href="/products"
-                  className="bg-gray-100 text-gray-800 px-6 py-2 rounded hover:bg-gray-200 text-sm"
-                >
-                  Continue Shopping
-                </Link>
-                <button
-                  onClick={handleSubmitOrder}
-                  disabled={submitting}
-                  className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:opacity-50 text-sm"
-                >
-                  {submitting ? "Submitting..." : "Submit Order"}
-                </button>
+
+              <div className="w-full sm:w-auto space-y-4">
+                <div className="w-full sm:w-[400px] mb-4">
+                  <label
+                    htmlFor="purchaseOrder"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Purchase Order Number
+                  </label>
+                  <input
+                    type="text"
+                    id="purchaseOrder"
+                    name="purchaseOrder"
+                    maxLength={25}
+                    className="w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    placeholder="Enter PO number (optional)"
+                    value={purchaseOrder}
+                    onChange={(e) => setPurchaseOrder(e.target.value)}
+                  />
+                </div>
+
+                <div className="w-full sm:w-[400px]">
+                  <label
+                    htmlFor="comment"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Order Comments
+                  </label>
+                  <textarea
+                    id="comment"
+                    name="comment"
+                    rows={3}
+                    className="w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    placeholder="Add any special instructions or comments about your order..."
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full justify-between">
+                  <Link
+                    href={getContinueShoppingUrl()}
+                    className="w-full sm:w-[180px] bg-gray-100 text-gray-800 px-6 py-2 rounded hover:bg-gray-200 text-sm text-center"
+                  >
+                    Continue Shopping
+                  </Link>
+                  <button
+                    onClick={handleSubmitOrder}
+                    disabled={submitting}
+                    className="w-full sm:w-[180px] bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:opacity-50 text-sm text-center"
+                  >
+                    {submitting ? "Submitting..." : "Submit Order"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

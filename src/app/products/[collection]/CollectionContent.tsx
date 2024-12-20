@@ -61,6 +61,7 @@ export default function CollectionContent({ collection }: Props) {
     totalPages: 0,
     hasMore: false,
   });
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // Fetch products with current filters and pagination
   useEffect(() => {
@@ -107,10 +108,12 @@ export default function CollectionContent({ collection }: Props) {
     fetchOptions();
   }, [collection]);
 
-  const handlePageChange = (newPage: number) => {
+  const handlePageChange = (page: number) => {
     const params = new URLSearchParams(searchParams.toString());
-    params.set("page", newPage.toString());
-    router.push(`/products/${collection}?${params.toString()}`);
+    params.set("page", page.toString());
+    router.push(`/products/${collection}?${params.toString()}`, {
+      scroll: false,
+    });
   };
 
   const handleCategoryChange = (category: string) => {
@@ -149,7 +152,9 @@ export default function CollectionContent({ collection }: Props) {
     }
 
     params.set("page", "1");
-    router.push(`/products/${collection}?${params.toString()}`);
+    router.push(`/products/${collection}?${params.toString()}`, {
+      scroll: false,
+    });
   };
 
   const handleManufacturerChange = (manufacturer: string) => {
@@ -190,7 +195,9 @@ export default function CollectionContent({ collection }: Props) {
     }
 
     params.set("page", "1");
-    router.push(`/products/${collection}?${params.toString()}`);
+    router.push(`/products/${collection}?${params.toString()}`, {
+      scroll: false,
+    });
   };
 
   const handleTagChange = (tag: string) => {
@@ -211,17 +218,23 @@ export default function CollectionContent({ collection }: Props) {
     }
 
     params.set("page", "1");
-    router.push(`/products/${collection}?${params.toString()}`);
+    router.push(`/products/${collection}?${params.toString()}`, {
+      scroll: false,
+    });
   };
 
   const clearAllFilters = () => {
-    router.push(`/products/${collection}`);
+    router.push(`/products/${collection}`, { scroll: false });
   };
 
   const collectionTitle = collection
     .split("-")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
+
+  const toggleFilter = () => {
+    setIsFilterOpen(!isFilterOpen);
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -241,33 +254,32 @@ export default function CollectionContent({ collection }: Props) {
 
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Left Sidebar - Now handled by FilterSidebar component for mobile */}
-          <div className="lg:w-64 flex-shrink-0">
-            <FilterSidebar
-              sortOptions={sortOptions}
-              selectedCategories={
-                searchParams
-                  .get("category")
-                  ?.split(",")
-                  .map((c) => decodeURIComponent(c.trim()))
-                  .filter(Boolean) || []
-              }
-              selectedManufacturers={
-                searchParams.get("manufacturer")?.split(",").filter(Boolean) ||
-                []
-              }
-              selectedTags={
-                searchParams.get("tags")?.split(",").filter(Boolean) || []
-              }
-              onCategoryChange={handleCategoryChange}
-              onManufacturerChange={handleManufacturerChange}
-              onTagChange={handleTagChange}
-              onClearAll={clearAllFilters}
-              isCollectionPage={true}
-            />
-          </div>
+          <FilterSidebar
+            sortOptions={sortOptions}
+            selectedCategories={
+              searchParams
+                .get("category")
+                ?.split(",")
+                .map((c) => decodeURIComponent(c.trim()))
+                .filter(Boolean) || []
+            }
+            selectedManufacturers={
+              searchParams.get("manufacturer")?.split(",").filter(Boolean) || []
+            }
+            selectedTags={
+              searchParams.get("tags")?.split(",").filter(Boolean) || []
+            }
+            onCategoryChange={handleCategoryChange}
+            onManufacturerChange={handleManufacturerChange}
+            onTagChange={handleTagChange}
+            onClearAll={clearAllFilters}
+            isCollectionPage={true}
+            isOpen={isFilterOpen}
+            onClose={() => setIsFilterOpen(false)}
+          />
 
           {/* Main Content */}
-          <div className="flex-1">
+          <div className="flex-1 min-h-0">
             {/* Header Section - Made responsive */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
               <h1 className="text-2xl font-bold text-gray-900">
@@ -394,6 +406,27 @@ export default function CollectionContent({ collection }: Props) {
           </div>
         </div>
       </div>
+
+      {/* Mobile Sticky Filter Button */}
+      <button
+        onClick={toggleFilter}
+        className="fixed bottom-4 right-4 z-30 md:hidden flex items-center gap-2 px-4 py-3 bg-white border border-gray-300 rounded-full shadow-lg hover:bg-gray-50"
+      >
+        <svg
+          className="w-5 h-5 text-gray-500"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+          />
+        </svg>
+        <span className="text-sm font-medium text-gray-500">Filter</span>
+      </button>
     </div>
   );
 }
