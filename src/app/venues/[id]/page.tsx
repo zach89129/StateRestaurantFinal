@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { useCart } from "@/contexts/CartContext";
 import QuantityInput from "@/components/products/QuantityInput";
 import VenueFilterSidebar from "@/components/venues/VenueFilterSidebar";
+import Link from "next/link";
 
 interface VenueProduct {
   id: string;
@@ -247,32 +248,46 @@ export default function VenuePage({
   return (
     <div className="min-h-screen bg-white">
       <div className="container mx-auto px-4 py-8">
-        {/* Header with desktop filter button */}
+        {/* Header with venue name */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
             {venue.venueName} Products
           </h1>
+        </div>
 
-          {/* Desktop Filter Button - Hidden on Mobile */}
-          <button
-            onClick={toggleFilter}
-            className="hidden md:flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50"
+        {/* Filter Button (Mobile & Desktop) */}
+        <button
+          onClick={toggleFilter}
+          className="fixed top-[110px] md:top-[180px] right-4 flex items-center gap-2 px-4 py-3 bg-copper text-white border border-copper shadow-lg hover:bg-copper-hover transition-colors md:py-2 md:rounded-lg rounded-full"
+        >
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            <svg
-              className="w-5 h-5 text-gray-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+            />
+          </svg>
+          <span className="text-sm font-medium">Filter</span>
+        </button>
+
+        {/* Add Catalog Reference Message */}
+        <div className="bg-blue-50 p-4 rounded-lg mb-6">
+          <p className="text-blue-800">
+            <Link
+              href="/products"
+              className="text-blue-600 hover:text-blue-800 font-medium underline"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-              />
-            </svg>
-            <span className="text-sm font-medium text-gray-500">Filter</span>
-          </button>
+              CLICK HERE
+            </Link>{" "}
+            TO ADD UNPRICED ITEMS FROM OUR MAIN CATALOG TO YOUR ORDER TO RECEIVE
+            A QUOTE .
+          </p>
         </div>
 
         {/* Filter Sidebar */}
@@ -300,7 +315,7 @@ export default function VenuePage({
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
                       Image
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -321,7 +336,7 @@ export default function VenuePage({
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Price
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
                       Action
                     </th>
                   </tr>
@@ -330,16 +345,12 @@ export default function VenuePage({
                   {filteredProducts.map((product) => (
                     <tr key={product.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="relative h-16 w-16">
+                        <div className="relative h-20 w-20">
                           {product.imageSrc ? (
                             <img
                               src={product.imageSrc}
                               alt={product.title}
                               className="h-full w-full object-contain"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.src = "/placeholder-product.png";
-                              }}
                             />
                           ) : (
                             <img
@@ -408,10 +419,6 @@ export default function VenuePage({
                           src={product.imageSrc}
                           alt={product.title}
                           className="h-full w-full object-contain"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = "/placeholder-product.png";
-                          }}
                         />
                       ) : (
                         <img
@@ -483,27 +490,6 @@ export default function VenuePage({
             </div>
           </div>
         </div>
-
-        {/* Mobile Sticky Filter Button */}
-        <button
-          onClick={toggleFilter}
-          className="fixed bottom-4 right-4 z-30 md:hidden flex items-center gap-2 px-4 py-3 bg-white border border-gray-300 rounded-full shadow-lg hover:bg-gray-50"
-        >
-          <svg
-            className="w-5 h-5 text-gray-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-            />
-          </svg>
-          <span className="text-sm font-medium text-gray-500">Filter</span>
-        </button>
       </div>
     </div>
   );

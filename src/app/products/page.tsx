@@ -6,6 +6,7 @@ import FilterSidebar from "@/components/products/FilterSidebar";
 import ProductCard from "@/components/products/ProductCard";
 import SortOptions from "@/components/products/SortOptions";
 import Link from "next/link";
+import { useSearch } from "@/contexts/SearchContext";
 
 interface Product {
   id: number;
@@ -66,6 +67,7 @@ function ProductsContent() {
     hasMore: false,
   });
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const { isSearchVisible } = useSearch();
 
   // Fetch products with current filters and pagination
   useEffect(() => {
@@ -367,10 +369,12 @@ function ProductsContent() {
         {/* Mobile Filter Button */}
         <button
           onClick={toggleFilter}
-          className="fixed bottom-4 right-4 z-30 lg:hidden flex items-center gap-2 px-4 py-3 bg-white border border-gray-300 rounded-full shadow-lg hover:bg-gray-50"
+          className={`fixed right-4 z-30 md:hidden flex items-center gap-2 px-4 py-3 bg-copper text-white border border-copper rounded-full shadow-lg hover:bg-copper-hover ${
+            isSearchVisible ? "top-[150px]" : "top-[100px]"
+          } transition-all duration-300 ease-in-out`}
         >
           <svg
-            className="w-5 h-5 text-gray-500"
+            className="w-5 h-5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -382,7 +386,7 @@ function ProductsContent() {
               d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
             />
           </svg>
-          <span className="text-sm font-medium text-gray-500">Filter</span>
+          <span className="text-sm font-medium">Filter</span>
         </button>
       </div>
     </div>

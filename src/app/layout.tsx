@@ -4,6 +4,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Providers } from "./providers";
 import { Suspense } from "react";
+import { SearchProvider } from "@/contexts/SearchContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -32,9 +33,11 @@ export default function RootLayout({
       <body className={`${inter.className} overflow-x-hidden`}>
         <Suspense fallback={<div>Loading...</div>}>
           <Providers>
-            <Header />
-            <main className="min-h-screen">{children}</main>
-            <Footer />
+            <SearchProvider>
+              <Header />
+              <main className="min-h-screen">{children}</main>
+              <Footer />
+            </SearchProvider>
           </Providers>
         </Suspense>
       </body>

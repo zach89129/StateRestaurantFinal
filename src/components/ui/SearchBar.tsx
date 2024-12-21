@@ -1,24 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function SearchBar() {
+interface SearchBarProps {
+  disabled?: boolean;
+}
+
+export default function SearchBar({ disabled = false }: SearchBarProps) {
   const router = useRouter();
-  const [query, setQuery] = useState("");
-  const [isSearching, setIsSearching] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const handleSearch = async (e: React.FormEvent) => {
+  const handleSearch = (e: FormEvent) => {
     e.preventDefault();
-    if (isSearching) return;
-
-    const trimmedQuery = query.trim();
-    if (!trimmedQuery) return;
-
-    setIsSearching(true);
-    console.log("Searching for:", trimmedQuery);
-    router.push(`/search?q=${encodeURIComponent(trimmedQuery)}`);
-    setIsSearching(false);
+    if (!disabled && searchTerm.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchTerm.trim())}`);
+    }
   };
 
   return (
@@ -26,33 +23,28 @@ export default function SearchBar() {
       <div className="relative">
         <input
           type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search products..."
-          className="w-full px-4 py-2 pl-10 border border-zinc-800 text-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-500"
-          disabled={isSearching}
+          placeholder={
+            disabled ? "Search disabled on venue page" : "Search products..."
+          }
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          disabled={disabled}
+          className={`w-full px-4 py-2 rounded-lg border text-gray-500 ${
+            disabled
+              ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+              : "bg-white border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          }`}
         />
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <svg
-            className="h-5 w-5 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-        </div>
         <button
           type="submit"
-          className="absolute inset-y-0 right-0 px-4 py-2 bg-blue-600 text-white rounded-r-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-blue-400"
-          disabled={isSearching}
+          disabled={disabled}
+          className={`absolute right-2 top-1/2 -translate-y-1/2 px-4 py-1 rounded ${
+            disabled
+              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+              : "bg-blue-600 text-white hover:bg-blue-700"
+          }`}
         >
-          {isSearching ? "Searching..." : "Search"}
+          Search
         </button>
       </div>
     </form>

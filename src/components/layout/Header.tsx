@@ -5,17 +5,20 @@ import Link from "next/link";
 import SearchBar from "@/components/ui/SearchBar";
 import { useSession, signOut } from "next-auth/react";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useCart } from "@/contexts/CartContext";
+import { useSearch } from "@/contexts/SearchContext";
 
 export default function Header() {
   const { data: session } = useSession();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isVenuesOpen, setIsVenuesOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const { isSearchVisible, setIsSearchVisible } = useSearch();
   const router = useRouter();
   const { itemCount } = useCart();
+  const pathname = usePathname();
+  const isVenuePage = pathname?.includes("/venues/");
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: "/" });
@@ -31,7 +34,7 @@ export default function Header() {
     <header className="bg-zinc-800 sticky top-0 z-50 shadow-md w-full">
       {/* Top bar */}
       <div className="bg-zinc-800 py-2 text-sm w-full">
-        <div className="container mx-auto px-4 flex justify-end items-center">
+        <div className="container flex justify-end items-center ml-8">
           <div className="flex gap-4">
             {session ? (
               <>
@@ -155,6 +158,17 @@ export default function Header() {
               </div>
             </div>
 
+            {/* Mobile Search - Collapsible */}
+            <div
+              className={`lg:hidden transition-all duration-300 overflow-hidden ${
+                isSearchVisible
+                  ? "max-h-20 opacity-100 mt-2"
+                  : "max-h-0 opacity-0"
+              }`}
+            >
+              <SearchBar disabled={isVenuePage} />
+            </div>
+
             {/* Desktop Header - Hidden on mobile */}
             <div className="hidden lg:block">
               {/* Desktop Layout Container */}
@@ -176,7 +190,7 @@ export default function Header() {
                 {/* Desktop Navigation */}
                 <div className="flex items-center gap-8 flex-grow">
                   <div className="flex-grow">
-                    <SearchBar />
+                    <SearchBar disabled={isVenuePage} />
                   </div>
                   {session?.user && (
                     <Link
@@ -207,17 +221,6 @@ export default function Header() {
                   )}
                 </div>
               </div>
-            </div>
-
-            {/* Mobile Search - Collapsible */}
-            <div
-              className={`lg:hidden transition-all duration-300 overflow-hidden ${
-                isSearchVisible
-                  ? "max-h-20 opacity-100 mt-2"
-                  : "max-h-0 opacity-0"
-              }`}
-            >
-              <SearchBar />
             </div>
           </div>
         </div>

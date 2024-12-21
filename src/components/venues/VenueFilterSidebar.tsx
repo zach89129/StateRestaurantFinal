@@ -62,7 +62,7 @@ export default function VenueFilterSidebar({
 
       {/* Sidebar Drawer */}
       <div
-        className={`fixed top-0 right-0 h-full bg-white w-full max-w-sm z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 right-0 h-full w-3/4 max-w-sm bg-white/70 backdrop-blur-sm z-50 transform transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "translate-x-full"
         } shadow-xl overflow-y-auto`}
       >

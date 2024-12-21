@@ -34,6 +34,12 @@ const config: Config = {
         xl: "1280px", // Laptops
         "2xl": "1536px", // Large screens
       },
+      colors: {
+        copper: {
+          DEFAULT: "#C17F59",
+          hover: "#A66B48",
+        },
+      },
     },
   },
   plugins: [aspectRatio],

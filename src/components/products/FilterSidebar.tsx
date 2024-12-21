@@ -60,7 +60,7 @@ export default function FilterSidebar({
   };
 
   const FilterContent = () => (
-    <div className="bg-white">
+    <div>
       <div className="flex items-center justify-between mb-4">
         {(selectedCategories.length > 0 ||
           selectedManufacturers.length > 0 ||
@@ -73,78 +73,6 @@ export default function FilterSidebar({
           </button>
         )}
       </div>
-
-      <CollapsibleSection title="STOCK ITEM / QUICK SHIP" defaultOpen={true}>
-        <div className="space-y-2">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              className="h-4 w-4 rounded border-gray-300"
-              checked={selectedTags.includes("Stock Item / Quick Ship")}
-              onChange={() => onTagChange("Stock Item / Quick Ship")}
-            />
-            <span className="ml-2 text-sm text-gray-700">
-              Stock Item / Quick Ship
-            </span>
-          </label>
-        </div>
-      </CollapsibleSection>
-
-      <CollapsibleSection title="PRODUCT CATEGORY" defaultOpen={true}>
-        <div className="space-y-4">
-          <input
-            type="text"
-            placeholder="Search options"
-            className="w-full px-3 py-2 border rounded text-sm text-black placeholder-gray-500"
-            value={categorySearch}
-            onChange={(e) => setCategorySearch(e.target.value)}
-          />
-          <div className="space-y-2 max-h-60 overflow-y-auto">
-            {filterItems(sortOptions.categories, categorySearch).map(
-              (category) => (
-                <label key={category} className="flex items-center">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-gray-300"
-                    checked={selectedCategories.includes(category)}
-                    onChange={() => onCategoryChange(category)}
-                  />
-                  <span className="ml-2 text-sm text-black">{category}</span>
-                </label>
-              )
-            )}
-          </div>
-        </div>
-      </CollapsibleSection>
-
-      <CollapsibleSection title="MANUFACTURER" defaultOpen={true}>
-        <div className="space-y-4">
-          <input
-            type="text"
-            placeholder="Search options"
-            className="w-full px-3 py-2 border rounded text-sm text-black placeholder-gray-500"
-            value={manufacturerSearch}
-            onChange={(e) => setManufacturerSearch(e.target.value)}
-          />
-          <div className="space-y-2 max-h-60 overflow-y-auto">
-            {filterItems(sortOptions.manufacturers, manufacturerSearch).map(
-              (manufacturer) => (
-                <label key={manufacturer} className="flex items-center">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-gray-300"
-                    checked={isManufacturerSelected(manufacturer)}
-                    onChange={() => onManufacturerChange(manufacturer)}
-                  />
-                  <span className="ml-2 text-sm text-black">
-                    {manufacturer}
-                  </span>
-                </label>
-              )
-            )}
-          </div>
-        </div>
-      </CollapsibleSection>
 
       {!isCollectionPage && sortOptions.collections.length > 0 && (
         <CollapsibleSection title="COLLECTIONS" defaultOpen={true}>
@@ -177,7 +105,63 @@ export default function FilterSidebar({
         </CollapsibleSection>
       )}
 
-      <CollapsibleSection title="PATTERNS" defaultOpen={true}>
+      <CollapsibleSection title="PRODUCT CATEGORY" defaultOpen={false}>
+        <div className="space-y-4">
+          <input
+            type="text"
+            placeholder="Search options"
+            className="w-full px-3 py-2 border rounded text-sm text-black placeholder-gray-500"
+            value={categorySearch}
+            onChange={(e) => setCategorySearch(e.target.value)}
+          />
+          <div className="space-y-2 max-h-60 overflow-y-auto">
+            {filterItems(sortOptions.categories, categorySearch).map(
+              (category) => (
+                <label key={category} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-gray-300"
+                    checked={selectedCategories.includes(category)}
+                    onChange={() => onCategoryChange(category)}
+                  />
+                  <span className="ml-2 text-sm text-black">{category}</span>
+                </label>
+              )
+            )}
+          </div>
+        </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="MANUFACTURER" defaultOpen={false}>
+        <div className="space-y-4">
+          <input
+            type="text"
+            placeholder="Search options"
+            className="w-full px-3 py-2 border rounded text-sm text-black placeholder-gray-500"
+            value={manufacturerSearch}
+            onChange={(e) => setManufacturerSearch(e.target.value)}
+          />
+          <div className="space-y-2 max-h-60 overflow-y-auto">
+            {filterItems(sortOptions.manufacturers, manufacturerSearch).map(
+              (manufacturer) => (
+                <label key={manufacturer} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-gray-300"
+                    checked={isManufacturerSelected(manufacturer)}
+                    onChange={() => onManufacturerChange(manufacturer)}
+                  />
+                  <span className="ml-2 text-sm text-black">
+                    {manufacturer}
+                  </span>
+                </label>
+              )
+            )}
+          </div>
+        </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="PATTERNS" defaultOpen={false}>
         <div className="space-y-4">
           <input
             type="text"
@@ -199,6 +183,22 @@ export default function FilterSidebar({
               </label>
             ))}
           </div>
+        </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="STOCK ITEM / QUICK SHIP" defaultOpen={false}>
+        <div className="space-y-2">
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border-gray-300"
+              checked={selectedTags.includes("Stock Item / Quick Ship")}
+              onChange={() => onTagChange("Stock Item / Quick Ship")}
+            />
+            <span className="ml-2 text-sm text-gray-700">
+              Stock Item / Quick Ship
+            </span>
+          </label>
         </div>
       </CollapsibleSection>
     </div>
@@ -225,7 +225,7 @@ export default function FilterSidebar({
 
       {/* Mobile Slide-out Drawer */}
       <div
-        className={`lg:hidden fixed top-0 right-0 h-full bg-white w-full max-w-sm z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`lg:hidden fixed top-0 right-0 h-full w-3/4 max-w-sm bg-white/70 backdrop-blur-sm z-50 transform transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "translate-x-full"
         } shadow-xl overflow-y-auto`}
       >
