@@ -14,7 +14,7 @@ const config: Config = {
       },
       animation: {
         "subtle-zoom": "subtle-zoom 20s infinite alternate",
-        scroll: "scroll 40s linear infinite",
+        scroll: "scroll 8s linear infinite",
       },
       keyframes: {
         "subtle-zoom": {
@@ -23,7 +23,7 @@ const config: Config = {
         },
         scroll: {
           "0%": { transform: "translateX(0)" },
-          "100%": { transform: "translateX(calc(-100% / 3))" },
+          "100%": { transform: "translateX(-50%)" },
         },
       },
       screens: {

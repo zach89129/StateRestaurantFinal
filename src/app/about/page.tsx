@@ -154,63 +154,18 @@ export default function AboutPage() {
             </section>
 
             {/* Client Logos Carousel */}
-            <section
-              className="relative w-full overflow-hidden py-8 before:absolute before:left-0 before:top-0 before:z-10 before:h-full before:w-20 before:bg-gradient-to-r before:from-white before:to-transparent after:absolute after:right-0 after:top-0 after:z-10 after:h-full after:w-20 after:bg-gradient-to-l after:from-white after:to-transparent"
-              onMouseEnter={() => setIsHovered(true)}
-              onMouseLeave={() => setIsHovered(false)}
-            >
-              {/* Left Arrow */}
-              <button
-                onClick={() => scroll("left")}
-                className={`absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/80 shadow-lg hover:bg-white transition-opacity duration-300 ${
-                  isHovered ? "opacity-100" : "opacity-0"
-                }`}
-              >
-                <svg
-                  className="w-6 h-6 text-gray-800"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
-              </button>
-
-              {/* Right Arrow */}
-              <button
-                onClick={() => scroll("right")}
-                className={`absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/80 shadow-lg hover:bg-white transition-opacity duration-300 ${
-                  isHovered ? "opacity-100" : "opacity-0"
-                }`}
-              >
-                <svg
-                  className="w-6 h-6 text-gray-800"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </button>
-
+            <section className="relative w-full overflow-hidden py-8 before:absolute before:left-0 before:top-0 before:z-10 before:h-full before:w-20 before:bg-gradient-to-r before:from-white before:to-transparent after:absolute after:right-0 after:top-0 after:z-10 after:h-full after:w-20 after:bg-gradient-to-l after:from-white after:to-transparent">
               <div
                 ref={scrollContainerRef}
-                className={`flex items-center gap-12 whitespace-nowrap overflow-x-hidden w-full ${
+                className={`flex items-center gap-12 whitespace-nowrap overflow-x-hidden ${
                   !isHovered ? "animate-scroll" : ""
                 }`}
-                style={{ WebkitOverflowScrolling: "touch" }}
+                style={{
+                  WebkitOverflowScrolling: "touch",
+                  width: "fit-content",
+                }}
               >
-                <div className="flex items-center gap-12 min-w-full">
+                <div className="flex items-center gap-12">
                   {duplicatedClients.map((client, index) => (
                     <div
                       key={`${client.name}-${index}`}
