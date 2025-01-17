@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
-import { verifyApiKey } from "@/lib/api-auth";
+// import { verifyApiKey } from "@/lib/api-auth";
 
 export async function middleware(request: NextRequest) {
   // Check if this is a POST request to one of our API endpoints that requires an API key
@@ -12,6 +12,8 @@ export async function middleware(request: NextRequest) {
       request.nextUrl.pathname === "/api/customers");
 
   if (requiresApiKey) {
+    // Temporarily commenting out API key verification
+    /*
     const apiKey = request.headers.get("x-api-key");
     console.log("Received API Key:", apiKey);
     console.log("Request path:", request.nextUrl.pathname);
@@ -33,6 +35,7 @@ export async function middleware(request: NextRequest) {
     }
 
     console.log("API key validation successful");
+    */
     return NextResponse.next();
   }
 
