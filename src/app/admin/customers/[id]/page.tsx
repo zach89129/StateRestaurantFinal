@@ -5,16 +5,14 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 interface Venue {
-  id: number;
   trxVenueId: number;
   venueName: string;
 }
 
 interface Customer {
-  id: string;
+  trxCustomerId: number;
   email: string;
   phone: string | null;
-  trxCustomerId: number;
   seePrices: boolean;
   updatedAt: Date;
   venues: Venue[];
@@ -51,7 +49,8 @@ export default function EditCustomerPage({ params }: PageProps) {
       }
       setAvailableVenues(
         data.venues.filter(
-          (venue: Venue) => !customer?.venues.some((v) => v.id === venue.id)
+          (venue: Venue) =>
+            !customer?.venues.some((v) => v.trxVenueId === venue.trxVenueId)
         )
       );
     } catch (error) {
@@ -93,11 +92,11 @@ export default function EditCustomerPage({ params }: PageProps) {
     if (!customer) return;
     try {
       const response = await fetch(
-        `/api/admin/customers/${customer.id}/venues`,
+        `/api/admin/customers/${customer.trxCustomerId}/venues`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ venueId: venue.id }),
+          body: JSON.stringify({ venueId: venue.trxVenueId }),
         }
       );
 
@@ -114,7 +113,9 @@ export default function EditCustomerPage({ params }: PageProps) {
             }
           : null
       );
-      setAvailableVenues((prev) => prev.filter((v) => v.id !== venue.id));
+      setAvailableVenues((prev) =>
+        prev.filter((v) => v.trxVenueId !== venue.trxVenueId)
+      );
     } catch (error) {
       console.error("Error adding venue:", error);
       setError(error instanceof Error ? error.message : "Failed to add venue");
@@ -125,7 +126,7 @@ export default function EditCustomerPage({ params }: PageProps) {
     if (!customer) return;
     try {
       const response = await fetch(
-        `/api/admin/customers/${customer.id}/venues/${venueId}`,
+        `/api/admin/customers/${customer.trxCustomerId}/venues/${venueId}`,
         {
           method: "DELETE",
         }
@@ -140,7 +141,7 @@ export default function EditCustomerPage({ params }: PageProps) {
         prev
           ? {
               ...prev,
-              venues: prev.venues.filter((v) => v.id !== venueId),
+              venues: prev.venues.filter((v) => v.trxVenueId !== venueId),
             }
           : null
       );
@@ -338,7 +339,7 @@ export default function EditCustomerPage({ params }: PageProps) {
                 <ul className="mt-2 border border-gray-200 rounded-md divide-y divide-gray-200">
                   {availableVenues.map((venue) => (
                     <li
-                      key={venue.id}
+                      key={venue.trxVenueId}
                       className="p-3 flex justify-between items-center hover:bg-gray-50"
                     >
                       <div>
@@ -365,7 +366,7 @@ export default function EditCustomerPage({ params }: PageProps) {
               <ul className="divide-y divide-gray-200 border border-gray-200 rounded-md">
                 {customer.venues.map((venue) => (
                   <li
-                    key={venue.id}
+                    key={venue.trxVenueId}
                     className="p-4 flex justify-between items-center"
                   >
                     <div>
@@ -378,7 +379,7 @@ export default function EditCustomerPage({ params }: PageProps) {
                     </div>
                     <button
                       type="button"
-                      onClick={() => handleRemoveVenue(venue.id)}
+                      onClick={() => handleRemoveVenue(venue.trxVenueId)}
                       className="text-sm text-red-600 hover:text-red-800"
                     >
                       Remove

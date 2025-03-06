@@ -4,16 +4,14 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 interface Venue {
-  id: number;
   trxVenueId: number;
   venueName: string;
 }
 
 interface Customer {
-  id: number;
+  trxCustomerId: number;
   email: string;
   phone: string | null;
-  trxCustomerId: number;
   seePrices: boolean;
   venues: Venue[];
 }
@@ -171,7 +169,9 @@ export default function AdminCustomersPage() {
                   checked={selectedCustomers.length === customers.length}
                   onChange={(e) => {
                     setSelectedCustomers(
-                      e.target.checked ? customers.map((c) => c.id) : []
+                      e.target.checked
+                        ? customers.map((c) => c.trxCustomerId)
+                        : []
                     );
                   }}
                   className="rounded border-gray-300"
@@ -214,12 +214,16 @@ export default function AdminCustomersPage() {
               </tr>
             ) : (
               customers.map((customer) => (
-                <tr key={customer.id} className="hover:bg-gray-50">
+                <tr key={customer.trxCustomerId} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <input
                       type="checkbox"
-                      checked={selectedCustomers.includes(customer.id)}
-                      onChange={() => handleCustomerSelect(customer.id)}
+                      checked={selectedCustomers.includes(
+                        customer.trxCustomerId
+                      )}
+                      onChange={() =>
+                        handleCustomerSelect(customer.trxCustomerId)
+                      }
                       className="rounded border-gray-300"
                     />
                   </td>
@@ -245,14 +249,18 @@ export default function AdminCustomersPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <button
                       onClick={() =>
-                        router.push(`/admin/customers/${customer.id}`)
+                        router.push(
+                          `/admin/customers/${customer.trxCustomerId}`
+                        )
                       }
                       className="text-blue-600 hover:text-blue-900 mr-4"
                     >
                       Edit
                     </button>
                     <button
-                      onClick={() => handleCustomerSelect(customer.id)}
+                      onClick={() =>
+                        handleCustomerSelect(customer.trxCustomerId)
+                      }
                       className="text-red-600 hover:text-red-900"
                     >
                       Delete

@@ -31,10 +31,10 @@ export async function DELETE(request: NextRequest, context: RouteParams) {
 
     // Check if the customer exists and has the venue
     const customer = await prisma.customer.findUnique({
-      where: { id: customerId },
+      where: { trxCustomerId: customerId },
       include: {
         venues: {
-          where: { id: venueId },
+          where: { trxVenueId: venueId },
         },
       },
     });
@@ -56,10 +56,10 @@ export async function DELETE(request: NextRequest, context: RouteParams) {
 
     // Remove the venue from the customer's venues
     await prisma.customer.update({
-      where: { id: customerId },
+      where: { trxCustomerId: customerId },
       data: {
         venues: {
-          disconnect: { id: venueId },
+          disconnect: { trxVenueId: venueId },
         },
       },
     });

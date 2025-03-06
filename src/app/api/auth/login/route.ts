@@ -25,7 +25,6 @@ export async function POST(request: NextRequest) {
       include: {
         venues: {
           select: {
-            id: true,
             trxVenueId: true,
             venueName: true,
           },
@@ -42,7 +41,6 @@ export async function POST(request: NextRequest) {
 
     // Format venues for response
     const venues = customer.venues.map((venue) => ({
-      id: venue.id,
       trxVenueId: venue.trxVenueId,
       name: venue.venueName,
     }));

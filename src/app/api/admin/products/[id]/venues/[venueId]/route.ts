@@ -31,7 +31,7 @@ export async function DELETE(request: Request, context: RouteParams) {
 
     // Find the venue and its associated products
     const venue = await prisma.venue.findUnique({
-      where: { id: venueId },
+      where: { trxVenueId: venueId },
       include: {
         venueProduct: {
           include: {

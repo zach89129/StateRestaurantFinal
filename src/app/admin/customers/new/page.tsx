@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 interface Venue {
-  id: number;
   trxVenueId: number;
   venueName: string;
 }
@@ -40,7 +39,7 @@ export default function NewCustomerPage() {
           phone: formData.phone || null,
           trxCustomerId: parseInt(formData.trxCustomerId),
           seePrices: formData.seePrices,
-          venueIds: selectedVenues.map((v) => v.id),
+          venueIds: selectedVenues.map((v) => v.trxVenueId),
         }),
       });
 
@@ -88,7 +87,8 @@ export default function NewCustomerPage() {
       }
       setAvailableVenues(
         data.venues.filter(
-          (venue: Venue) => !selectedVenues.some((v) => v.id === venue.id)
+          (venue: Venue) =>
+            !selectedVenues.some((v) => v.trxVenueId === venue.trxVenueId)
         )
       );
     } catch (error) {
@@ -100,12 +100,16 @@ export default function NewCustomerPage() {
 
   const handleAddVenue = (venue: Venue) => {
     setSelectedVenues((prev) => [...prev, venue]);
-    setAvailableVenues((prev) => prev.filter((v) => v.id !== venue.id));
+    setAvailableVenues((prev) =>
+      prev.filter((v) => v.trxVenueId !== venue.trxVenueId)
+    );
     setSearchVenue("");
   };
 
-  const handleRemoveVenue = (venueId: number) => {
-    setSelectedVenues((prev) => prev.filter((v) => v.id !== venueId));
+  const handleRemoveVenue = (trxVenueId: number) => {
+    setSelectedVenues((prev) =>
+      prev.filter((v) => v.trxVenueId !== trxVenueId)
+    );
   };
 
   useEffect(() => {
@@ -218,7 +222,7 @@ export default function NewCustomerPage() {
                 <ul className="mt-2 border border-gray-200 rounded-md divide-y divide-gray-200">
                   {availableVenues.map((venue) => (
                     <li
-                      key={venue.id}
+                      key={venue.trxVenueId}
                       className="p-3 flex justify-between items-center hover:bg-gray-50"
                     >
                       <div>
@@ -246,7 +250,7 @@ export default function NewCustomerPage() {
               <ul className="divide-y divide-gray-200 border border-gray-200 rounded-md">
                 {selectedVenues.map((venue) => (
                   <li
-                    key={venue.id}
+                    key={venue.trxVenueId}
                     className="p-4 flex justify-between items-center"
                   >
                     <div>
@@ -259,7 +263,7 @@ export default function NewCustomerPage() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => handleRemoveVenue(venue.id)}
+                      onClick={() => handleRemoveVenue(venue.trxVenueId)}
                       className="text-sm text-red-600 hover:text-red-800"
                     >
                       Remove

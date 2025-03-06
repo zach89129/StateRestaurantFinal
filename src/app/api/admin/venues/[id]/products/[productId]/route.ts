@@ -23,7 +23,7 @@ export async function DELETE(request: NextRequest, context: RouteParams) {
 
     const params = await context.params;
     const venue = await prisma.venue.findUnique({
-      where: { id: Number(params.id) },
+      where: { trxVenueId: Number(params.id) },
       include: {
         venueProduct: true,
       },

@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     const customer = await prisma.customer.findUnique({
       where: { email: email.toLowerCase() },
       select: {
-        id: true,
+        trxCustomerId: true,
         email: true,
         phone: true,
       },

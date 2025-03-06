@@ -7,7 +7,7 @@ import { Product, VenueProduct } from "@prisma/client";
 interface ProductWithVenues extends Product {
   venueProducts: (VenueProduct & {
     venue: {
-      id: number;
+      trxVenueId: number;
       venueName: string;
     };
   })[];
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
                 include: {
                   venue: {
                     select: {
-                      id: true,
+                      trxVenueId: true,
                       venueName: true,
                     },
                   },
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
         venueProducts: includeVenues
           ? (product as ProductWithVenues).venueProducts.map((vp) => ({
               id: vp.id,
-              venueId: vp.venue.id,
+              venueId: vp.venue.trxVenueId,
               venueName: vp.venue.venueName,
               price: null, // Add these fields when they're added to the schema
               qtyAvailable: null,

@@ -15,7 +15,6 @@ interface VenueProduct {
 }
 
 interface Venue {
-  id: number;
   trxVenueId: number;
   venueName: string;
   venueProduct: VenueProduct | null;
@@ -95,13 +94,16 @@ export default function VenueProductsPage({
   const handleAddProduct = async (product: Product) => {
     if (!venue) return;
     try {
-      const response = await fetch(`/api/admin/venues/${venue.id}/products`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productId: product.id,
-        }),
-      });
+      const response = await fetch(
+        `/api/admin/venues/${venue.trxVenueId}/products`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            productId: product.id,
+          }),
+        }
+      );
 
       if (!response.ok) {
         const data = await response.json();
@@ -123,7 +125,7 @@ export default function VenueProductsPage({
     if (!venue) return;
     try {
       const response = await fetch(
-        `/api/admin/venues/${venue.id}/products/${productId}`,
+        `/api/admin/venues/${venue.trxVenueId}/products/${productId}`,
         {
           method: "DELETE",
         }

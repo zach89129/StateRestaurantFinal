@@ -15,7 +15,6 @@ interface VenueProduct {
 }
 
 interface Venue {
-  id: number;
   trxVenueId: number;
   venueName: string;
   venueProduct: VenueProduct | null;
@@ -142,7 +141,7 @@ export default function AdminVenuesPage() {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {venues.map((venue) => (
-              <tr key={venue.id} className="hover:bg-gray-50">
+              <tr key={venue.trxVenueId} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {venue.trxVenueId}
                 </td>
@@ -154,14 +153,16 @@ export default function AdminVenuesPage() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button
-                    onClick={() => router.push(`/admin/venues/${venue.id}`)}
+                    onClick={() =>
+                      router.push(`/admin/venues/${venue.trxVenueId}`)
+                    }
                     className="text-blue-600 hover:text-blue-900 mr-4"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() =>
-                      router.push(`/admin/venues/${venue.id}/products`)
+                      router.push(`/admin/venues/${venue.trxVenueId}/products`)
                     }
                     className="text-green-600 hover:text-green-900"
                   >

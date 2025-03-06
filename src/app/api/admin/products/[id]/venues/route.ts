@@ -37,7 +37,7 @@ export async function POST(request: Request, context: RouteParams) {
 
     // Check if venue exists
     const venue = await prisma.venue.findUnique({
-      where: { id: venueId },
+      where: { trxVenueId: venueId },
       include: {
         venueProduct: {
           include: {

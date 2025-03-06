@@ -22,11 +22,10 @@ export async function GET(request: NextRequest) {
     // If ID is provided, fetch a single customer
     if (id) {
       const customer = await prisma.customer.findUnique({
-        where: { id: Number(id) },
+        where: { trxCustomerId: Number(id) },
         include: {
           venues: {
             select: {
-              id: true,
               trxVenueId: true,
               venueName: true,
             },
@@ -44,10 +43,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         customer: {
           ...customer,
-          id: String(customer.id),
           venues: customer.venues.map((venue) => ({
             ...venue,
-            id: Number(venue.id),
           })),
         },
       });
@@ -93,7 +90,6 @@ export async function GET(request: NextRequest) {
       include: {
         venues: {
           select: {
-            id: true,
             trxVenueId: true,
             venueName: true,
           },
@@ -109,10 +105,8 @@ export async function GET(request: NextRequest) {
       success: true,
       customers: customers.map((customer) => ({
         ...customer,
-        id: String(customer.id),
         venues: customer.venues.map((venue) => ({
           ...venue,
-          id: Number(venue.id),
         })),
       })),
       pagination: {
@@ -181,7 +175,7 @@ export async function POST(request: NextRequest) {
         seePrices: data.seePrices || false,
         venues: data.venueIds?.length
           ? {
-              connect: data.venueIds.map((id: number) => ({ id })),
+              connect: data.venueIds.map((id: number) => ({ trxVenueId: id })),
             }
           : undefined,
       },
@@ -194,10 +188,8 @@ export async function POST(request: NextRequest) {
       success: true,
       customer: {
         ...customer,
-        id: Number(customer.id),
         venues: customer.venues.map((venue) => ({
           ...venue,
-          id: Number(venue.id),
         })),
       },
     });
@@ -222,7 +214,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const data = await request.json();
-    if (!data.id) {
+    if (!data.trxCustomerId) {
       return NextResponse.json(
         { error: "Customer ID is required" },
         { status: 400 }
@@ -240,11 +232,10 @@ export async function PUT(request: NextRequest) {
 
     // Update customer
     const customer = await prisma.customer.update({
-      where: { id: Number(data.id) },
+      where: { trxCustomerId: trxCustomerId },
       data: {
         email: data.email?.toLowerCase(),
         phone: data.phone || null,
-        trxCustomerId: trxCustomerId,
         seePrices: Boolean(data.seePrices),
       },
       include: {
@@ -256,10 +247,8 @@ export async function PUT(request: NextRequest) {
       success: true,
       customer: {
         ...customer,
-        id: String(customer.id),
         venues: customer.venues.map((venue) => ({
           ...venue,
-          id: Number(venue.id),
         })),
       },
     });
@@ -290,7 +279,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const data = await request.json();
-    if (!data.id) {
+    if (!data.trxCustomerId) {
       return NextResponse.json(
         { error: "Customer ID is required" },
         { status: 400 }
@@ -299,7 +288,7 @@ export async function DELETE(request: NextRequest) {
 
     // Delete customer
     await prisma.customer.delete({
-      where: { id: data.id },
+      where: { trxCustomerId: parseInt(data.trxCustomerId) },
     });
 
     return NextResponse.json({

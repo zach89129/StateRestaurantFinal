@@ -19,9 +19,8 @@ interface VenueProduct {
 }
 
 interface Venue {
-  id: number;
-  venueName: string;
   trxVenueId: number;
+  venueName: string;
   venueProducts: VenueProduct[];
 }
 
@@ -98,16 +97,19 @@ export default function EditVenuePage({ params }: PageProps) {
   const handleAddProduct = async (product: Product) => {
     if (!venue) return;
     try {
-      const response = await fetch(`/api/admin/venues/${venue.id}/products`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productId: product.id,
-          price: null,
-          qtyAvailable: null,
-          isActive: true,
-        }),
-      });
+      const response = await fetch(
+        `/api/admin/venues/${venue.trxVenueId}/products`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            productId: product.id,
+            price: null,
+            qtyAvailable: null,
+            isActive: true,
+          }),
+        }
+      );
 
       if (!response.ok) {
         const data = await response.json();
@@ -144,7 +146,7 @@ export default function EditVenuePage({ params }: PageProps) {
     if (!venue) return;
     try {
       const response = await fetch(
-        `/api/admin/venues/${venue.id}/products/${productId}`,
+        `/api/admin/venues/${venue.trxVenueId}/products/${productId}`,
         {
           method: "DELETE",
         }
@@ -182,7 +184,7 @@ export default function EditVenuePage({ params }: PageProps) {
 
     try {
       const response = await fetch(
-        `/api/admin/venues/${venue.id}/products/${productId}`,
+        `/api/admin/venues/${venue.trxVenueId}/products/${productId}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },

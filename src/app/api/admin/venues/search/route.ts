@@ -28,7 +28,6 @@ export async function GET(request: Request) {
         ],
       },
       select: {
-        id: true,
         trxVenueId: true,
         venueName: true,
       },

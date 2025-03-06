@@ -67,7 +67,6 @@ export const authOptions: AuthOptions = {
           include: {
             venues: {
               select: {
-                id: true,
                 trxVenueId: true,
                 venueName: true,
               },
@@ -85,7 +84,7 @@ export const authOptions: AuthOptions = {
 
         // Format venues for session
         const venues = customer.venues.map((venue) => ({
-          id: venue.id.toString(),
+          id: venue.trxVenueId.toString(),
           trxVenueId: venue.trxVenueId,
           venueName: venue.venueName,
         }));
@@ -94,11 +93,11 @@ export const authOptions: AuthOptions = {
         await deleteOTP(normalizedEmail);
 
         return {
-          id: customer.id.toString(),
+          id: customer.trxCustomerId.toString(),
           email: customer.email,
           venues: venues,
           isSuperuser,
-          trxCustomerId: customer.id.toString(),
+          trxCustomerId: customer.trxCustomerId.toString(),
         } as User;
       },
     }),

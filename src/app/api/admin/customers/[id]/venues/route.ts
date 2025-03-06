@@ -31,7 +31,7 @@ export async function GET(request: NextRequest, context: RouteParams) {
     }
 
     const customer = await prisma.customer.findUnique({
-      where: { id: customerId },
+      where: { trxCustomerId: customerId },
       include: {
         venues: true,
       },
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest, context: RouteParams) {
 
     // Check if customer exists
     const customer = await prisma.customer.findUnique({
-      where: { id: customerId },
+      where: { trxCustomerId: customerId },
     });
 
     if (!customer) {
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest, context: RouteParams) {
 
     // Check if venue exists
     const venue = await prisma.venue.findUnique({
-      where: { id: venueId },
+      where: { trxVenueId: venueId },
     });
 
     if (!venue) {
@@ -110,10 +110,10 @@ export async function POST(request: NextRequest, context: RouteParams) {
 
     // Add venue to customer
     const updatedCustomer = await prisma.customer.update({
-      where: { id: customerId },
+      where: { trxCustomerId: customerId },
       data: {
         venues: {
-          connect: { id: venueId },
+          connect: { trxVenueId: venueId },
         },
       },
       include: {

@@ -13,12 +13,10 @@ interface ProductResponse {
 
 interface VenueProductWithProducts {
   id: number;
-  trxVenueId: number;
   products: ProductResponse[];
 }
 
 interface VenueResponse {
-  id: number;
   trxVenueId: number;
   venueName: string;
   venueProduct: VenueProductWithProducts | null;
@@ -46,7 +44,6 @@ type VenueWithProducts = Prisma.VenueGetPayload<typeof venueWithProducts>;
 function formatVenueResponse(venue: VenueWithProducts): VenueResponse {
   return {
     ...venue,
-    id: Number(venue.id),
     venueProduct: venue.venueProduct
       ? {
           ...venue.venueProduct,
@@ -78,7 +75,7 @@ export async function GET(request: NextRequest) {
     // If ID is provided, fetch a single venue
     if (id) {
       const venue = await prisma.venue.findUnique({
-        where: { id: Number(id) },
+        where: { trxVenueId: Number(id) },
         ...venueWithProducts,
       });
 
@@ -166,7 +163,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const data = await request.json();
-    if (!data.id) {
+    if (!data.trxVenueId) {
       return NextResponse.json(
         { error: "Venue ID is required" },
         { status: 400 }
@@ -184,10 +181,9 @@ export async function PUT(request: NextRequest) {
 
     // Update venue
     const venue = await prisma.venue.update({
-      where: { id: Number(data.id) },
+      where: { trxVenueId: Number(data.trxVenueId) },
       data: {
         venueName: data.venueName,
-        trxVenueId: trxVenueId,
       },
       ...venueWithProducts,
     });
@@ -306,7 +302,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const data = await request.json();
-    if (!data.id) {
+    if (!data.trxVenueId) {
       return NextResponse.json(
         { error: "Venue ID is required" },
         { status: 400 }
@@ -315,7 +311,7 @@ export async function DELETE(request: NextRequest) {
 
     // Delete venue
     await prisma.venue.delete({
-      where: { id: Number(data.id) },
+      where: { trxVenueId: Number(data.trxVenueId) },
     });
 
     return NextResponse.json({
