@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { convertBigIntToString } from "@/utils/convertBigIntToString";
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,13 +44,18 @@ export async function POST(request: NextRequest) {
 
       // Format the response with a simplified structure
       venueProducts = venueProducts.map((venue) => ({
-        trxVenueId: venue.trxVenueId,
+        trx_venue_id: venue.trxVenueId,
         venueName: venue.venueName,
-        venueProducts:
-          venue.venueProduct?.products.map((product) => ({
-            ...product,
-            id: String(product.id),
-          })) || [],
+        products:
+          venue.venueProduct?.products.map((product) => {
+            // Create a new object with all properties except id
+            const { id, ...rest } = product;
+            return {
+              // Convert all BigInt values to strings
+              trx_product_id: String(id),
+              ...rest,
+            };
+          }) || [],
       }));
     } else {
       // Convert all ids to numbers
@@ -86,19 +92,27 @@ export async function POST(request: NextRequest) {
 
       // Format the response with a simplified structure
       venueProducts = venueProducts.map((venue) => ({
-        trxVenueId: venue.trxVenueId,
+        trx_venue_id: venue.trxVenueId,
         venueName: venue.venueName,
-        venueProducts:
-          venue.venueProduct?.products.map((product) => ({
-            ...product,
-            id: String(product.id),
-          })) || [],
+        products:
+          venue.venueProduct?.products.map((product) => {
+            // Create a new object with all properties except id
+            const { id, ...rest } = product;
+            return {
+              // Convert all BigInt values to strings
+              trx_product_id: String(id),
+              ...rest,
+            };
+          }) || [],
       }));
     }
 
+    // Convert any remaining BigInt values to strings
+    const safeVenueProducts = convertBigIntToString(venueProducts);
+
     return NextResponse.json({
       success: true,
-      venueProducts,
+      venueProducts: safeVenueProducts,
     });
   } catch (error) {
     console.error("Error fetching venue products:", error);

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { CustomerInput, VenueData } from "@/types/api";
 import { NextRequest, NextResponse } from "next/server";
+import { convertBigIntToString } from "@/utils/convertBigIntToString";
 
 export async function POST(req: NextRequest) {
   if (!req.body) {
@@ -14,7 +15,29 @@ export async function POST(req: NextRequest) {
     const bodyText = await req.text();
     console.log("Raw request body:", bodyText);
 
-    const body: CustomerInput = JSON.parse(bodyText);
+    let body: CustomerInput;
+    try {
+      // Parse the JSON body
+      body = JSON.parse(bodyText);
+    } catch (parseError: any) {
+      console.error("JSON parse error:", parseError);
+
+      // Try to fix common issues with leading zeros in numeric IDs
+      const fixedBodyText = bodyText.replace(
+        /"trx_customer_id":\s*0+(\d+)/g,
+        '"trx_customer_id": $1'
+      );
+
+      try {
+        body = JSON.parse(fixedBodyText);
+        console.log("Successfully parsed with fixed JSON:", fixedBodyText);
+      } catch (secondError) {
+        return NextResponse.json(
+          { error: `Invalid JSON format: ${parseError.message}` },
+          { status: 400 }
+        );
+      }
+    }
 
     if (!body || !body.customers || !body.customers.length) {
       return NextResponse.json(
@@ -28,8 +51,16 @@ export async function POST(req: NextRequest) {
 
     for (const customerData of body.customers) {
       try {
-        const { email, trx_customer_id, seePrices, venueData, phone } =
+        const { email, trx_customer_id, seePrices, venues, phone } =
           customerData;
+
+        // Validate required fields
+        if (!trx_customer_id) {
+          errors.push({
+            error: "Missing required field: trx_customer_id",
+          });
+          continue; // Skip to next customer
+        }
 
         // Check if phone number is already in use by another customer
         if (phone) {
@@ -66,31 +97,84 @@ export async function POST(req: NextRequest) {
           include: { venues: true },
         });
 
-        // Add venues connection only if venueData exists and is not empty
+        // Add venues connection only if venues exists and is not empty
         const venuesConnection =
-          venueData?.length > 0
+          venues?.length > 0
             ? {
                 venues: {
-                  connect: venueData.map((venue: VenueData) => ({
-                    trxVenueId: venue.trx_venue_id,
-                  })),
+                  connect: venues.map((venue: VenueData | number) => {
+                    // Handle both formats: number or object with trx_venue_id
+                    const venueId =
+                      typeof venue === "number" ? venue : venue.trx_venue_id;
+
+                    return { trxVenueId: venueId };
+                  }),
                 },
               }
             : {};
 
-        const customer = await prisma.customer.upsert({
-          where: { trxCustomerId: trx_customer_id },
-          update: {
-            ...baseCustomerData,
-            ...(existingCustomer ? venuesConnection : {}),
-          },
-          create: {
-            ...baseCustomerData,
-            ...venuesConnection,
-          },
-        });
+        let customer;
 
-        results.push(customer);
+        if (existingCustomer) {
+          // If customer exists, delete and recreate it to completely replace it
+          // First, disconnect all venues
+          if (existingCustomer.venues.length > 0) {
+            await prisma.customer.update({
+              where: { trxCustomerId: trx_customer_id },
+              data: {
+                venues: {
+                  disconnect: existingCustomer.venues.map((venue) => ({
+                    trxVenueId: venue.trxVenueId,
+                  })),
+                },
+              },
+            });
+          }
+
+          // Then, delete the customer
+          await prisma.customer.delete({
+            where: { trxCustomerId: trx_customer_id },
+          });
+
+          // Finally, create a new customer with the new data
+          customer = await prisma.customer.create({
+            data: {
+              ...baseCustomerData,
+              ...venuesConnection,
+            },
+            include: {
+              venues: true,
+            },
+          });
+        } else {
+          // If customer doesn't exist, just create it
+          customer = await prisma.customer.create({
+            data: {
+              ...baseCustomerData,
+              ...venuesConnection,
+            },
+            include: {
+              venues: true,
+            },
+          });
+        }
+
+        // Format the customer response to use trx_venue_id instead of trxVenueId
+        const {
+          trxCustomerId,
+          venues: customerVenues,
+          ...customerRest
+        } = customer;
+        const formattedCustomer = {
+          trx_customer_id: trxCustomerId,
+          ...customerRest,
+          venues: customerVenues.map((venue) => ({
+            trx_venue_id: venue.trxVenueId,
+            venueName: venue.venueName,
+          })),
+        };
+
+        results.push(formattedCustomer);
       } catch (err) {
         errors.push({
           customer_id: customerData.trx_customer_id,
@@ -99,11 +183,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Convert any remaining BigInt values to strings
+    const safeResults = convertBigIntToString(results);
+
     return NextResponse.json({
       success: true,
       processed: results.length,
       errors: errors.length > 0 ? errors : undefined,
-      results,
+      results: safeResults,
     });
   } catch (error) {
     console.error("Error processing request:", error);
@@ -142,9 +229,23 @@ export async function GET(req: NextRequest) {
         );
       }
 
+      // Format the customer response to use trx_venue_id instead of trxVenueId
+      const { trxCustomerId: _, venues, ...customerRest } = customer;
+      const formattedCustomer = {
+        trx_customer_id: trxCustomerId,
+        ...customerRest,
+        venues: venues.map((venue) => ({
+          trx_venue_id: venue.trxVenueId,
+          venueName: venue.venueName,
+        })),
+      };
+
+      // Convert any remaining BigInt values to strings
+      const safeCustomer = convertBigIntToString(formattedCustomer);
+
       return NextResponse.json({
         success: true,
-        customer,
+        customer: safeCustomer,
       });
     }
 
@@ -153,9 +254,29 @@ export async function GET(req: NextRequest) {
       include: { venues: true },
     });
 
+    // Format all customers to use trx_venue_id instead of trxVenueId
+    const formattedCustomers = customers.map((customer) => {
+      const {
+        trxCustomerId,
+        venues: customerVenues,
+        ...customerRest
+      } = customer;
+      return {
+        trx_customer_id: trxCustomerId,
+        ...customerRest,
+        venues: customerVenues.map((venue) => ({
+          trx_venue_id: venue.trxVenueId,
+          venueName: venue.venueName,
+        })),
+      };
+    });
+
+    // Convert any remaining BigInt values to strings
+    const safeCustomers = convertBigIntToString(formattedCustomers);
+
     return NextResponse.json({
       success: true,
-      customers,
+      customers: safeCustomers,
     });
   } catch (error) {
     console.error("Error fetching customers:", error);

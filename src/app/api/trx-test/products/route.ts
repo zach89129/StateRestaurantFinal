@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
-
+import { convertBigIntToString } from "@/utils/convertBigIntToString";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -34,10 +34,13 @@ export async function POST(request: NextRequest) {
       });
 
       // Convert BigInt id to string for JSON serialization
-      products = products.map((product) => ({
-        ...product,
-        id: String(product.id),
-      }));
+      products = products.map((product) => {
+        const { id, ...rest } = product;
+        return {
+          trx_product_id: String(id),
+          ...rest,
+        };
+      });
     } else {
       // Convert all ids to BigInt
       const productIds = ids.map((id) => BigInt(id));
@@ -64,15 +67,21 @@ export async function POST(request: NextRequest) {
       });
 
       // Convert BigInt id to string for JSON serialization
-      products = products.map((product) => ({
-        ...product,
-        id: String(product.id),
-      }));
+      products = products.map((product) => {
+        const { id, ...rest } = product;
+        return {
+          ...rest,
+          trx_product_id: String(id),
+        };
+      });
     }
+
+    // Convert any remaining BigInt values to strings
+    const safeProducts = convertBigIntToString(products);
 
     return NextResponse.json({
       success: true,
-      products,
+      products: safeProducts,
     });
   } catch (error) {
     console.error("Error fetching products:", error);

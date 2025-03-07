@@ -6,7 +6,7 @@ export interface CustomerInput {
       seePrices: boolean;
       phone?: string;
       password?: string;
-      venueData: VenueData[];
+      venues: (VenueData | number)[];
     }
   ];
 }
@@ -23,6 +23,7 @@ export interface VenueProductInput {
 export interface VenueProductData {
   trx_venue_id: number;
   products: number[];
+  venueName?: string;
 }
 
 export interface VenueInput {

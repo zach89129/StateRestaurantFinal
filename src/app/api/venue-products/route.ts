@@ -3,6 +3,7 @@ import { VenueProductInput, VenueProductData } from "@/types/api";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/auth-options";
+import { convertBigIntToString } from "@/utils/convertBigIntToString";
 
 export async function POST(request: Request) {
   if (!request.body) {
@@ -45,6 +46,8 @@ export async function POST(request: Request) {
           const venue = await prisma.venue.update({
             where: { trxVenueId: vp.trx_venue_id },
             data: {
+              // Update venueName if provided
+              ...(vp.venueName && { venueName: vp.venueName }),
               venueProduct: {
                 upsert: {
                   create: {
@@ -73,17 +76,21 @@ export async function POST(request: Request) {
             },
           });
 
+          // Format venue to match trx-test/venue-products response
           const formattedVenue = {
-            ...venue,
-            venueProduct: venue.venueProduct
-              ? {
-                  ...venue.venueProduct,
-                  products: venue.venueProduct.products.map((product) => ({
-                    ...product,
-                    id: Number(product.id),
-                  })),
-                }
-              : null,
+            trx_venue_id: venue.trxVenueId,
+            venueName: venue.venueName,
+            products: venue.venueProduct
+              ? venue.venueProduct.products.map((product) => {
+                  // Create a new object with all properties except id
+                  const { id, ...rest } = product;
+                  return {
+                    // Convert all BigInt values to strings
+                    trx_product_id: String(id),
+                    ...rest,
+                  };
+                })
+              : [],
           };
 
           results.push(formattedVenue);
@@ -92,7 +99,8 @@ export async function POST(request: Request) {
           const venue = await prisma.venue.create({
             data: {
               trxVenueId: vp.trx_venue_id,
-              venueName: `Venue ${vp.trx_venue_id}`,
+              // Use provided venueName or default
+              venueName: vp.venueName || `Venue ${vp.trx_venue_id}`,
               venueProduct: {
                 create: {
                   products: {
@@ -112,17 +120,21 @@ export async function POST(request: Request) {
             },
           });
 
+          // Format venue to match trx-test/venue-products response
           const formattedVenue = {
-            ...venue,
-            venueProduct: venue.venueProduct
-              ? {
-                  ...venue.venueProduct,
-                  products: venue.venueProduct.products.map((product) => ({
-                    ...product,
-                    id: Number(product.id),
-                  })),
-                }
-              : null,
+            trx_venue_id: venue.trxVenueId,
+            venueName: venue.venueName,
+            products: venue.venueProduct
+              ? venue.venueProduct.products.map((product) => {
+                  // Create a new object with all properties except id
+                  const { id, ...rest } = product;
+                  return {
+                    // Convert all BigInt values to strings
+                    trx_product_id: String(id),
+                    ...rest,
+                  };
+                })
+              : [],
           };
 
           results.push(formattedVenue);
@@ -135,11 +147,12 @@ export async function POST(request: Request) {
       }
     }
 
+    // Convert any remaining BigInt values to strings
+    const safeResults = convertBigIntToString(results);
+
     return NextResponse.json({
       success: true,
-      processed: results.length,
-      errors: errors.length > 0 ? errors : undefined,
-      results,
+      venueProducts: safeResults,
     });
   } catch (error) {
     console.error("Error processing request:", error);

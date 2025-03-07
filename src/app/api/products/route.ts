@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { ProductInput } from "@/types/api";
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
+import { convertBigIntToString } from "@/utils/convertBigIntToString";
 
 const MAX_PAGE_SIZE = 100;
 
@@ -69,8 +70,9 @@ export async function POST(request: NextRequest) {
           });
 
           results.push({
+            trx_product_id: Number(updatedProduct.id),
             ...updatedProduct,
-            id: Number(updatedProduct.id),
+            id: undefined,
           });
         } else {
           // Validate all required fields for creation
@@ -116,7 +118,8 @@ export async function POST(request: NextRequest) {
 
           results.push({
             ...newProduct,
-            id: Number(newProduct.id),
+            trx_product_id: Number(newProduct.id),
+            id: undefined,
           });
         }
       } catch (err) {
@@ -128,11 +131,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Convert any remaining BigInt values to strings
+    const safeResults = convertBigIntToString(results);
+
     return NextResponse.json({
       success: true,
       processed: results.length,
       errors: errors.length > 0 ? errors : undefined,
-      results,
+      results: safeResults,
     });
   } catch (error) {
     console.error("Error processing request:", error);
@@ -220,7 +226,8 @@ export async function GET(request: NextRequest) {
     // Convert BigInt to number in the products array
     const serializedProducts = products.map((product) => ({
       ...product,
-      id: Number(product.id),
+      trx_product_id: Number(product.id),
+      id: undefined,
       qtyAvailable: Number(product.qtyAvailable),
     }));
 
@@ -228,9 +235,12 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil(total / pageSize);
     const hasMore = page < totalPages;
 
+    // Convert any remaining BigInt values to strings
+    const safeProducts = convertBigIntToString(serializedProducts);
+
     return NextResponse.json({
       success: true,
-      products: serializedProducts,
+      products: safeProducts,
       pagination: {
         total,
         page,
