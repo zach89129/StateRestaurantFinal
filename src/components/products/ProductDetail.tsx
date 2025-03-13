@@ -110,7 +110,6 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                       <QuantityInput
                         onQuantityChange={setQuantity}
                         initialQuantity={1}
-                        max={product.qtyAvailable}
                       />
                     </div>
                     <button

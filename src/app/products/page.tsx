@@ -41,7 +41,7 @@ interface SortOptions {
 export default function ProductsPage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <ProductsContent />
+      <ProductsContent key="products-content" />
     </Suspense>
   );
 }
@@ -245,20 +245,29 @@ function ProductsContent() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white" key="products-page-container">
       <div className="max-w-7xl mx-auto px-4">
         {/* Breadcrumb */}
         <nav className="flex py-4 text-sm">
-          <Link href="/" className="text-gray-600 hover:text-gray-900">
+          <Link
+            href="/"
+            className="text-gray-600 hover:text-gray-900"
+            key="home-link"
+          >
             Home
           </Link>
-          <span className="mx-2 text-gray-600">/</span>
-          <span className="text-gray-900 font-medium">Products</span>
+          <span className="mx-2 text-gray-600" key="separator">
+            /
+          </span>
+          <span className="text-gray-900 font-medium" key="products-label">
+            Products
+          </span>
         </nav>
 
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Left Sidebar */}
           <FilterSidebar
+            key="filter-sidebar"
             sortOptions={sortOptions}
             selectedCategories={
               searchParams
@@ -299,9 +308,15 @@ function ProductsContent() {
                   <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-300 border-t-black"></div>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-6 mb-8">
-                  {products.map((product) => (
-                    <ProductCard key={product.id} product={product} />
+                <div
+                  key="products-grid"
+                  className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-6 mb-8"
+                >
+                  {products.map((product, index) => (
+                    <ProductCard
+                      key={`${product.id}-${index}`}
+                      product={product}
+                    />
                   ))}
                 </div>
               )}
@@ -312,6 +327,7 @@ function ProductsContent() {
                   <nav className="flex items-center gap-1">
                     {/* Previous button */}
                     <button
+                      key="prev-button"
                       onClick={() =>
                         handlePageChange(Math.max(1, pagination.page - 1))
                       }
@@ -331,7 +347,7 @@ function ProductsContent() {
                       (_, i) => i + 1
                     ).map((page) => (
                       <button
-                        key={page}
+                        key={`page-${page}`}
                         onClick={() => handlePageChange(page)}
                         className={`px-3 py-1 rounded border ${
                           page === pagination.page
@@ -345,6 +361,7 @@ function ProductsContent() {
 
                     {/* Next button */}
                     <button
+                      key="next-button"
                       onClick={() =>
                         handlePageChange(
                           Math.min(pagination.totalPages, pagination.page + 1)

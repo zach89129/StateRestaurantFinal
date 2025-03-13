@@ -105,7 +105,7 @@ export default function FilterSidebar({
         </CollapsibleSection>
       )}
 
-      <CollapsibleSection title="PRODUCT CATEGORY" defaultOpen={false}>
+      <CollapsibleSection title="PRODUCT CATEGORY" defaultOpen={true}>
         <div className="space-y-4">
           <input
             type="text"
@@ -132,7 +132,7 @@ export default function FilterSidebar({
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title="MANUFACTURER" defaultOpen={false}>
+      <CollapsibleSection title="MANUFACTURER" defaultOpen={true}>
         <div className="space-y-4">
           <input
             type="text"
@@ -161,7 +161,7 @@ export default function FilterSidebar({
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title="PATTERNS" defaultOpen={false}>
+      <CollapsibleSection title="PATTERNS" defaultOpen={true}>
         <div className="space-y-4">
           <input
             type="text"
@@ -186,7 +186,7 @@ export default function FilterSidebar({
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title="STOCK ITEM / QUICK SHIP" defaultOpen={false}>
+      <CollapsibleSection title="STOCK ITEM / QUICK SHIP" defaultOpen={true}>
         <div className="space-y-2">
           <label className="flex items-center">
             <input
@@ -205,17 +205,18 @@ export default function FilterSidebar({
   );
 
   return (
-    <>
+    <div key="filter-sidebar-container">
       {/* Mobile Overlay */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden transition-opacity"
           onClick={onClose}
+          key="mobile-overlay"
         />
       )}
 
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block w-64 flex-shrink-0">
+      <div className="hidden lg:block w-64 flex-shrink-0" key="desktop-sidebar">
         <div className="sticky top-[120px]">
           <div className="bg-white rounded-lg shadow-lg p-4 overflow-y-auto max-h-[calc(100vh-140px)]">
             <FilterContent />
@@ -228,6 +229,7 @@ export default function FilterSidebar({
         className={`lg:hidden fixed top-0 right-0 h-full w-3/4 max-w-sm bg-white/70 backdrop-blur-sm z-50 transform transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "translate-x-full"
         } shadow-xl overflow-y-auto`}
+        key="mobile-drawer"
       >
         <div className="p-4">
           {/* Header */}
@@ -257,6 +259,6 @@ export default function FilterSidebar({
           <FilterContent />
         </div>
       </div>
-    </>
+    </div>
   );
 }

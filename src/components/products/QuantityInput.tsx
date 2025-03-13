@@ -8,6 +8,7 @@ interface QuantityInputProps {
   max?: number;
   min?: number;
   className?: string;
+  preventPropagation?: boolean;
 }
 
 export default function QuantityInput({
@@ -16,6 +17,7 @@ export default function QuantityInput({
   max,
   min = 1,
   className = "",
+  preventPropagation = false,
 }: QuantityInputProps) {
   const [quantity, setQuantity] = useState(initialQuantity);
 
@@ -26,10 +28,25 @@ export default function QuantityInput({
     onQuantityChange(newQuantity);
   };
 
+  const handleButtonClick = (e: React.MouseEvent, newQuantity: number) => {
+    if (preventPropagation) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    handleQuantityChange(newQuantity);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (preventPropagation) {
+      e.stopPropagation();
+    }
+    handleQuantityChange(parseInt(e.target.value) || min);
+  };
+
   return (
     <div className={`flex items-stretch h-8 ${className}`}>
       <button
-        onClick={() => handleQuantityChange(quantity - 1)}
+        onClick={(e) => handleButtonClick(e, quantity - 1)}
         className="w-8 border border-gray-300 rounded-l bg-gray-50 hover:bg-gray-100 text-gray-600 flex items-center justify-center text-lg font-medium"
       >
         −
@@ -39,11 +56,12 @@ export default function QuantityInput({
         value={quantity}
         min={min}
         max={max}
-        onChange={(e) => handleQuantityChange(parseInt(e.target.value) || min)}
+        onChange={handleInputChange}
+        onClick={(e) => preventPropagation && e.stopPropagation()}
         className="w-full border-t border-b border-gray-300 px-2 text-center text-sm text-gray-900 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
       />
       <button
-        onClick={() => handleQuantityChange(quantity + 1)}
+        onClick={(e) => handleButtonClick(e, quantity + 1)}
         className="w-8 border border-gray-300 rounded-r bg-gray-50 hover:bg-gray-100 text-gray-600 flex items-center justify-center text-lg font-medium"
       >
         ＋
