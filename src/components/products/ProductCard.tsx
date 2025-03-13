@@ -82,100 +82,106 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <Link href={`/product/${product.sku}`} key={`product-link-${product.id}`}>
-      <div className="group relative border rounded-lg p-2 sm:p-4 hover:shadow-lg transition-shadow bg-white h-full flex flex-col">
-        {/* Image - Fixed height */}
-        <div className="aspect-square bg-gray-100 mb-2 sm:mb-4 flex items-center justify-center overflow-hidden rounded">
-          {product.imageSrc ? (
-            <img
-              src={product.imageSrc}
-              alt={product.title}
-              className="object-contain h-full w-full p-1 sm:p-2 group-hover:scale-105 transition-transform duration-200"
-            />
-          ) : (
-            <div className="text-gray-400 text-sm">No image</div>
-          )}
+      <div className="group relative border rounded-lg p-2 sm:p-4 hover:shadow-lg transition-shadow bg-white h-full flex flex-col justify-between">
+        {/* Top content section */}
+        <div className="flex flex-col">
+          {/* Image - Fixed height */}
+          <div className="aspect-square bg-gray-100 mb-2 sm:mb-4 flex items-center justify-center overflow-hidden rounded">
+            {product.imageSrc ? (
+              <img
+                src={product.imageSrc}
+                alt={product.title}
+                className="object-contain h-full w-full p-1 sm:p-2 group-hover:scale-105 transition-transform duration-200"
+              />
+            ) : (
+              <div className="text-gray-400 text-sm">No image</div>
+            )}
+          </div>
+
+          {/* Product Info */}
+          <div className="space-y-1 sm:space-y-2">
+            {/* Product details with fixed heights */}
+            <div className="min-h-[40px] sm:min-h-[48px]">
+              <h3 className="font-medium text-gray-900 text-xs sm:text-sm line-clamp-2">
+                {product.title}
+              </h3>
+            </div>
+
+            <div className="min-h-[20px] sm:min-h-[24px]">
+              <p className="text-xs sm:text-sm text-gray-900">
+                SKU: {product.sku}
+              </p>
+            </div>
+
+            <div className="min-h-[20px] sm:min-h-[24px]">
+              <p className="text-xs sm:text-sm text-gray-900">
+                {product.manufacturer}
+              </p>
+            </div>
+
+            {/* Availability - Fixed height regardless of whether it's shown */}
+            <div className="min-h-[20px] sm:min-h-[24px]">
+              {product.qtyAvailable > 0 && (
+                <p className="text-xs sm:text-sm text-green-600">In Stock</p>
+              )}
+            </div>
+
+            {/* Filter Links - Fixed height section */}
+            <div className="space-y-1 mt-2 min-h-[60px] sm:min-h-[72px]">
+              <button
+                onClick={handleMoreLikeThis}
+                className="text-xs text-blue-600 hover:text-blue-800 block w-full text-left"
+              >
+                More Like This : {product.category}
+              </button>
+              {hasCollection && (
+                <button
+                  onClick={handleMoreFromCollection}
+                  className="text-xs text-blue-600 hover:text-blue-800 block w-full text-left capitalize"
+                >
+                  More From Collection :{" "}
+                  {product.tags.match(/COLLECTION_([^,]+)/)?.[1].toLowerCase()}
+                </button>
+              )}
+              {hasPattern && (
+                <button
+                  onClick={handleMoreOfPattern}
+                  className="text-xs text-blue-600 hover:text-blue-800 block w-full text-left capitalize"
+                >
+                  More of This Pattern :{" "}
+                  {product.tags.match(/PATTERN_([^,]+)/)?.[1].toLowerCase()}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Product Info - Flex grow to fill space */}
-        <div className="space-y-1 sm:space-y-2 flex-grow flex flex-col">
-          {/* Product details with fixed heights */}
-          <div className="min-h-[40px] sm:min-h-[48px]">
-            <h3 className="font-medium text-gray-900 text-xs sm:text-sm line-clamp-2">
-              {product.title}
-            </h3>
-          </div>
-
-          <div className="min-h-[20px] sm:min-h-[24px]">
-            <p className="text-xs sm:text-sm text-gray-900">
-              SKU: {product.sku}
-            </p>
-          </div>
-
-          <div className="min-h-[20px] sm:min-h-[24px]">
-            <p className="text-xs sm:text-sm text-gray-900">
-              {product.manufacturer}
-            </p>
-          </div>
-
-          {/* Availability - Fixed height regardless of whether it's shown */}
-          <div className="min-h-[20px] sm:min-h-[24px]">
-            {product.qtyAvailable > 0 && (
-              <p className="text-xs sm:text-sm text-green-600">In Stock</p>
-            )}
-          </div>
-
-          {/* Filter Links - Fixed height section */}
-          <div className="space-y-1 mt-2 min-h-[60px] sm:min-h-[72px]">
-            <button
-              onClick={handleMoreLikeThis}
-              className="text-xs text-blue-600 hover:text-blue-800 block w-full text-left"
+        {/* Cart Controls - Always at the bottom */}
+        <div className="pt-4 mt-4 border-t border-gray-100">
+          {session?.user ? (
+            <div
+              className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2"
+              onClick={(e) => e.preventDefault()}
             >
-              More Like This : {product.category}
-            </button>
-            {hasCollection && (
-              <button
-                onClick={handleMoreFromCollection}
-                className="text-xs text-blue-600 hover:text-blue-800 block w-full text-left capitalize"
-              >
-                More From Collection :{" "}
-                {product.tags.match(/COLLECTION_([^,]+)/)?.[1].toLowerCase()}
-              </button>
-            )}
-            {hasPattern && (
-              <button
-                onClick={handleMoreOfPattern}
-                className="text-xs text-blue-600 hover:text-blue-800 block w-full text-left capitalize"
-              >
-                More of This Pattern :{" "}
-                {product.tags.match(/PATTERN_([^,]+)/)?.[1].toLowerCase()}
-              </button>
-            )}
-          </div>
-
-          {/* Cart Controls - Only show if logged in - Fixed height section */}
-          <div className="mt-auto pt-2">
-            {session?.user && (
-              <div
-                className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2"
-                onClick={(e) => e.preventDefault()}
-              >
-                <div className="flex-1">
-                  <QuantityInput
-                    onQuantityChange={setQuantity}
-                    initialQuantity={1}
-                    className="w-full"
-                    preventPropagation={true}
-                  />
-                </div>
-                <button
-                  onClick={handleAddToCart}
-                  className="bg-blue-600 text-white text-xs sm:text-sm px-3 py-1.5 rounded hover:bg-blue-700 transition-colors w-full sm:w-auto"
-                >
-                  Add to Cart
-                </button>
+              <div className="flex-1">
+                <QuantityInput
+                  onQuantityChange={setQuantity}
+                  initialQuantity={1}
+                  className="w-full"
+                  preventPropagation={true}
+                />
               </div>
-            )}
-          </div>
+              <button
+                onClick={handleAddToCart}
+                className="bg-blue-600 text-white text-xs sm:text-sm px-3 py-1.5 rounded hover:bg-blue-700 transition-colors w-full sm:w-auto"
+              >
+                Add to Cart
+              </button>
+            </div>
+          ) : (
+            // Placeholder for consistent height when not logged in
+            <div className="h-8 sm:h-10"></div>
+          )}
         </div>
       </div>
     </Link>
