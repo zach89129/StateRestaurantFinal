@@ -7,7 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Your existing products table
 model Product {
   id            BigInt         @id @map("trx_product_id")
   sku           String         @unique
@@ -16,42 +15,51 @@ model Product {
   manufacturer  String?
   category      String?
   uom           String?
-  qtyAvailable  Int?          @map("qty_available")
+  qtyAvailable  Int?           @map("qty_available")
   tags          String?
-  imageSrc      String?       @map("image_src")
-  venueProducts VenueProduct[] 
+  images        ProductImage[]
+  venueProducts VenueProduct[] @relation("ProductToVenueProduct")
 
   @@map("products")
 }
 
+model ProductImage {
+  id        Int      @id @default(autoincrement())
+  url       String
+  productId BigInt   @map("product_id")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@map("product_images")
+}
+
 model Venue {
-  trxVenueId   Int          @id @map("trx_venue_id")
-  venueName    String       @map("venue_name")
-  customers    Customer[]    // Many-to-many relationship
+  trxVenueId   Int           @id @map("trx_venue_id")
+  venueName    String        @map("venue_name")
   venueProduct VenueProduct?
+  customers    Customer[]    @relation("CustomerToVenue")
 
   @@map("venues")
 }
 
 model Customer {
-  trxCustomerId Int      @id @map("trx_customer_id")
   email         String   @unique
-  phone         String?   @unique
+  phone         String?  @unique
+  trxCustomerId Int      @id @map("trx_customer_id")
   seePrices     Boolean  @default(false)
-  venues        Venue[]  // Many-to-many relationship
-  updatedAt     DateTime  @updatedAt
+  updatedAt     DateTime @updatedAt
+  venues        Venue[]  @relation("CustomerToVenue")
 
   @@map("customers")
 }
 
 model VenueProduct {
-  id          Int       @id @default(autoincrement())
-  trxVenueId  Int       @map("trx_venue_id")
-  products    Product[] 
-  venue       Venue     @relation(fields: [trxVenueId], references: [trxVenueId])
+  id         Int       @id @default(autoincrement())
+  trxVenueId Int       @unique @map("trx_venue_id")
+  venue      Venue     @relation(fields: [trxVenueId], references: [trxVenueId])
+  products   Product[] @relation("ProductToVenueProduct")
 
   @@map("venue_products")
-  @@unique([trxVenueId])
 }
 
 model otp {

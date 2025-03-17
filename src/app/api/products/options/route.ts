@@ -41,7 +41,7 @@ export async function GET() {
         select: { tags: true },
         where: {
           tags: {
-            contains: "COLLECTION_",
+            contains: "AQCAT_",
           },
         },
       }),
@@ -81,8 +81,8 @@ export async function GET() {
     collections.forEach((product) => {
       const tags = product.tags?.split(",") || [];
       tags.forEach((tag) => {
-        if (tag.includes("COLLECTION_")) {
-          collectionSet.add(tag.split("COLLECTION_")[1].trim());
+        if (tag.includes("AQCAT_")) {
+          collectionSet.add(tag.split("AQCAT_")[1].trim());
         }
       });
     });

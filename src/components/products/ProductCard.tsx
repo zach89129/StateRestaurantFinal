@@ -18,7 +18,7 @@ interface Product {
   uom: string;
   qtyAvailable: number;
   tags: string;
-  imageSrc: string | null;
+  images: { src: string }[];
 }
 
 interface ProductCardProps {
@@ -43,7 +43,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         manufacturer: product.manufacturer,
         category: product.category,
         uom: product.uom,
-        imageSrc: product.imageSrc,
+        imageSrc: product.images[0].src,
       },
       quantity
     );
@@ -69,11 +69,11 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const hasPattern = product.tags.includes("PATTERN_");
 
-  const hasCollection = product.tags.includes("COLLECTION_");
+  const hasCollection = product.tags.includes("AQCAT_");
 
   const handleMoreFromCollection = (e: React.MouseEvent) => {
     e.preventDefault();
-    const collectionMatch = product.tags.match(/COLLECTION_([^,]+)/);
+    const collectionMatch = product.tags.match(/AQCAT_([^,]+)/);
     if (collectionMatch) {
       const collection = collectionMatch[1];
       router.push(`/products?page=1&tags=${collection}`);
@@ -87,9 +87,9 @@ export default function ProductCard({ product }: ProductCardProps) {
         <div className="flex flex-col">
           {/* Image - Fixed height */}
           <div className="aspect-square bg-gray-100 mb-2 sm:mb-4 flex items-center justify-center overflow-hidden rounded">
-            {product.imageSrc ? (
+            {product.images[0].src ? (
               <img
-                src={product.imageSrc}
+                src={product.images[0].src}
                 alt={product.title}
                 className="object-contain h-full w-full p-1 sm:p-2 group-hover:scale-105 transition-transform duration-200"
               />
@@ -137,10 +137,10 @@ export default function ProductCard({ product }: ProductCardProps) {
               {hasCollection && (
                 <button
                   onClick={handleMoreFromCollection}
-                  className="text-xs text-blue-600 hover:text-blue-800 block w-full text-left capitalize"
+                  className="mt-2 text-sm text-blue-600 hover:text-blue-800"
                 >
-                  More From Collection :{" "}
-                  {product.tags.match(/COLLECTION_([^,]+)/)?.[1].toLowerCase()}
+                  More From Collection:{" "}
+                  {product.tags.match(/AQCAT_([^,]+)/)?.[1].toLowerCase()}
                 </button>
               )}
               {hasPattern && (

@@ -189,7 +189,11 @@ export async function GET(request: NextRequest) {
         include: {
           venueProduct: {
             include: {
-              products: true,
+              products: {
+                include: {
+                  images: true,
+                },
+              },
             },
           },
         },
@@ -224,7 +228,7 @@ export async function GET(request: NextRequest) {
         venue.venueProduct?.products.map((product) => ({
           ...product,
           id: Number(product.id),
-          imageSrc: product.imageSrc || null,
+          images: product.images.map((img) => ({ src: img.url })),
         })) || [];
 
       console.log("Product with image:", products[0]);

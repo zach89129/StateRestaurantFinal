@@ -8,11 +8,11 @@ import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useCart } from "@/contexts/CartContext";
 import { useSearch } from "@/contexts/SearchContext";
+import CategoryNav from "./CategoryNav";
 
 export default function Header() {
   const { data: session } = useSession();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isVenuesOpen, setIsVenuesOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isSearchVisible, setIsSearchVisible } = useSearch();
   const router = useRouter();
@@ -22,12 +22,6 @@ export default function Header() {
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: "/" });
-  };
-
-  const handleNavigate = (collectionName: string) => {
-    router.push(`/products/${collectionName}?collection=${collectionName}`);
-    setIsDropdownOpen(false);
-    setIsMobileMenuOpen(false);
   };
 
   return (
@@ -158,6 +152,18 @@ export default function Header() {
               </div>
             </div>
 
+            {/* Mobile Menu - Collapsible */}
+            <div
+              className={`lg:hidden transition-all duration-300 overflow-hidden ${
+                isMobileMenuOpen ? "max-h-screen" : "max-h-0"
+              }`}
+            >
+              <CategoryNav
+                isMobile
+                onClose={() => setIsMobileMenuOpen(false)}
+              />
+            </div>
+
             {/* Mobile Search - Collapsible */}
             <div
               className={`lg:hidden transition-all duration-300 overflow-hidden ${
@@ -259,21 +265,7 @@ export default function Header() {
                 </svg>
               </button>
               {isDropdownOpen && (
-                <div className="absolute top-full left-0 bg-zinc-700 rounded shadow-lg py-2 min-w-[200px] z-50">
-                  <Link
-                    href="/products"
-                    className="block px-4 py-2 hover:bg-zinc-600"
-                    onClick={() => setIsDropdownOpen(false)}
-                  >
-                    All Products
-                  </Link>
-                  <button
-                    onClick={() => handleNavigate("glassware")}
-                    className="block px-4 py-2 hover:bg-zinc-600 w-full text-left"
-                  >
-                    Glassware
-                  </button>
-                </div>
+                <CategoryNav onClose={() => setIsDropdownOpen(false)} />
               )}
             </li>
             <li>
@@ -291,173 +283,7 @@ export default function Header() {
                 Contact
               </Link>
             </li>
-            {session?.user?.venues && session.user.venues.length > 0 && (
-              <li className="relative">
-                <button
-                  onClick={() => setIsVenuesOpen(!isVenuesOpen)}
-                  className="hover:text-blue-200 flex items-center gap-1"
-                >
-                  Your Venues
-                  <svg
-                    className={`w-4 h-4 transition-transform ${
-                      isVenuesOpen ? "rotate-180" : ""
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
-
-                {/* Dropdown Menu */}
-                {isVenuesOpen && (
-                  <div className="absolute top-full left-0 bg-zinc-700 rounded shadow-lg py-2 min-w-[200px] z-50">
-                    {session.user.venues.map((venue) => (
-                      <Link
-                        key={venue.venueName}
-                        href={`/venues/${venue.trxVenueId}`}
-                        className="block px-4 py-2 hover:bg-zinc-600 text-white"
-                        onClick={() => setIsVenuesOpen(false)}
-                      >
-                        {venue.venueName}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </li>
-            )}
           </ul>
-
-          {/* Mobile Navigation */}
-          <div
-            className={`lg:hidden transition-all duration-300 overflow-hidden ${
-              isMobileMenuOpen ? "max-h-screen" : "max-h-0"
-            }`}
-          >
-            <div className="py-4 space-y-4">
-              <Link
-                href="/"
-                className="block px-4 py-2 hover:bg-zinc-700 rounded"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Home
-              </Link>
-              <div className="border-b border-zinc-700 pb-2">
-                <button
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="w-full text-left px-4 py-2 hover:bg-zinc-700 rounded flex items-center justify-between"
-                >
-                  <span>Products</span>
-                  <svg
-                    className={`w-4 h-4 transition-transform ${
-                      isDropdownOpen ? "rotate-180" : ""
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
-                {isDropdownOpen && (
-                  <div className="pl-8 space-y-2 mt-2">
-                    <Link
-                      href="/products"
-                      className="block py-2 hover:bg-zinc-700 rounded px-4"
-                      onClick={() => {
-                        setIsDropdownOpen(false);
-                        setIsMobileMenuOpen(false);
-                      }}
-                    >
-                      All Products
-                    </Link>
-                    <button
-                      onClick={() => handleNavigate("glassware")}
-                      className="block w-full text-left py-2 hover:bg-zinc-700 rounded px-4"
-                    >
-                      Glassware
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <Link
-                href="/about"
-                className="block px-4 py-2 hover:bg-zinc-700 rounded"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                About Us
-              </Link>
-              <Link
-                href="/showroom"
-                className="block px-4 py-2 hover:bg-zinc-700 rounded"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Showroom
-              </Link>
-              <Link
-                href="/contact"
-                className="block px-4 py-2 hover:bg-zinc-700 rounded"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Contact
-              </Link>
-
-              {session?.user?.venues && session.user.venues.length > 0 && (
-                <div className="border-t border-zinc-700 pt-2">
-                  <button
-                    onClick={() => setIsVenuesOpen(!isVenuesOpen)}
-                    className="w-full text-left px-4 py-2 hover:bg-zinc-700 rounded flex items-center justify-between"
-                  >
-                    <span>Your Venues</span>
-                    <svg
-                      className={`w-4 h-4 transition-transform ${
-                        isVenuesOpen ? "rotate-180" : ""
-                      }`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </button>
-                  {isVenuesOpen && (
-                    <div className="pl-8 space-y-2 mt-2">
-                      {session.user.venues.map((venue) => (
-                        <Link
-                          key={venue.venueName}
-                          href={`/venues/${venue.trxVenueId}`}
-                          className="block py-2 hover:bg-zinc-700 rounded px-4"
-                          onClick={() => {
-                            setIsVenuesOpen(false);
-                            setIsMobileMenuOpen(false);
-                          }}
-                        >
-                          {venue.venueName}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
         </div>
       </nav>
     </header>

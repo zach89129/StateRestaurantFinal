@@ -17,7 +17,11 @@ export default async function ProductPage({ params }: PageProps) {
     where: {
       sku: sku,
     },
+    include: {
+      images: true,
+    },
   });
+  console.log(product);
 
   if (!product) {
     notFound();
@@ -33,7 +37,7 @@ export default async function ProductPage({ params }: PageProps) {
     uom: product.uom || "",
     qtyAvailable: product.qtyAvailable || 0,
     tags: product.tags || "",
-    imageSrc: product.imageSrc,
+    images: product.images.map((img) => ({ src: img.url })),
   };
 
   return <ProductDetail product={formattedProduct} />;

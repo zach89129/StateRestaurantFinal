@@ -157,31 +157,30 @@ export default function VenuePage({
   const getSortOptions = (products: VenueProduct[]) => {
     const categories = new Set<string>();
     const manufacturers = new Set<string>();
-    const tags = new Set<string>();
     const patterns = new Set<string>();
     const collections = new Set<string>();
+    const otherTags = new Set<string>();
 
+    // Process tags
     products.forEach((product) => {
       if (product.category) categories.add(product.category);
       if (product.manufacturer) manufacturers.add(product.manufacturer);
-      if (product.tags) {
-        const tagsList = product.tags.split(",");
-        tagsList.forEach((tag) => {
-          if (tag.startsWith("PATTERN_")) {
-            patterns.add(tag.replace("PATTERN_", ""));
-          } else if (tag.startsWith("COLLECTION_")) {
-            collections.add(tag.replace("COLLECTION_", ""));
-          } else {
-            tags.add(tag);
-          }
-        });
-      }
+      const tags = product.tags?.split(",").map((t) => t.trim()) || [];
+      tags.forEach((tag) => {
+        if (tag.startsWith("PATTERN_")) {
+          patterns.add(tag.replace("PATTERN_", ""));
+        } else if (tag.startsWith("AQCAT_")) {
+          collections.add(tag.replace("AQCAT_", ""));
+        } else {
+          otherTags.add(tag);
+        }
+      });
     });
 
     return {
       categories: Array.from(categories).sort(),
       manufacturers: Array.from(manufacturers).sort(),
-      tags: Array.from(tags).sort(),
+      tags: Array.from(otherTags).sort(),
       patterns: Array.from(patterns).sort(),
       collections: Array.from(collections).sort(),
       hasStockItems: products.some((p) =>

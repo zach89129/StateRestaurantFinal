@@ -61,25 +61,17 @@ export async function GET(request: NextRequest) {
       orderBy: { title: "asc" },
       skip: offset,
       take: pageSize,
-      select: {
-        id: true,
-        sku: true,
-        title: true,
-        description: true,
-        manufacturer: true,
-        category: true,
-        uom: true,
-        qtyAvailable: true,
-        tags: true,
-        imageSrc: true,
+      include: {
+        images: true,
       },
     });
 
-    // Convert BigInt to number in the products array
+    // Convert BigInt to number in the products array and format response
     const serializedProducts = products.map((product) => ({
       ...product,
       id: Number(product.id),
       qtyAvailable: Number(product.qtyAvailable),
+      images: product.images.map((img) => ({ src: img.url })),
     }));
 
     // Get available filter options from search results
@@ -127,10 +119,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Error searching products:", error);
     return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to search products. Please try again later.",
-      },
+      { success: false, error: "Failed to search products" },
       { status: 500 }
     );
   }

@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useCart } from "@/contexts/CartContext";
 import Link from "next/link";
 import QuantityInput from "./QuantityInput";
+import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 
 interface ProductDetailProps {
   product: {
@@ -17,7 +18,7 @@ interface ProductDetailProps {
     uom: string;
     qtyAvailable: number;
     tags: string;
-    imageSrc: string | null;
+    images: { src: string }[];
   };
 }
 
@@ -25,6 +26,19 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   const { data: session } = useSession();
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) =>
+      prev === product.images.length - 1 ? 0 : prev + 1
+    );
+  };
+
+  const previousImage = () => {
+    setCurrentImageIndex((prev) =>
+      prev === 0 ? product.images.length - 1 : prev - 1
+    );
+  };
 
   const handleAddToCart = () => {
     addItem(
@@ -35,7 +49,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
         manufacturer: product.manufacturer,
         category: product.category,
         uom: product.uom,
-        imageSrc: product.imageSrc,
+        imageSrc: product.images[0].src,
       },
       quantity
     );
@@ -60,20 +74,70 @@ export default function ProductDetail({ product }: ProductDetailProps) {
         {/* Product Details */}
         <div className="bg-white rounded-lg shadow-sm mt-6">
           <div className="grid md:grid-cols-2 gap-8 p-8">
-            {/* Left Column - Image */}
-            <div className="bg-white rounded-lg overflow-hidden">
-              <div className="aspect-square bg-gray-50 flex items-center justify-center p-8">
-                {product.imageSrc ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={product.imageSrc}
-                    alt={product.title}
-                    className="object-contain w-full h-full"
-                  />
-                ) : (
-                  <div className="text-gray-400">No image available</div>
-                )}
+            {/* Left Column - Image Gallery */}
+            <div className="space-y-4">
+              {/* Main Image */}
+              <div className="relative bg-white rounded-lg overflow-hidden p-2">
+                <div className="aspect-square bg-gray-50 flex items-center justify-center p-4 relative">
+                  {product.images.length > 0 ? (
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={product.images[currentImageIndex].src}
+                        alt={`${product.title} - Image ${
+                          currentImageIndex + 1
+                        }`}
+                        className="object-contain w-full h-full transition-opacity duration-300 max-h-[500px]"
+                      />
+                      {/* Navigation Arrows */}
+                      {product.images.length > 1 && (
+                        <>
+                          <button
+                            onClick={previousImage}
+                            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-md transition-all"
+                            aria-label="Previous image"
+                          >
+                            <ChevronLeftIcon className="h-6 w-6 text-gray-800" />
+                          </button>
+                          <button
+                            onClick={nextImage}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-md transition-all"
+                            aria-label="Next image"
+                          >
+                            <ChevronRightIcon className="h-6 w-6 text-gray-800" />
+                          </button>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-gray-400">No image available</div>
+                  )}
+                </div>
               </div>
+
+              {/* Thumbnails */}
+              {product.images.length > 1 && (
+                <div className="flex gap-3 overflow-x-auto pb-4 pt-5 px-2 snap-x">
+                  {product.images.map((image, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentImageIndex(index)}
+                      className={`flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden snap-start p-1 bg-white ${
+                        currentImageIndex === index
+                          ? "ring-2 ring-blue-500 ring-offset-2"
+                          : "ring-1 ring-gray-200 hover:ring-gray-300"
+                      }`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={image.src}
+                        alt={`${product.title} thumbnail ${index + 1}`}
+                        className="w-full h-full object-contain rounded-md"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Right Column - Info */}

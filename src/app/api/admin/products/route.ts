@@ -1,41 +1,106 @@
-import { prisma } from "@/lib/prisma";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../auth/[...nextauth]/auth-options";
-import { Product, VenueProduct } from "@prisma/client";
+import { authOptions } from "@/app/api/auth/[...nextauth]/auth-options";
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
-interface ProductWithVenues extends Product {
-  venueProducts: (VenueProduct & {
+type SerializedProduct = {
+  id: string;
+  sku: string;
+  title: string;
+  description: string | null;
+  manufacturer: string | null;
+  category: string | null;
+  uom: string | null;
+  qtyAvailable: number;
+  tags: string | null;
+  images: {
+    id: string;
+    url: string;
+    productId: string;
+    createdAt: Date;
+  }[];
+  venueProducts?: {
+    id: string;
+    trxVenueId: number;
     venue: {
       trxVenueId: number;
       venueName: string;
     };
-  })[];
+  }[];
+};
+
+type ApiResponse = {
+  products: SerializedProduct[];
+  pagination: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
+};
+
+type SingleProductResponse = {
+  product: SerializedProduct;
+};
+
+// Helper function to serialize a product
+function serializeProduct(product: any): SerializedProduct {
+  return {
+    id: String(product.id),
+    sku: product.sku,
+    title: product.title,
+    description: product.description,
+    manufacturer: product.manufacturer,
+    category: product.category,
+    uom: product.uom,
+    qtyAvailable: product.qtyAvailable ? Number(product.qtyAvailable) : 0,
+    tags: product.tags,
+    images: product.images.map((img: any) => ({
+      id: String(img.id),
+      url: img.url,
+      productId: String(img.productId),
+      createdAt: img.createdAt,
+    })),
+    venueProducts: product.venueProducts?.map((vp: any) => ({
+      id: String(vp.id),
+      trxVenueId: vp.trxVenueId,
+      venue: {
+        trxVenueId: vp.venue.trxVenueId,
+        venueName: vp.venue.venueName,
+      },
+    })),
+  };
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(
+  request: Request
+): Promise<NextResponse<ApiResponse | SingleProductResponse>> {
   try {
-    // Check authentication and authorization
     const session = await getServerSession(authOptions);
-    if (!session?.user?.isSuperuser) {
-      return NextResponse.json(
-        { error: "Unauthorized access" },
-        { status: 401 }
-      );
+    if (!session) {
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
     // Get query parameters
-    const searchParams = new URL(request.url).searchParams;
+    const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
     const includeVenues = searchParams.get("includeVenues") === "true";
+    const page = parseInt(searchParams.get("page") || "1");
+    const pageSize = parseInt(searchParams.get("pageSize") || "20");
+    const search = searchParams.get("search") || "";
+    const sort = searchParams.get("sort") || "title:asc";
+    const [sortField, sortOrder] = sort.split(":");
 
     // If ID is provided, fetch a single product
     if (id) {
       const product = await prisma.product.findUnique({
         where: { id: BigInt(id) },
-        include: includeVenues
-          ? {
-              venueProducts: {
+        include: {
+          images: true,
+          venueProducts: includeVenues
+            ? {
                 include: {
                   venue: {
                     select: {
@@ -44,55 +109,25 @@ export async function GET(request: NextRequest) {
                     },
                   },
                 },
-              },
-            }
-          : undefined,
+              }
+            : undefined,
+        },
       });
 
       if (!product) {
-        return NextResponse.json(
-          { error: "Product not found" },
-          { status: 404 }
-        );
+        return new NextResponse("Product not found", { status: 404 });
       }
 
-      // Convert BigInt to string for JSON serialization
-      const serializedProduct = {
-        ...product,
-        id: String(product.id),
-        qtyAvailable: product.qtyAvailable
-          ? Number(product.qtyAvailable)
-          : null,
-        venueProducts: includeVenues
-          ? (product as ProductWithVenues).venueProducts.map((vp) => ({
-              id: vp.id,
-              venueId: vp.venue.trxVenueId,
-              venueName: vp.venue.venueName,
-              price: null, // Add these fields when they're added to the schema
-              qtyAvailable: null,
-              isActive: true,
-            }))
-          : undefined,
-      };
-
-      return NextResponse.json({ product: serializedProduct });
+      return NextResponse.json({ product: serializeProduct(product) });
     }
 
-    // Otherwise, handle paginated list
-    const page = parseInt(searchParams.get("page") || "1");
-    const pageSize = parseInt(searchParams.get("pageSize") || "20");
-    const search = searchParams.get("search") || "";
-    const sort = searchParams.get("sort") || "title:asc";
-    const [sortField, sortOrder] = sort.split(":");
-
-    // Calculate offset
+    // Calculate offset for pagination
     const offset = (page - 1) * pageSize;
 
     // Build where clause for search
     const whereClause = search
       ? {
           OR: [
-            // Try to parse the search term as a number for trx_product_id search
             ...(!isNaN(Number(search)) ? [{ id: BigInt(search) }] : []),
             { sku: { contains: search } },
             { title: { contains: search } },
@@ -107,41 +142,39 @@ export async function GET(request: NextRequest) {
       where: whereClause,
     });
 
-    // Fetch products
+    // Fetch products with pagination, sorting, and filtering
     const products = await prisma.product.findMany({
       where: whereClause,
       orderBy: {
-        [sortField]: sortOrder,
+        [sortField]: sortOrder.toLowerCase(),
       },
       skip: offset,
       take: pageSize,
-      select: {
-        id: true,
-        sku: true,
-        title: true,
-        description: true,
-        manufacturer: true,
-        category: true,
-        uom: true,
-        qtyAvailable: true,
-        tags: true,
-        imageSrc: true,
+      include: {
+        images: true,
+        venueProducts: includeVenues
+          ? {
+              include: {
+                venue: {
+                  select: {
+                    trxVenueId: true,
+                    venueName: true,
+                  },
+                },
+              },
+            }
+          : undefined,
       },
     });
-
-    // Convert BigInt to string for JSON serialization
-    const serializedProducts = products.map((product) => ({
-      ...product,
-      id: String(product.id),
-      qtyAvailable: product.qtyAvailable ? Number(product.qtyAvailable) : null,
-    }));
 
     // Calculate pagination info
     const totalPages = Math.ceil(total / pageSize);
     const hasMore = page < totalPages;
 
+    // Convert BigInt values to strings
+    const serializedProducts = products.map(serializeProduct);
+
     return NextResponse.json({
-      success: true,
       products: serializedProducts,
       pagination: {
         total,
@@ -152,171 +185,163 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error fetching products:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    console.error("[PRODUCTS_GET]", error);
+    return new NextResponse("Internal error", { status: 500 });
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(
+  req: Request
+): Promise<NextResponse<SingleProductResponse>> {
   try {
-    // Check authentication and authorization
     const session = await getServerSession(authOptions);
-    if (!session?.user?.isSuperuser) {
-      return NextResponse.json(
-        { error: "Unauthorized access" },
-        { status: 401 }
-      );
+    if (!session) {
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const data = await request.json();
+    const body = await req.json();
+    const {
+      sku,
+      title,
+      description,
+      manufacturer,
+      category,
+      uom,
+      qtyAvailable,
+      tags,
+      images,
+    } = body;
 
-    // Validate required fields
-    const requiredFields = ["sku", "title"];
-    const missingFields = requiredFields.filter((field) => !data[field]);
-    if (missingFields.length > 0) {
-      return NextResponse.json(
-        { error: `Missing required fields: ${missingFields.join(", ")}` },
-        { status: 400 }
-      );
-    }
-
-    // Create product
     const product = await prisma.product.create({
       data: {
-        id: BigInt(data.trx_product_id || Date.now()),
-        sku: data.sku,
-        title: data.title,
-        description: data.description || null,
-        manufacturer: data.manufacturer || null,
-        category: data.category || null,
-        uom: data.uom || null,
-        qtyAvailable: data.qtyAvailable || 0,
-        tags: data.tags || null,
-        imageSrc: data.imageSrc || null,
+        id: BigInt(Date.now()),
+        sku,
+        title,
+        description,
+        manufacturer,
+        category,
+        uom,
+        qtyAvailable,
+        tags,
+        images: {
+          createMany: {
+            data: images.map((url: string) => ({ url })),
+          },
+        },
+      },
+      include: {
+        images: true,
+        venueProducts: {
+          include: {
+            venue: {
+              select: {
+                trxVenueId: true,
+                venueName: true,
+              },
+            },
+          },
+        },
       },
     });
 
-    return NextResponse.json({
-      success: true,
-      product: {
-        ...product,
-        id: Number(product.id),
-        qtyAvailable: product.qtyAvailable
-          ? Number(product.qtyAvailable)
-          : null,
-      },
-    });
+    return NextResponse.json({ product: serializeProduct(product) });
   } catch (error) {
-    console.error("Error creating product:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    console.error("[PRODUCTS_POST]", error);
+    return new NextResponse("Internal error", { status: 500 });
   }
 }
 
-export async function PUT(request: NextRequest) {
+export async function PUT(
+  req: Request
+): Promise<NextResponse<SingleProductResponse>> {
   try {
-    // Check authentication and authorization
     const session = await getServerSession(authOptions);
-    if (!session?.user?.isSuperuser) {
-      return NextResponse.json(
-        { error: "Unauthorized access" },
-        { status: 401 }
-      );
+    if (!session) {
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const data = await request.json();
-    if (!data.id) {
-      return NextResponse.json(
-        { error: "Product ID is required" },
-        { status: 400 }
-      );
-    }
+    const body = await req.json();
+    const {
+      id,
+      sku,
+      title,
+      description,
+      manufacturer,
+      category,
+      uom,
+      qtyAvailable,
+      tags,
+      images,
+    } = body;
 
-    // Convert string values to appropriate types
-    const qtyAvailable = data.qtyAvailable ? parseInt(data.qtyAvailable) : 0;
-    if (isNaN(qtyAvailable)) {
-      return NextResponse.json(
-        { error: "Invalid quantity value" },
-        { status: 400 }
-      );
-    }
+    // Delete existing images
+    await prisma.productImage.deleteMany({
+      where: { productId: BigInt(id) },
+    });
 
-    // Update product
     const product = await prisma.product.update({
-      where: { id: BigInt(data.id) },
+      where: { id: BigInt(id) },
       data: {
-        sku: data.sku,
-        title: data.title,
-        description: data.description || null,
-        manufacturer: data.manufacturer || null,
-        category: data.category || null,
-        uom: data.uom || null,
-        qtyAvailable: qtyAvailable,
-        tags: data.tags || null,
-        imageSrc: data.imageSrc || null,
+        sku,
+        title,
+        description,
+        manufacturer,
+        category,
+        uom,
+        qtyAvailable,
+        tags,
+        images: {
+          createMany: {
+            data: images.map((url: string) => ({ url })),
+          },
+        },
+      },
+      include: {
+        images: true,
+        venueProducts: {
+          include: {
+            venue: {
+              select: {
+                trxVenueId: true,
+                venueName: true,
+              },
+            },
+          },
+        },
       },
     });
 
-    return NextResponse.json({
-      success: true,
-      product: {
-        ...product,
-        id: String(product.id),
-        qtyAvailable: product.qtyAvailable
-          ? Number(product.qtyAvailable)
-          : null,
-      },
-    });
+    return NextResponse.json({ product: serializeProduct(product) });
   } catch (error) {
-    console.error("Error updating product:", error);
-    if (error instanceof Error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    console.error("[PRODUCTS_PUT]", error);
+    return new NextResponse("Internal error", { status: 500 });
   }
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE(
+  req: Request
+): Promise<NextResponse<{ success: true }>> {
   try {
-    // Check authentication and authorization
     const session = await getServerSession(authOptions);
-    if (!session?.user?.isSuperuser) {
-      return NextResponse.json(
-        { error: "Unauthorized access" },
-        { status: 401 }
-      );
+    if (!session) {
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const data = await request.json();
-    if (!data.id) {
-      return NextResponse.json(
-        { error: "Product ID is required" },
-        { status: 400 }
-      );
+    const { searchParams } = new URL(req.url);
+    const productId = searchParams.get("productId");
+
+    if (!productId) {
+      return new NextResponse("Product ID is required", { status: 400 });
     }
 
-    // Delete product
+    // Delete the product (cascade will handle images)
     await prisma.product.delete({
-      where: { id: BigInt(data.id) },
+      where: { id: BigInt(productId) },
     });
 
-    return NextResponse.json({
-      success: true,
-      message: "Product deleted successfully",
-    });
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting product:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    console.error("[PRODUCTS_DELETE]", error);
+    return new NextResponse("Internal error", { status: 500 });
   }
 }

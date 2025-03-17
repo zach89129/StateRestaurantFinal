@@ -18,7 +18,7 @@ interface Product {
   uom: string;
   qtyAvailable: number;
   tags: string;
-  imageSrc: string | null;
+  images: { src: string }[];
 }
 
 interface PaginationInfo {
@@ -69,6 +69,16 @@ function ProductsContent() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const { isSearchVisible } = useSearch();
 
+  // Track selected filters from URL params
+  const selectedCategories =
+    searchParams.get("category")?.split(",").filter(Boolean) || [];
+  const selectedManufacturers =
+    searchParams.get("manufacturer")?.split(",").filter(Boolean) || [];
+  const selectedPatterns =
+    searchParams.get("pattern")?.split(",").filter(Boolean) || [];
+  const selectedTags =
+    searchParams.get("tags")?.split(",").filter(Boolean) || [];
+
   // Fetch products with current filters and pagination
   useEffect(() => {
     const fetchProducts = async () => {
@@ -91,18 +101,21 @@ function ProductsContent() {
           setSortOptions((prev) => ({
             ...prev,
             categories: Array.from(
-              new Set([...prev.categories, ...data.filters.appliedCategories])
+              new Set([
+                ...prev.categories,
+                ...(data.filters.appliedCategories || []),
+              ])
             ),
             manufacturers: Array.from(
               new Set([
                 ...prev.manufacturers,
-                ...data.filters.appliedManufacturers,
+                ...(data.filters.appliedManufacturers || []),
               ])
             ),
             patterns: Array.from(
               new Set([
                 ...prev.patterns,
-                ...data.filters.appliedPatterns.map((p: string) =>
+                ...(data.filters.appliedPatterns || []).map((p: string) =>
                   p.replace("PATTERN_", "")
                 ),
               ])
@@ -214,6 +227,29 @@ function ProductsContent() {
     router.push(`/products?${params.toString()}`, { scroll: false });
   };
 
+  const handlePatternChange = (pattern: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    const currentPatterns =
+      params.get("pattern")?.split(",").filter(Boolean) || [];
+
+    let newPatterns;
+    if (currentPatterns.includes(pattern)) {
+      newPatterns = currentPatterns.filter((p) => p !== pattern);
+    } else {
+      newPatterns = [...currentPatterns, pattern];
+    }
+
+    if (newPatterns.length > 0) {
+      params.set("pattern", newPatterns.join(","));
+    } else {
+      params.delete("pattern");
+    }
+
+    // Reset to first page when filter changes
+    params.set("page", "1");
+    router.push(`/products?${params.toString()}`, { scroll: false });
+  };
+
   const handleTagChange = (tag: string) => {
     const params = new URLSearchParams(searchParams.toString());
     const currentTags = params.get("tags")?.split(",").filter(Boolean) || [];
@@ -269,21 +305,13 @@ function ProductsContent() {
           <FilterSidebar
             key="filter-sidebar"
             sortOptions={sortOptions}
-            selectedCategories={
-              searchParams
-                .get("category")
-                ?.split(",")
-                .map((c) => decodeURIComponent(c.trim()))
-                .filter(Boolean) || []
-            }
-            selectedManufacturers={
-              searchParams.get("manufacturer")?.split(",").filter(Boolean) || []
-            }
-            selectedTags={
-              searchParams.get("tags")?.split(",").filter(Boolean) || []
-            }
+            selectedCategories={selectedCategories}
+            selectedManufacturers={selectedManufacturers}
+            selectedPatterns={selectedPatterns}
+            selectedTags={selectedTags}
             onCategoryChange={handleCategoryChange}
             onManufacturerChange={handleManufacturerChange}
+            onPatternChange={handlePatternChange}
             onTagChange={handleTagChange}
             onClearAll={clearAllFilters}
             isOpen={isFilterOpen}
