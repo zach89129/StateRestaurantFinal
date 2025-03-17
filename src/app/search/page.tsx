@@ -11,6 +11,7 @@ import { useSearch } from "@/contexts/SearchContext";
 
 interface Product {
   id: number;
+  trx_product_id: number;
   sku: string;
   title: string;
   description: string;
@@ -19,7 +20,7 @@ interface Product {
   uom: string;
   qtyAvailable: number;
   tags: string;
-  imageSrc: string | null;
+  images: { src: string }[];
 }
 
 // Add PaginationInfo interface
@@ -37,8 +38,6 @@ function SearchContent() {
   const searchTerm = searchParams.get("q") || "";
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [pagination, setPagination] = useState<PaginationInfo>({
     total: 0,
     page: 1,
@@ -58,6 +57,20 @@ function SearchContent() {
   // Add new state for filter drawer
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
+  // Track selected filters
+  const selectedManufacturers =
+    searchParams.get("manufacturer")?.split(",").filter(Boolean) || [];
+  const selectedPatterns =
+    searchParams.get("pattern")?.split(",").filter(Boolean) || [];
+  const selectedTags =
+    searchParams.get("tags")?.split(",").filter(Boolean) || [];
+  const selectedCategories =
+    searchParams
+      .get("category")
+      ?.split(",")
+      .filter(Boolean)
+      .map((c) => decodeURIComponent(c)) || [];
+
   // Add toggle function
   const toggleFilter = () => {
     setIsFilterOpen(!isFilterOpen);
@@ -68,7 +81,6 @@ function SearchContent() {
     const fetchSearchResults = async () => {
       if (!searchTerm) {
         setProducts([]);
-        setFilteredProducts([]);
         setSortOptions({
           categories: [],
           manufacturers: [],
@@ -96,7 +108,6 @@ function SearchContent() {
         const data = await response.json();
         if (data.success) {
           setProducts(data.products);
-          setFilteredProducts(data.products);
           setPagination(data.pagination);
           // Update sort options from server data
           setSortOptions({
@@ -110,127 +121,111 @@ function SearchContent() {
         } else {
           console.error("Search failed:", data.error);
           setProducts([]);
-          setFilteredProducts([]);
         }
       } catch (error) {
         console.error("Error fetching search results:", error);
         setProducts([]);
-        setFilteredProducts([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchSearchResults();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]); // Depend on all searchParams to refetch when any parameter changes
+  }, [searchParams, searchTerm]);
 
-  // Remove the filtering effect since filtering will be handled by the server
   const handleCategoryChange = (category: string) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams);
+    params.set("page", "1");
+
     const currentCategories =
       params
         .get("category")
         ?.split(",")
-        .map((c) => decodeURIComponent(c.trim()))
-        .filter(Boolean) || [];
+        .filter(Boolean)
+        .map((c) => decodeURIComponent(c)) || [];
+    const updatedCategories = currentCategories.includes(category)
+      ? currentCategories.filter((c) => c !== category)
+      : [...currentCategories, category];
 
-    let newCategories;
-    if (currentCategories.includes(category)) {
-      newCategories = currentCategories.filter((c) => c !== category);
-    } else {
-      newCategories = [...new Set([...currentCategories, category])];
-    }
-
-    if (newCategories.length > 0) {
+    if (updatedCategories.length > 0) {
       params.set(
         "category",
-        newCategories.map((c) => encodeURIComponent(c)).join(",")
+        updatedCategories.map((c) => encodeURIComponent(c)).join(",")
       );
     } else {
       params.delete("category");
     }
 
-    // Reset to first page when filter changes
-    params.set("page", "1");
-    params.set("q", searchTerm); // Preserve search term
-    router.push(`/search?${params.toString()}`);
+    router.push(`/search?${params.toString()}`, { scroll: false });
   };
 
   const handleManufacturerChange = (manufacturer: string) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams);
+    params.set("page", "1");
+
     const currentManufacturers =
-      params
-        .get("manufacturer")
-        ?.split(",")
-        .map((m) => decodeURIComponent(m))
-        .filter(Boolean) || [];
+      params.get("manufacturer")?.split(",").filter(Boolean) || [];
+    const updatedManufacturers = currentManufacturers.includes(manufacturer)
+      ? currentManufacturers.filter((m) => m !== manufacturer)
+      : [...currentManufacturers, manufacturer];
 
-    // Normalize the manufacturer name for comparison
-    const normalizeString = (str: string) => str.trim();
-    const normalizedManufacturer = normalizeString(manufacturer);
-
-    // Check if the manufacturer is already selected (exact match)
-    const isSelected = currentManufacturers.some(
-      (m) => normalizeString(m) === normalizedManufacturer
-    );
-
-    let newManufacturers;
-    if (isSelected) {
-      newManufacturers = currentManufacturers.filter(
-        (m) => normalizeString(m) !== normalizedManufacturer
-      );
-    } else {
-      // Use the original manufacturer name when adding
-      newManufacturers = [...new Set([...currentManufacturers, manufacturer])];
-    }
-
-    if (newManufacturers.length > 0) {
-      params.set(
-        "manufacturer",
-        newManufacturers.map((m) => encodeURIComponent(m)).join(",")
-      );
+    if (updatedManufacturers.length > 0) {
+      params.set("manufacturer", updatedManufacturers.join(","));
     } else {
       params.delete("manufacturer");
     }
 
+    router.push(`/search?${params.toString()}`, { scroll: false });
+  };
+
+  const handlePatternChange = (pattern: string) => {
+    const params = new URLSearchParams(searchParams);
     params.set("page", "1");
-    router.push(`/search?${params.toString()}`);
+
+    const currentPatterns =
+      params.get("pattern")?.split(",").filter(Boolean) || [];
+    const updatedPatterns = currentPatterns.includes(pattern)
+      ? currentPatterns.filter((p) => p !== pattern)
+      : [...currentPatterns, pattern];
+
+    if (updatedPatterns.length > 0) {
+      params.set("pattern", updatedPatterns.join(","));
+    } else {
+      params.delete("pattern");
+    }
+
+    router.push(`/search?${params.toString()}`, { scroll: false });
   };
 
   const handleTagChange = (tag: string) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams);
+    params.set("page", "1");
+
     const currentTags = params.get("tags")?.split(",").filter(Boolean) || [];
+    const updatedTags = currentTags.includes(tag)
+      ? currentTags.filter((t) => t !== tag)
+      : [...currentTags, tag];
 
-    let newTags;
-    if (currentTags.includes(tag)) {
-      newTags = currentTags.filter((t) => t !== tag);
-    } else {
-      newTags = [...currentTags, tag];
-    }
-
-    if (newTags.length > 0) {
-      params.set("tags", newTags.join(","));
+    if (updatedTags.length > 0) {
+      params.set("tags", updatedTags.join(","));
     } else {
       params.delete("tags");
     }
 
-    // Preserve search term
-    params.set("q", searchTerm || "");
-    router.push(`/search?${params.toString()}`);
+    router.push(`/search?${params.toString()}`, { scroll: false });
   };
 
   const handleClearAll = () => {
-    // Return to search results without filters
-    router.push(`/search?q=${encodeURIComponent(searchTerm || "")}`);
+    const params = new URLSearchParams();
+    params.set("q", searchTerm);
+    router.push(`/search?${params.toString()}`, { scroll: false });
   };
 
   // Add page change handler
   const handlePageChange = (newPage: number) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams);
     params.set("page", newPage.toString());
-    params.set("q", searchTerm); // Preserve search term
-    router.push(`/search?${params.toString()}`);
+    router.push(`/search?${params.toString()}`, { scroll: false });
   };
 
   const { isSearchVisible } = useSearch();
@@ -255,25 +250,17 @@ function SearchContent() {
           {/* Left Sidebar */}
           <FilterSidebar
             sortOptions={sortOptions}
-            selectedCategories={
-              searchParams
-                .get("category")
-                ?.split(",")
-                .map((c) => decodeURIComponent(c.trim()))
-                .filter(Boolean) || []
-            }
-            selectedManufacturers={
-              searchParams.get("manufacturer")?.split(",").filter(Boolean) || []
-            }
-            selectedTags={
-              searchParams.get("tags")?.split(",").filter(Boolean) || []
-            }
+            selectedCategories={selectedCategories}
+            selectedManufacturers={selectedManufacturers}
+            selectedPatterns={selectedPatterns}
+            selectedTags={selectedTags}
             onCategoryChange={handleCategoryChange}
             onManufacturerChange={handleManufacturerChange}
+            onPatternChange={handlePatternChange}
             onTagChange={handleTagChange}
             onClearAll={handleClearAll}
-            isOpen={isFilterOpen}
             onClose={() => setIsFilterOpen(false)}
+            isOpen={isFilterOpen}
           />
 
           {/* Main Content */}
@@ -311,11 +298,29 @@ function SearchContent() {
                   <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-300 border-t-black"></div>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-6 mb-8">
-                  {products.map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-6 mb-8">
+                    {products.map((product) => (
+                      <ProductCard
+                        key={product.trx_product_id}
+                        product={product}
+                      />
+                    ))}
+                  </div>
+
+                  {/* No Results */}
+                  {products.length === 0 && !loading && (
+                    <div className="text-center py-12">
+                      <p className="text-gray-500">No products found</p>
+                      <button
+                        onClick={handleClearAll}
+                        className="mt-4 text-blue-600 hover:text-blue-800"
+                      >
+                        Clear all filters
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
 
               {/* Pagination */}
@@ -324,6 +329,7 @@ function SearchContent() {
                   <nav className="flex items-center gap-1">
                     {/* Previous button */}
                     <button
+                      key="prev"
                       onClick={() =>
                         handlePageChange(Math.max(1, pagination.page - 1))
                       }
@@ -343,7 +349,7 @@ function SearchContent() {
                       (_, i) => i + 1
                     ).map((page) => (
                       <button
-                        key={page}
+                        key={`page-${page}`}
                         onClick={() => handlePageChange(page)}
                         className={`px-3 py-1 rounded border ${
                           page === pagination.page
@@ -357,6 +363,7 @@ function SearchContent() {
 
                     {/* Next button */}
                     <button
+                      key="next"
                       onClick={() =>
                         handlePageChange(
                           Math.min(pagination.totalPages, pagination.page + 1)

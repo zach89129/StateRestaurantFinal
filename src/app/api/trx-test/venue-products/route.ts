@@ -34,7 +34,11 @@ export async function POST(request: NextRequest) {
                   uom: true,
                   qtyAvailable: true,
                   tags: true,
-                  imageSrc: true,
+                  images: {
+                    select: {
+                      url: true,
+                    },
+                  },
                 },
               },
             },
@@ -82,7 +86,11 @@ export async function POST(request: NextRequest) {
                   uom: true,
                   qtyAvailable: true,
                   tags: true,
-                  imageSrc: true,
+                  images: {
+                    select: {
+                      url: true,
+                    },
+                  },
                 },
               },
             },

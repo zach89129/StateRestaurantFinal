@@ -1,12 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { category: string } }
-) {
+interface RouteParams {
+  params: Promise<{
+    category: string;
+  }>;
+}
+
+export async function GET(request: Request, context: RouteParams) {
   try {
+    const params = await context.params;
     const decodedCategory = decodeURIComponent(params.category);
     const { searchParams } = new URL(request.url);
 

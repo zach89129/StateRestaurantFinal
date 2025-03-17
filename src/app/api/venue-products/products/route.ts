@@ -67,7 +67,11 @@ export async function DELETE(request: NextRequest) {
                 uom: true,
                 qtyAvailable: true,
                 tags: true,
-                imageSrc: true,
+                images: {
+                  select: {
+                    url: true,
+                  },
+                },
               },
             },
           },
