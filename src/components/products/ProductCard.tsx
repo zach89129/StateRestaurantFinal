@@ -87,15 +87,11 @@ export default function ProductCard({ product }: ProductCardProps) {
         <div className="flex flex-col">
           {/* Image - Fixed height */}
           <div className="aspect-square bg-gray-100 mb-2 sm:mb-4 flex items-center justify-center overflow-hidden rounded">
-            {product.images[0].src ? (
-              <img
-                src={product.images[0].src}
-                alt={product.title}
-                className="object-contain h-full w-full p-1 sm:p-2 group-hover:scale-105 transition-transform duration-200"
-              />
-            ) : (
-              <div className="text-gray-400 text-sm">No image</div>
-            )}
+            <img
+              src={product.images[0]?.src || "/noImageState.jpg"}
+              alt={product.title}
+              className="object-contain h-full w-full p-1 sm:p-2 group-hover:scale-105 transition-transform duration-200"
+            />
           </div>
 
           {/* Product Info */}
