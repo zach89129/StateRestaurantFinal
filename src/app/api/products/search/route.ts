@@ -20,6 +20,10 @@ export async function GET(request: NextRequest) {
         { title: { contains: searchTerm } },
         { sku: { contains: searchTerm } },
         { description: { contains: searchTerm } },
+        { manufacturer: { contains: searchTerm } },
+        { category: { contains: searchTerm } },
+        { uom: { contains: searchTerm } },
+        { tags: { contains: searchTerm } },
       ],
     };
 
@@ -93,6 +97,18 @@ export async function GET(request: NextRequest) {
           .flat()
       ),
     ].filter(Boolean);
+    const availableCollections = [
+      ...new Set(
+        products
+          .map((p) =>
+            p.tags
+              ?.split(",")
+              .filter((tag) => tag.startsWith("AQCAT_"))
+              .map((tag) => tag.replace("AQCAT_", ""))
+          )
+          .flat()
+      ),
+    ].filter(Boolean);
 
     // Calculate pagination info
     const totalPages = Math.ceil(total / pageSize);
@@ -112,6 +128,7 @@ export async function GET(request: NextRequest) {
         availableCategories,
         availableManufacturers,
         availablePatterns,
+        availableCollections,
         hasStockItems: products.some((p) => p.tags?.includes("stock-item")),
         hasQuickShip: products.some((p) => p.tags?.includes("quick-ship")),
       },

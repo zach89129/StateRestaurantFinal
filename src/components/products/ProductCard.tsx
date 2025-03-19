@@ -119,6 +119,13 @@ export default function ProductCard({ product }: ProductCardProps) {
               </p>
             </div>
 
+            {/* Description - Fixed height with line clamp */}
+            <div className="min-h-[40px] sm:min-h-[48px]">
+              <p className="text-xs sm:text-sm text-gray-600 line-clamp-2">
+                {product.description}
+              </p>
+            </div>
+
             {/* Availability - Fixed height regardless of whether it's shown */}
             <div className="min-h-[20px] sm:min-h-[24px]">
               {product.qtyAvailable > 0 && (
@@ -137,7 +144,7 @@ export default function ProductCard({ product }: ProductCardProps) {
               {hasCollection && (
                 <button
                   onClick={handleMoreFromCollection}
-                  className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+                  className="mt-2 text-xs text-blue-600 hover:text-blue-800 block w-full text-left"
                 >
                   More From Collection:{" "}
                   {product.tags.match(/AQCAT_([^,]+)/)?.[1].toLowerCase()}

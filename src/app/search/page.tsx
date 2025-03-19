@@ -23,7 +23,15 @@ interface Product {
   images: { src: string }[];
 }
 
-// Add PaginationInfo interface
+interface SortOptions {
+  categories: string[];
+  manufacturers: string[];
+  patterns: string[];
+  collections: string[];
+  hasStockItems: boolean;
+  hasQuickShip: boolean;
+}
+
 interface PaginationInfo {
   total: number;
   page: number;
@@ -38,14 +46,7 @@ function SearchContent() {
   const searchTerm = searchParams.get("q") || "";
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
-  const [pagination, setPagination] = useState<PaginationInfo>({
-    total: 0,
-    page: 1,
-    pageSize: 24,
-    totalPages: 0,
-    hasMore: false,
-  });
-  const [sortOptions, setSortOptions] = useState({
+  const [sortOptions, setSortOptions] = useState<SortOptions>({
     categories: [],
     manufacturers: [],
     patterns: [],
@@ -53,15 +54,26 @@ function SearchContent() {
     hasStockItems: false,
     hasQuickShip: false,
   });
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    total: 0,
+    page: 1,
+    pageSize: 24,
+    totalPages: 0,
+    hasMore: false,
+  });
 
   // Add new state for filter drawer
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const { isSearchVisible } = useSearch();
 
   // Track selected filters
   const selectedManufacturers =
     searchParams.get("manufacturer")?.split(",").filter(Boolean) || [];
-  const selectedPatterns =
-    searchParams.get("pattern")?.split(",").filter(Boolean) || [];
+  const selectedPatterns = (
+    searchParams.get("tags")?.split(",").filter(Boolean) || []
+  )
+    .filter((tag) => tag.startsWith("PATTERN_"))
+    .map((tag) => tag.replace("PATTERN_", ""));
   const selectedTags =
     searchParams.get("tags")?.split(",").filter(Boolean) || [];
   const selectedCategories =
@@ -71,17 +83,30 @@ function SearchContent() {
       .filter(Boolean)
       .map((c) => decodeURIComponent(c)) || [];
 
-  // Add toggle function
-  const toggleFilter = () => {
-    setIsFilterOpen(!isFilterOpen);
-  };
+  // Add state to track initial filter options
+  const [initialSortOptions, setInitialSortOptions] = useState<SortOptions>({
+    categories: [],
+    manufacturers: [],
+    patterns: [],
+    collections: [],
+    hasStockItems: false,
+    hasQuickShip: false,
+  });
 
-  // Add search effect to fetch products when search term changes
+  // Update the search effect
   useEffect(() => {
     const fetchSearchResults = async () => {
       if (!searchTerm) {
         setProducts([]);
         setSortOptions({
+          categories: [],
+          manufacturers: [],
+          patterns: [],
+          collections: [],
+          hasStockItems: false,
+          hasQuickShip: false,
+        });
+        setInitialSortOptions({
           categories: [],
           manufacturers: [],
           patterns: [],
@@ -95,7 +120,6 @@ function SearchContent() {
 
       setLoading(true);
       try {
-        // Include all URL parameters in the search request
         const params = new URLSearchParams(searchParams.toString());
         const response = await fetch(
           `/api/products/search?${params.toString()}`
@@ -109,22 +133,74 @@ function SearchContent() {
         if (data.success) {
           setProducts(data.products);
           setPagination(data.pagination);
-          // Update sort options from server data
-          setSortOptions({
-            categories: data.filters.availableCategories || [],
-            manufacturers: data.filters.availableManufacturers || [],
-            patterns: data.filters.availablePatterns || [],
-            collections: [], // Collections are not used in search
-            hasStockItems: data.filters.hasStockItems || false,
-            hasQuickShip: data.filters.hasQuickShip || false,
-          });
+
+          // If this is the initial search (no filters applied), save these options
+          const hasNoFilters =
+            !params.get("category") &&
+            !params.get("manufacturer") &&
+            !params.get("pattern") &&
+            !params.get("tags");
+
+          if (hasNoFilters && data.filters) {
+            const initialOptions = {
+              categories: data.filters.availableCategories || [],
+              manufacturers: data.filters.availableManufacturers || [],
+              patterns: data.filters.availablePatterns || [],
+              collections: data.filters.availableCollections || [],
+              hasStockItems: data.filters.hasStockItems,
+              hasQuickShip: data.filters.hasQuickShip,
+            };
+            setInitialSortOptions(initialOptions);
+            setSortOptions(initialOptions);
+          } else if (data.filters) {
+            // For filtered results, use initial options but update stock/quickship status
+            setSortOptions((prev) => ({
+              ...initialSortOptions,
+              hasStockItems: data.filters.hasStockItems,
+              hasQuickShip: data.filters.hasQuickShip,
+            }));
+          }
         } else {
           console.error("Search failed:", data.error);
           setProducts([]);
+          // Clear filter options when search fails
+          setSortOptions({
+            categories: [],
+            manufacturers: [],
+            patterns: [],
+            collections: [],
+            hasStockItems: false,
+            hasQuickShip: false,
+          });
+          setInitialSortOptions({
+            categories: [],
+            manufacturers: [],
+            patterns: [],
+            collections: [],
+            hasStockItems: false,
+            hasQuickShip: false,
+          });
         }
       } catch (error) {
         console.error("Error fetching search results:", error);
         setProducts([]);
+        // Clear filter options on error
+        setSortOptions({
+          categories: [],
+          manufacturers: [],
+          patterns: [],
+          collections: [],
+          hasStockItems: false,
+          hasQuickShip: false,
+        });
+        setInitialSortOptions({
+          categories: [],
+          manufacturers: [],
+          patterns: [],
+          collections: [],
+          hasStockItems: false,
+          hasQuickShip: false,
+        });
       } finally {
         setLoading(false);
       }
@@ -141,16 +217,20 @@ function SearchContent() {
       params
         .get("category")
         ?.split(",")
-        .filter(Boolean)
-        .map((c) => decodeURIComponent(c)) || [];
-    const updatedCategories = currentCategories.includes(category)
-      ? currentCategories.filter((c) => c !== category)
-      : [...currentCategories, category];
+        .map((c) => decodeURIComponent(c.trim()))
+        .filter(Boolean) || [];
 
-    if (updatedCategories.length > 0) {
+    let newCategories;
+    if (currentCategories.includes(category)) {
+      newCategories = currentCategories.filter((c) => c !== category);
+    } else {
+      newCategories = [...new Set([...currentCategories, category])];
+    }
+
+    if (newCategories.length > 0) {
       params.set(
         "category",
-        updatedCategories.map((c) => encodeURIComponent(c)).join(",")
+        newCategories.map((c) => encodeURIComponent(c)).join(",")
       );
     } else {
       params.delete("category");
@@ -164,13 +244,33 @@ function SearchContent() {
     params.set("page", "1");
 
     const currentManufacturers =
-      params.get("manufacturer")?.split(",").filter(Boolean) || [];
-    const updatedManufacturers = currentManufacturers.includes(manufacturer)
-      ? currentManufacturers.filter((m) => m !== manufacturer)
-      : [...currentManufacturers, manufacturer];
+      params
+        .get("manufacturer")
+        ?.split(",")
+        .map((m) => decodeURIComponent(m))
+        .filter(Boolean) || [];
 
-    if (updatedManufacturers.length > 0) {
-      params.set("manufacturer", updatedManufacturers.join(","));
+    const normalizeString = (str: string) => str.trim();
+    const normalizedManufacturer = normalizeString(manufacturer);
+
+    const isSelected = currentManufacturers.some(
+      (m) => normalizeString(m) === normalizedManufacturer
+    );
+
+    let newManufacturers;
+    if (isSelected) {
+      newManufacturers = currentManufacturers.filter(
+        (m) => normalizeString(m) !== normalizedManufacturer
+      );
+    } else {
+      newManufacturers = [...new Set([...currentManufacturers, manufacturer])];
+    }
+
+    if (newManufacturers.length > 0) {
+      params.set(
+        "manufacturer",
+        newManufacturers.map((m) => encodeURIComponent(m)).join(",")
+      );
     } else {
       params.delete("manufacturer");
     }
@@ -182,16 +282,21 @@ function SearchContent() {
     const params = new URLSearchParams(searchParams);
     params.set("page", "1");
 
-    const currentPatterns =
-      params.get("pattern")?.split(",").filter(Boolean) || [];
-    const updatedPatterns = currentPatterns.includes(pattern)
-      ? currentPatterns.filter((p) => p !== pattern)
-      : [...currentPatterns, pattern];
+    // Add tags parameter if not present
+    const currentTags = params.get("tags")?.split(",").filter(Boolean) || [];
+    const patternTag = `PATTERN_${pattern}`;
 
-    if (updatedPatterns.length > 0) {
-      params.set("pattern", updatedPatterns.join(","));
+    let newTags;
+    if (currentTags.includes(patternTag)) {
+      newTags = currentTags.filter((t) => t !== patternTag);
     } else {
-      params.delete("pattern");
+      newTags = [...currentTags, patternTag];
+    }
+
+    if (newTags.length > 0) {
+      params.set("tags", newTags.join(","));
+    } else {
+      params.delete("tags");
     }
 
     router.push(`/search?${params.toString()}`, { scroll: false });
@@ -202,12 +307,16 @@ function SearchContent() {
     params.set("page", "1");
 
     const currentTags = params.get("tags")?.split(",").filter(Boolean) || [];
-    const updatedTags = currentTags.includes(tag)
-      ? currentTags.filter((t) => t !== tag)
-      : [...currentTags, tag];
 
-    if (updatedTags.length > 0) {
-      params.set("tags", updatedTags.join(","));
+    let newTags;
+    if (currentTags.includes(tag)) {
+      newTags = currentTags.filter((t) => t !== tag);
+    } else {
+      newTags = [...currentTags, tag];
+    }
+
+    if (newTags.length > 0) {
+      params.set("tags", newTags.join(","));
     } else {
       params.delete("tags");
     }
@@ -223,12 +332,15 @@ function SearchContent() {
 
   // Add page change handler
   const handlePageChange = (newPage: number) => {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams.toString());
     params.set("page", newPage.toString());
     router.push(`/search?${params.toString()}`, { scroll: false });
   };
 
-  const { isSearchVisible } = useSearch();
+  // Add toggle function for mobile filter
+  const toggleFilter = () => {
+    setIsFilterOpen(!isFilterOpen);
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -302,7 +414,7 @@ function SearchContent() {
                   <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-6 mb-8">
                     {products.map((product) => (
                       <ProductCard
-                        key={product.trx_product_id}
+                        key={`search-product-${product.id}`}
                         product={product}
                       />
                     ))}
@@ -339,6 +451,7 @@ function SearchContent() {
                           ? "border-gray-200 text-gray-400 cursor-not-allowed"
                           : "border-gray-300 text-gray-700 hover:bg-gray-50"
                       }`}
+                      aria-label="Previous page"
                     >
                       ‹
                     </button>
@@ -356,6 +469,10 @@ function SearchContent() {
                             ? "bg-zinc-900 text-white border-zinc-900"
                             : "border-gray-300 text-gray-700 hover:bg-gray-50"
                         }`}
+                        aria-label={`Go to page ${page}`}
+                        aria-current={
+                          page === pagination.page ? "page" : undefined
+                        }
                       >
                         {page}
                       </button>
@@ -375,6 +492,7 @@ function SearchContent() {
                           ? "border-gray-200 text-gray-400 cursor-not-allowed"
                           : "border-gray-300 text-gray-700 hover:bg-gray-50"
                       }`}
+                      aria-label="Next page"
                     >
                       ›
                     </button>

@@ -27,9 +27,11 @@ export async function POST(request: NextRequest) {
 
       // Convert BigInt id to string for JSON serialization
       products = products.map((product) => {
-        const { id } = product;
+        const { id, ...rest } = product;
         return {
           trx_product_id: String(id),
+          ...rest,
+          images: product.images.map((img) => ({ src: img.url })),
         };
       });
     } else {

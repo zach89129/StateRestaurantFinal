@@ -84,7 +84,12 @@ export async function POST(request: NextRequest) {
             include: { images: true },
           });
 
-          results.push(Number(updatedProduct.id));
+          results.push({
+            trx_product_id: Number(updatedProduct.id),
+            ...updatedProduct,
+            id: undefined,
+            images: updatedProduct.images.map((img) => ({ src: img.url })),
+          });
         } else {
           // Validate all required fields for creation
           const requiredFields = [
@@ -134,7 +139,11 @@ export async function POST(request: NextRequest) {
             include: { images: true },
           });
 
-          results.push(Number(newProduct.id));
+          results.push({
+            ...newProduct,
+            trx_product_id: Number(newProduct.id),
+            images: newProduct.images.map((img) => ({ src: img.url })),
+          });
         }
       } catch (err) {
         errors.push({
@@ -145,11 +154,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Convert any remaining BigInt values to strings
+    const safeResults = convertBigIntToString(results);
+
     return NextResponse.json({
       success: true,
       processed: results.length,
       errors: errors.length > 0 ? errors : undefined,
-      trx_product_ids: results,
+      results: safeResults,
     });
   } catch (error) {
     console.error("Error processing request:", error);

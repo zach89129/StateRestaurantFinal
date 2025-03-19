@@ -81,15 +81,7 @@ export async function POST(request: Request) {
             trx_venue_id: venue.trxVenueId,
             venueName: venue.venueName,
             products: venue.venueProduct
-              ? venue.venueProduct.products.map((product) => {
-                  // Create a new object with all properties except id
-                  const { id, ...rest } = product;
-                  return {
-                    // Convert all BigInt values to strings
-                    trx_product_id: String(id),
-                    ...rest,
-                  };
-                })
+              ? venue.venueProduct.products.map((product) => String(product.id))
               : [],
           };
 
@@ -125,15 +117,7 @@ export async function POST(request: Request) {
             trx_venue_id: venue.trxVenueId,
             venueName: venue.venueName,
             products: venue.venueProduct
-              ? venue.venueProduct.products.map((product) => {
-                  // Create a new object with all properties except id
-                  const { id, ...rest } = product;
-                  return {
-                    // Convert all BigInt values to strings
-                    trx_product_id: String(id),
-                    ...rest,
-                  };
-                })
+              ? venue.venueProduct.products.map((product) => String(product.id))
               : [],
           };
 

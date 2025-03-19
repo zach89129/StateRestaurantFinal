@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import SearchBar from "@/components/ui/SearchBar";
 import { useSession, signOut } from "next-auth/react";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useCart } from "@/contexts/CartContext";
 import { useSearch } from "@/contexts/SearchContext";
@@ -19,10 +19,28 @@ export default function Header() {
   const { itemCount } = useCart();
   const pathname = usePathname();
   const isVenuePage = pathname?.includes("/venues/");
+  const dropdownRef = useRef<HTMLLIElement>(null);
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: "/" });
   };
+
+  // Add click outside handler
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
     <header className="bg-zinc-800 sticky top-0 z-50 shadow-md w-full">
@@ -242,7 +260,7 @@ export default function Header() {
                 Home
               </Link>
             </li>
-            <li className="relative">
+            <li className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="hover:text-blue-200 flex items-center gap-1"
