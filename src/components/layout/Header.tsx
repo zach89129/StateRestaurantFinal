@@ -13,6 +13,7 @@ import CategoryNav from "./CategoryNav";
 export default function Header() {
   const { data: session } = useSession();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isMobileDropdownOpen, setIsMobileDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isSearchVisible, setIsSearchVisible } = useSearch();
   const router = useRouter();
@@ -176,10 +177,84 @@ export default function Header() {
                 isMobileMenuOpen ? "max-h-screen" : "max-h-0"
               }`}
             >
-              <CategoryNav
-                isMobile
-                onClose={() => setIsMobileMenuOpen(false)}
-              />
+              <div className="py-2 px-4 space-y-2">
+                <Link
+                  href="/"
+                  className="block text-gray-300 hover:text-white"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setIsMobileDropdownOpen(false);
+                  }}
+                >
+                  Home
+                </Link>
+                <div>
+                  <button
+                    onClick={() =>
+                      setIsMobileDropdownOpen(!isMobileDropdownOpen)
+                    }
+                    className="flex items-center justify-between w-full text-gray-300 hover:text-white"
+                  >
+                    Products
+                    <svg
+                      className={`w-4 h-4 transition-transform ${
+                        isMobileDropdownOpen ? "rotate-180" : ""
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+                  {isMobileDropdownOpen && (
+                    <div className="pl-4 mt-2">
+                      <CategoryNav
+                        isMobile
+                        onClose={() => {
+                          setIsMobileDropdownOpen(false);
+                          setIsMobileMenuOpen(false);
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+                <Link
+                  href="/about"
+                  className="block text-gray-300 hover:text-white"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setIsMobileDropdownOpen(false);
+                  }}
+                >
+                  About Us
+                </Link>
+                <Link
+                  href="/showroom"
+                  className="block text-gray-300 hover:text-white"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setIsMobileDropdownOpen(false);
+                  }}
+                >
+                  Showroom
+                </Link>
+                <Link
+                  href="/contact"
+                  className="block text-gray-300 hover:text-white"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setIsMobileDropdownOpen(false);
+                  }}
+                >
+                  Contact
+                </Link>
+              </div>
             </div>
 
             {/* Mobile Search - Collapsible */}
