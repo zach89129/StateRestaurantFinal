@@ -15,18 +15,22 @@ export default function Header() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileDropdownOpen, setIsMobileDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isVenueDropdownOpen, setIsVenueDropdownOpen] = useState(false);
+  const [isMobileVenueDropdownOpen, setIsMobileVenueDropdownOpen] =
+    useState(false);
   const { isSearchVisible, setIsSearchVisible } = useSearch();
   const router = useRouter();
   const { itemCount } = useCart();
   const pathname = usePathname();
   const isVenuePage = pathname?.includes("/venues/");
   const dropdownRef = useRef<HTMLLIElement>(null);
+  const venueDropdownRef = useRef<HTMLLIElement>(null);
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: "/" });
   };
 
-  // Add click outside handler
+  // Add click outside handler for both dropdowns
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -34,6 +38,12 @@ export default function Header() {
         !dropdownRef.current.contains(event.target as Node)
       ) {
         setIsDropdownOpen(false);
+      }
+      if (
+        venueDropdownRef.current &&
+        !venueDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsVenueDropdownOpen(false);
       }
     }
 
@@ -254,6 +264,51 @@ export default function Header() {
                 >
                   Contact
                 </Link>
+                {session?.user?.venues && session.user.venues.length > 0 && (
+                  <div>
+                    <button
+                      onClick={() =>
+                        setIsMobileVenueDropdownOpen(!isMobileVenueDropdownOpen)
+                      }
+                      className="flex items-center justify-between w-full text-gray-300 hover:text-white"
+                    >
+                      Venue Products
+                      <svg
+                        className={`w-4 h-4 transition-transform ${
+                          isMobileVenueDropdownOpen ? "rotate-180" : ""
+                        }`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
+                    {isMobileVenueDropdownOpen && (
+                      <div className="pl-4 mt-2 space-y-2">
+                        {session.user.venues.map((venue) => (
+                          <Link
+                            key={venue.trxVenueId}
+                            href={`/venues/${venue.trxVenueId}`}
+                            className="block text-gray-300 hover:text-white"
+                            onClick={() => {
+                              setIsMobileMenuOpen(false);
+                              setIsMobileDropdownOpen(false);
+                              setIsMobileVenueDropdownOpen(false);
+                            }}
+                          >
+                            {venue.venueName}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -376,6 +431,48 @@ export default function Header() {
                 Contact
               </Link>
             </li>
+            {session?.user?.venues && session.user.venues.length > 0 && (
+              <li className="relative" ref={venueDropdownRef}>
+                <button
+                  onClick={() => setIsVenueDropdownOpen(!isVenueDropdownOpen)}
+                  className="hover:text-blue-200 flex items-center gap-1"
+                >
+                  Venue Products
+                  <svg
+                    className={`w-4 h-4 transition-transform ${
+                      isVenueDropdownOpen ? "rotate-180" : ""
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+                {isVenueDropdownOpen && (
+                  <div className="absolute top-full right-0 w-64 bg-zinc-800 shadow-lg rounded-b-lg py-2 z-50">
+                    <ul className="py-1">
+                      {session.user.venues.map((venue) => (
+                        <li key={venue.trxVenueId}>
+                          <Link
+                            href={`/venues/${venue.trxVenueId}`}
+                            className="block px-4 py-2 text-gray-300 hover:bg-zinc-700 hover:text-white"
+                            onClick={() => setIsVenueDropdownOpen(false)}
+                          >
+                            {venue.venueName}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </li>
+            )}
           </ul>
         </div>
       </nav>

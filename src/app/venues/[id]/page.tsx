@@ -17,7 +17,7 @@ interface VenueProduct {
   uom: string | null;
   qtyAvailable: number | null;
   price: number | null;
-  imageSrc: string | null;
+  images: { src: string }[];
   tags: string | null;
 }
 
@@ -34,7 +34,7 @@ interface VenueProductsResponse {
     uom: string | null;
     qtyAvailable: bigint | number | null;
     price: number | null;
-    imageSrc: string | null;
+    images: { src: string }[];
     tags: string | null;
   }[];
 }
@@ -76,7 +76,10 @@ export default function VenuePage({
         }
         const data = (await response.json()) as VenueProductsResponse;
         if (data.success) {
-          console.log("First product image URL:", data.products[0]?.imageSrc);
+          console.log(
+            "First product image URL:",
+            data.products[0]?.images[0]?.src
+          );
           setVenue({
             id: resolvedParams.id,
             venueName: data.venueName,
@@ -120,7 +123,7 @@ export default function VenuePage({
         manufacturer: product.manufacturer,
         category: product.category,
         uom: product.uom,
-        imageSrc: product.imageSrc,
+        imageSrc: product.images[0]?.src,
       },
       quantity
     );
@@ -345,15 +348,15 @@ export default function VenuePage({
                     <tr key={product.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="relative h-20 w-20">
-                          {product.imageSrc ? (
+                          {product.images && product.images.length > 0 ? (
                             <img
-                              src={product.imageSrc}
+                              src={product.images[0].src}
                               alt={product.title}
                               className="h-full w-full object-contain"
                             />
                           ) : (
                             <img
-                              src="/placeholder-product.png"
+                              src="/noImageState.jpg"
                               alt="No image available"
                               className="h-full w-full object-contain"
                             />
@@ -413,15 +416,15 @@ export default function VenuePage({
                   {/* Product Header */}
                   <div className="flex gap-4">
                     <div className="relative h-20 w-20 flex-shrink-0">
-                      {product.imageSrc ? (
+                      {product.images && product.images.length > 0 ? (
                         <img
-                          src={product.imageSrc}
+                          src={product.images[0].src}
                           alt={product.title}
                           className="h-full w-full object-contain"
                         />
                       ) : (
                         <img
-                          src="/placeholder-product.png"
+                          src="/noImageState.jpg"
                           alt="No image available"
                           className="h-full w-full object-contain"
                         />
