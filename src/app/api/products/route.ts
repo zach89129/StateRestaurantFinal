@@ -191,8 +191,28 @@ export async function GET(request: NextRequest) {
         .map((m) => decodeURIComponent(m).trim()) || [];
     const tags = searchParams.get("tags")?.split(",").filter(Boolean) || [];
 
-    console.log("Raw categories from URL:", searchParams.get("category"));
-    console.log("Processed categories:", categories);
+    // Get tags parameter and parse it
+    const tagsParam = searchParams.get("tags");
+    const isExactMatch = searchParams.get("exact") === "true";
+    console.log("Raw tags parameter:", tagsParam);
+    console.log("Exact match requested:", isExactMatch);
+
+    let processedTags: string[] = [];
+
+    if (
+      tagsParam &&
+      tagsParam.startsWith("AQCAT_") &&
+      (tagsParam.includes("%2C") || isExactMatch)
+    ) {
+      // This is likely a single AQCAT_ tag with URL-encoded commas
+      console.log("Detected AQCAT_ tag with special handling");
+      processedTags = [tagsParam];
+    } else {
+      // Normal tag splitting
+      processedTags = tags;
+    }
+
+    console.log("Processed tags array:", processedTags);
 
     // Calculate offset
     const offset = (page - 1) * pageSize;
@@ -231,28 +251,43 @@ export async function GET(request: NextRequest) {
     }
 
     // Separate tags by type
-    const patternTags = tags.filter((tag) => tag.startsWith("PATTERN_"));
-    const stockAndQuickShipTags = tags.filter((tag) =>
+    console.log("Original tags from URL:", processedTags);
+
+    // First decode any URL-encoded tags
+    const decodedTags = processedTags.map((tag) => decodeURIComponent(tag));
+    console.log("Decoded tags:", decodedTags);
+
+    const patternTags = decodedTags.filter((tag) => tag.startsWith("PATTERN_"));
+    console.log("Pattern tags:", patternTags);
+
+    const stockAndQuickShipTags = decodedTags.filter((tag) =>
       ["Stock Item", "Quick Ship", "Stock Item / Quick Ship"].includes(tag)
     );
-    const collectionTags = tags.filter((tag) => {
+    console.log("Stock/QuickShip tags:", stockAndQuickShipTags);
+
+    const collectionTags = decodedTags.filter((tag) => {
+      // If it's an AQCAT_ tag, include it
+      if (tag.startsWith("AQCAT_")) {
+        return true;
+      }
+
       // If it doesn't have any special prefix and isn't a stock/quick ship tag
       if (
         !tag.startsWith("PATTERN_") &&
-        !tag.startsWith("AQCAT_") &&
         !["Stock Item", "Quick Ship", "Stock Item / Quick Ship"].includes(tag)
       ) {
         return true;
       }
-      // Or if it already has the AQCAT_ prefix
-      return tag.startsWith("AQCAT_");
+
+      return false;
     });
+    console.log("Collection tags:", collectionTags);
 
     // Add null/empty tag handling for proper filtering
     if (
-      tags.includes("null") ||
-      tags.includes("undefined") ||
-      tags.includes("")
+      decodedTags.includes("null") ||
+      decodedTags.includes("undefined") ||
+      decodedTags.includes("")
     ) {
       conditions.push({
         OR: [{ tags: null }, { tags: "" }],
@@ -283,13 +318,138 @@ export async function GET(request: NextRequest) {
 
     // Add collection tags with OR condition
     if (collectionTags.length > 0) {
-      conditions.push({
-        OR: collectionTags.map((tag) => ({
-          tags: {
-            contains: tag.startsWith("AQCAT_") ? tag : `AQCAT_${tag}`,
-          },
-        })),
-      });
+      // Log the exact collection tags we're looking for to help debug
+      console.log("Collection tags to match:", collectionTags);
+
+      // Check if we have a single AQCAT_ tag that might contain a comma
+      if (
+        collectionTags.length === 1 &&
+        collectionTags[0].startsWith("AQCAT_")
+      ) {
+        const singleTag = collectionTags[0];
+        console.log("Single AQCAT_ tag detected:", singleTag);
+
+        // Log the exact tag we're looking for to compare with database values
+        console.log("Looking for tag in database exactly as:", singleTag);
+
+        // If exact match is requested, use direct equality or contains with specific formatting
+        if (isExactMatch) {
+          console.log("Using strict exact matching for AQCAT_ tag");
+
+          // Normalize the tag, removing URL encoding
+          const decodedTag = decodeURIComponent(singleTag);
+          console.log("Decoded tag for direct comparison:", decodedTag);
+
+          // Direct equality match
+          conditions.push({
+            OR: [
+              // Exact match as the only tag
+              { tags: { equals: decodedTag } },
+              // Match surrounded by commas (tag in the middle of a list)
+              { tags: { contains: `,${decodedTag},` } },
+              // Match at start with comma after
+              { tags: { startsWith: `${decodedTag},` } },
+              // Match at end with comma before
+              { tags: { endsWith: `,${decodedTag}` } },
+            ],
+          });
+
+          console.log("Using direct equality conditions");
+          // Continue processing instead of returning
+        } else {
+          // Handle non-exact match case here
+          // For debugging, let's see what tags exist in the database
+          const searchTagBase = singleTag.includes("%20")
+            ? singleTag.replace(/%20/g, " ")
+            : singleTag;
+
+          console.log(
+            "Non-exact match - using search tag base:",
+            searchTagBase
+          );
+
+          // Add more flexible matching conditions
+          conditions.push({
+            OR: [
+              // Exact match
+              { tags: { equals: decodeURIComponent(singleTag) } },
+              // More flexible matching for similar tags
+              { tags: { contains: searchTagBase.split("%2C")[0] } },
+            ],
+          });
+        }
+      } else {
+        conditions.push({
+          OR: collectionTags.map((tag) => {
+            // For URL-encoded tags, decode them first
+            const decodedTag = decodeURIComponent(tag);
+            console.log(
+              `Processing collection tag: ${tag}, decoded: ${decodedTag}`
+            );
+
+            // For tags that already include AQCAT_, use exact matching
+            if (decodedTag.startsWith("AQCAT_")) {
+              console.log(`Using exact match for AQCAT_ tag: ${decodedTag}`);
+              return {
+                OR: [
+                  // Match where the tag appears exactly, surrounded by commas or at start/end
+                  {
+                    tags: {
+                      contains: `,${decodedTag},`,
+                    },
+                  },
+                  // Match at the start of the tags string, followed by a comma
+                  {
+                    tags: {
+                      startsWith: `${decodedTag},`,
+                    },
+                  },
+                  // Match at the end of the tags string, preceded by a comma
+                  {
+                    tags: {
+                      endsWith: `,${decodedTag}`,
+                    },
+                  },
+                  // Match as the only tag
+                  {
+                    tags: {
+                      equals: decodedTag,
+                    },
+                  },
+                ],
+              };
+            }
+
+            // For regular collection tags (without AQCAT_ prefix), use the old approach but with more precision
+            console.log(`Using regular match for tag: ${decodedTag}`);
+            const tagWithPrefix = `AQCAT_${decodedTag}`;
+            return {
+              OR: [
+                {
+                  tags: {
+                    contains: `,${tagWithPrefix},`,
+                  },
+                },
+                {
+                  tags: {
+                    startsWith: `${tagWithPrefix},`,
+                  },
+                },
+                {
+                  tags: {
+                    endsWith: `,${tagWithPrefix}`,
+                  },
+                },
+                {
+                  tags: {
+                    equals: tagWithPrefix,
+                  },
+                },
+              ],
+            };
+          }),
+        });
+      }
     }
 
     // Add stock/quick ship tags with OR condition
@@ -320,6 +480,8 @@ export async function GET(request: NextRequest) {
       });
 
     console.log("Total products found:", total);
+    console.log("Page size:", pageSize);
+    console.log("Current page:", page);
 
     // Build order by clause
     let orderBy: Prisma.ProductOrderByWithRelationInput = { title: "asc" };
@@ -327,11 +489,15 @@ export async function GET(request: NextRequest) {
       orderBy = { title: "desc" };
     }
 
+    // Calculate skip value
+    const skip = (page - 1) * pageSize;
+    console.log("Skip value:", skip, "Take value:", pageSize);
+
     // Fetch products
     console.log("Executing query with params:", {
       where: whereClause,
       orderBy,
-      skip: offset,
+      skip: skip,
       take: pageSize,
     });
 
@@ -339,7 +505,7 @@ export async function GET(request: NextRequest) {
       .findMany({
         where: whereClause,
         orderBy,
-        skip: offset,
+        skip: skip,
         take: pageSize,
         include: {
           images: true,
@@ -368,6 +534,9 @@ export async function GET(request: NextRequest) {
     // Calculate pagination info
     const totalPages = Math.ceil(total / pageSize);
     const hasMore = page < totalPages;
+
+    console.log("Total pages calculated:", totalPages);
+    console.log("Has more pages:", hasMore);
 
     // Convert any remaining BigInt values to strings
     const safeProducts = convertBigIntToString(serializedProducts);

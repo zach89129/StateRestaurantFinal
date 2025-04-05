@@ -364,7 +364,12 @@ function ProductsContent() {
 
               {/* Pagination */}
               {!loading && pagination.totalPages > 1 && (
-                <div className="mt-8 mb-4 flex justify-center">
+                <div className="mt-8 mb-4 flex flex-col items-center">
+                  <div className="text-sm text-gray-500 mb-2">
+                    Page {pagination.page} of {pagination.totalPages} | Total
+                    Items: {pagination.total} | Items per page:{" "}
+                    {pagination.pageSize}
+                  </div>
                   <nav className="flex items-center gap-1">
                     {/* Previous button */}
                     <button
@@ -382,23 +387,76 @@ function ProductsContent() {
                       ‹
                     </button>
 
-                    {/* Page numbers */}
-                    {Array.from(
-                      { length: pagination.totalPages },
-                      (_, i) => i + 1
-                    ).map((page) => (
-                      <button
-                        key={`page-${page}`}
-                        onClick={() => handlePageChange(page)}
-                        className={`px-3 py-1 rounded border ${
-                          page === pagination.page
-                            ? "bg-zinc-900 text-white border-zinc-900"
-                            : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    ))}
+                    {/* Page numbers - display up to 7 pages with ellipsis for large page counts */}
+                    {(() => {
+                      const currentPage = pagination.page;
+                      const totalPages = pagination.totalPages;
+
+                      // Always show first page
+                      const pages = [1];
+
+                      if (totalPages <= 7) {
+                        // If 7 or fewer pages, show all
+                        for (let i = 2; i <= totalPages; i++) {
+                          pages.push(i);
+                        }
+                      } else {
+                        // More than 7 pages, show strategy:
+                        // Always show first, last, current, and pages around current
+
+                        // Add ellipsis after first page if needed
+                        if (currentPage > 3) {
+                          pages.push(-1); // -1 represents ellipsis
+                        }
+
+                        // Pages around current
+                        const startPage = Math.max(2, currentPage - 1);
+                        const endPage = Math.min(
+                          totalPages - 1,
+                          currentPage + 1
+                        );
+
+                        for (let i = startPage; i <= endPage; i++) {
+                          pages.push(i);
+                        }
+
+                        // Add ellipsis before last page if needed
+                        if (currentPage < totalPages - 2) {
+                          pages.push(-2); // -2 represents second ellipsis
+                        }
+
+                        // Always show last page
+                        pages.push(totalPages);
+                      }
+
+                      return pages.map((page) => {
+                        if (page < 0) {
+                          // Render ellipsis
+                          return (
+                            <span
+                              key={`ellipsis-${page}`}
+                              className="px-2 py-1"
+                            >
+                              …
+                            </span>
+                          );
+                        }
+
+                        return (
+                          <button
+                            key={`page-${page}`}
+                            onClick={() => handlePageChange(page)}
+                            className={`px-3 py-1 rounded border ${
+                              page === pagination.page
+                                ? "bg-zinc-900 text-white border-zinc-900"
+                                : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        );
+                      });
+                    })()}
 
                     {/* Next button */}
                     <button

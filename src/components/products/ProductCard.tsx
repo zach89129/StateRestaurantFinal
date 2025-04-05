@@ -59,7 +59,10 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const handleMoreOfPattern = (e: React.MouseEvent) => {
     e.preventDefault();
-    const patternMatch = product.tags.match(/PATTERN_([^,]+)/);
+    // Extract everything after "PATTERN_" until the end of the string or next tag separator
+    const patternMatch = product.tags.match(
+      /PATTERN_([^,]*(?:,[^,]*)*?)(?:,\s*\w+_|$)/
+    );
     if (patternMatch) {
       const pattern = `PATTERN_${patternMatch[1]}`;
       const encodedPattern = encodeURIComponent(pattern);
@@ -73,10 +76,27 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const handleMoreFromCollection = (e: React.MouseEvent) => {
     e.preventDefault();
-    const collectionMatch = product.tags.match(/AQCAT_([^,]+)/);
+    // Extract everything after "AQCAT_" until the end of the string or next tag separator
+    const collectionMatch = product.tags.match(
+      /AQCAT_([^,]*(?:,[^,]*)*?)(?:,\s*\w+_|$)/
+    );
     if (collectionMatch) {
-      const collection = collectionMatch[1];
-      router.push(`/products?page=1&tags=${collection}`);
+      // Use the full AQCAT_ tag for exact matching, ensuring we capture any commas in the name
+      const fullTagRaw = `AQCAT_${collectionMatch[1]}`;
+
+      // Get the actual tag format from the database and log it for debugging
+      console.log("Raw tag from database:", fullTagRaw);
+
+      // Normalize by ensuring consistent space after comma
+      const fullTagText = fullTagRaw.replace(/,\s*/g, ", ");
+      console.log("Normalized tag:", fullTagText);
+
+      // Now encode the tag for URL
+      const encodedTag = encodeURIComponent(fullTagText);
+      console.log("Encoded tag for URL:", encodedTag);
+
+      // Force a direct database match by adding a special parameter
+      router.push(`/products?page=1&tags=${encodedTag}&exact=true`);
     }
   };
 
@@ -165,7 +185,13 @@ export default function ProductCard({ product }: ProductCardProps) {
                   className="mt-2 text-xs text-blue-600 hover:text-blue-800 block w-full text-left"
                 >
                   More Like This:{" "}
-                  {product.tags.match(/AQCAT_([^,]+)/)?.[1].toLowerCase()}
+                  {(() => {
+                    // Extract the collection name after AQCAT_ prefix, preserving any commas
+                    const match = product.tags.match(
+                      /AQCAT_([^,]*(?:,[^,]*)*?)(?:,\s*\w+_|$)/
+                    );
+                    return match ? match[1].toLowerCase() : "";
+                  })()}
                 </button>
               )}
               {hasPattern && (
@@ -174,7 +200,13 @@ export default function ProductCard({ product }: ProductCardProps) {
                   className="text-xs text-blue-600 hover:text-blue-800 block w-full text-left capitalize"
                 >
                   More of This Pattern :{" "}
-                  {product.tags.match(/PATTERN_([^,]+)/)?.[1].toLowerCase()}
+                  {(() => {
+                    // Extract the pattern name after PATTERN_ prefix, preserving any commas
+                    const match = product.tags.match(
+                      /PATTERN_([^,]*(?:,[^,]*)*?)(?:,\s*\w+_|$)/
+                    );
+                    return match ? match[1].toLowerCase() : "";
+                  })()}
                 </button>
               )}
             </div>

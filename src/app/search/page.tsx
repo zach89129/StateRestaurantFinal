@@ -358,7 +358,7 @@ function SearchContent() {
           <span className="text-gray-900 font-medium">Search Results</span>
         </nav>
 
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row gap-8 w-full overflow-hidden">
           {/* Left Sidebar */}
           <FilterSidebar
             sortOptions={sortOptions}
@@ -376,7 +376,7 @@ function SearchContent() {
           />
 
           {/* Main Content */}
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 max-w-full overflow-hidden">
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
@@ -403,15 +403,21 @@ function SearchContent() {
               </div>
             </div>
 
-            {/* Add min-height and proper spacing */}
-            <div className="min-h-screen pb-16">
+            <div className="min-h-screen max-w-full overflow-hidden">
               {loading ? (
                 <div className="flex justify-center items-center h-64">
                   <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-300 border-t-black"></div>
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-6 mb-8">
+                  <div
+                    className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 mb-8"
+                    style={{
+                      width: "100%",
+                      maxWidth: "100%",
+                      overflow: "hidden",
+                    }}
+                  >
                     {products.map((product) => (
                       <ProductCard
                         key={`search-product-${product.id}`}
@@ -437,7 +443,12 @@ function SearchContent() {
 
               {/* Pagination */}
               {!loading && pagination.totalPages > 1 && (
-                <div className="mt-8 mb-4 flex justify-center">
+                <div className="mt-8 mb-4 flex flex-col items-center">
+                  <div className="text-sm text-gray-500 mb-2">
+                    Page {pagination.page} of {pagination.totalPages} | Total
+                    Items: {pagination.total} | Items per page:{" "}
+                    {pagination.pageSize}
+                  </div>
                   <nav className="flex items-center gap-1">
                     {/* Previous button */}
                     <button
@@ -456,27 +467,80 @@ function SearchContent() {
                       ‹
                     </button>
 
-                    {/* Page numbers */}
-                    {Array.from(
-                      { length: pagination.totalPages },
-                      (_, i) => i + 1
-                    ).map((page) => (
-                      <button
-                        key={`page-${page}`}
-                        onClick={() => handlePageChange(page)}
-                        className={`px-3 py-1 rounded border ${
-                          page === pagination.page
-                            ? "bg-zinc-900 text-white border-zinc-900"
-                            : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                        }`}
-                        aria-label={`Go to page ${page}`}
-                        aria-current={
-                          page === pagination.page ? "page" : undefined
+                    {/* Page numbers - display up to 7 pages with ellipsis for large page counts */}
+                    {(() => {
+                      const currentPage = pagination.page;
+                      const totalPages = pagination.totalPages;
+
+                      // Always show first page
+                      const pages = [1];
+
+                      if (totalPages <= 7) {
+                        // If 7 or fewer pages, show all
+                        for (let i = 2; i <= totalPages; i++) {
+                          pages.push(i);
                         }
-                      >
-                        {page}
-                      </button>
-                    ))}
+                      } else {
+                        // More than 7 pages, show strategy:
+                        // Always show first, last, current, and pages around current
+
+                        // Add ellipsis after first page if needed
+                        if (currentPage > 3) {
+                          pages.push(-1); // -1 represents ellipsis
+                        }
+
+                        // Pages around current
+                        const startPage = Math.max(2, currentPage - 1);
+                        const endPage = Math.min(
+                          totalPages - 1,
+                          currentPage + 1
+                        );
+
+                        for (let i = startPage; i <= endPage; i++) {
+                          pages.push(i);
+                        }
+
+                        // Add ellipsis before last page if needed
+                        if (currentPage < totalPages - 2) {
+                          pages.push(-2); // -2 represents second ellipsis
+                        }
+
+                        // Always show last page
+                        pages.push(totalPages);
+                      }
+
+                      return pages.map((page) => {
+                        if (page < 0) {
+                          // Render ellipsis
+                          return (
+                            <span
+                              key={`ellipsis-${page}`}
+                              className="px-2 py-1"
+                            >
+                              …
+                            </span>
+                          );
+                        }
+
+                        return (
+                          <button
+                            key={`page-${page}`}
+                            onClick={() => handlePageChange(page)}
+                            className={`px-3 py-1 rounded border ${
+                              page === pagination.page
+                                ? "bg-zinc-900 text-white border-zinc-900"
+                                : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                            }`}
+                            aria-label={`Go to page ${page}`}
+                            aria-current={
+                              page === pagination.page ? "page" : undefined
+                            }
+                          >
+                            {page}
+                          </button>
+                        );
+                      });
+                    })()}
 
                     {/* Next button */}
                     <button

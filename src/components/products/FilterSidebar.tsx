@@ -97,7 +97,7 @@ export default function FilterSidebar({
               value={categorySearch}
               onChange={(e) => setCategorySearch(e.target.value)}
             />
-            <div className="space-y-2 max-h-60 overflow-y-auto">
+            <div className="space-y-2 max-h-60 overflow-y-scroll scrollbar">
               {filterItems(sortOptions.categories, categorySearch).map(
                 (category) => (
                   <label key={category} className="flex items-center">
@@ -125,7 +125,7 @@ export default function FilterSidebar({
             value={patternSearch}
             onChange={(e) => setPatternSearch(e.target.value)}
           />
-          <div className="space-y-2 max-h-60 overflow-y-auto">
+          <div className="space-y-2 max-h-60 overflow-y-scroll scrollbar">
             {filterItems(sortOptions.patterns, patternSearch).map((pattern) => (
               <label key={pattern} className="flex items-center">
                 <input
@@ -150,7 +150,7 @@ export default function FilterSidebar({
             value={collectionSearch}
             onChange={(e) => setCollectionSearch(e.target.value)}
           />
-          <div className="space-y-2 max-h-60 overflow-y-auto">
+          <div className="space-y-2 max-h-60 overflow-y-scroll scrollbar">
             {filterItems(sortOptions.collections, collectionSearch).map(
               (collection) => (
                 <label key={collection} className="flex items-center">
@@ -177,7 +177,7 @@ export default function FilterSidebar({
             value={manufacturerSearch}
             onChange={(e) => setManufacturerSearch(e.target.value)}
           />
-          <div className="space-y-2 max-h-60 overflow-y-auto">
+          <div className="space-y-2 max-h-60 overflow-y-scroll scrollbar">
             {filterItems(sortOptions.manufacturers, manufacturerSearch).map(
               (manufacturer) => (
                 <label key={manufacturer} className="flex items-center">
@@ -229,7 +229,7 @@ export default function FilterSidebar({
       {/* Desktop Sidebar */}
       <div className="hidden lg:block w-64 flex-shrink-0" key="desktop-sidebar">
         <div className="sticky top-[120px]">
-          <div className="bg-white rounded-lg shadow-lg p-4 overflow-y-auto max-h-[calc(100vh-140px)]">
+          <div className="bg-white rounded-lg shadow-lg p-4 overflow-y-scroll max-h-[calc(100vh-140px)] scrollbar">
             <FilterContent />
           </div>
         </div>
@@ -239,7 +239,7 @@ export default function FilterSidebar({
       <div
         className={`lg:hidden fixed top-0 right-0 h-full w-3/4 max-w-sm bg-white/70 backdrop-blur-sm z-50 transform transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "translate-x-full"
-        } shadow-xl overflow-y-auto`}
+        } shadow-xl overflow-y-scroll scrollbar`}
         key="mobile-drawer"
       >
         <div className="p-4">
