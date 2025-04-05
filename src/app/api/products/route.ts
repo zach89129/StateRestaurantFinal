@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
           if (product.uom !== undefined) updateData.uom = product.uom;
           if (product.qty_available !== undefined)
             updateData.qtyAvailable = product.qty_available;
-          if (product.tags !== undefined) updateData.tags = product.tags;
+          if (product.tags !== undefined) updateData.tags = product.tags || "";
 
           // Handle image updates
           if (product.images?.length) {
@@ -100,7 +100,6 @@ export async function POST(request: NextRequest) {
             "category",
             "uom",
             "qty_available",
-            "tags",
           ] as const;
 
           const missingFields = requiredFields.filter((field) => {
@@ -127,7 +126,7 @@ export async function POST(request: NextRequest) {
               category: product.category,
               uom: product.uom,
               qtyAvailable: product.qty_available,
-              tags: product.tags,
+              tags: product.tags || "",
               images: product.images?.length
                 ? {
                     createMany: {
@@ -248,6 +247,17 @@ export async function GET(request: NextRequest) {
       // Or if it already has the AQCAT_ prefix
       return tag.startsWith("AQCAT_");
     });
+
+    // Add null/empty tag handling for proper filtering
+    if (
+      tags.includes("null") ||
+      tags.includes("undefined") ||
+      tags.includes("")
+    ) {
+      conditions.push({
+        OR: [{ tags: null }, { tags: "" }],
+      });
+    }
 
     // Get patterns from the pattern parameter
     const patterns =

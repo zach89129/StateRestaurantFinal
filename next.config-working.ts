@@ -8,7 +8,6 @@ const nextConfig: NextConfig = {
       "staterestaurant.com",
       "staterestaurantequipment.com",
       "cdn.staterestaurant.com",
-      "localhost",
     ],
     remotePatterns: [
       {
@@ -17,23 +16,8 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/products-api/resources/**",
       },
-      {
-        protocol: "http",
-        hostname: "localhost",
-        port: "3000",
-        pathname: "/**",
-      },
-      {
-        protocol: "http",
-        hostname: "**",
-        port: "",
-        pathname: "/**",
-      },
     ],
-    unoptimized: true,
   },
-  assetPrefix: "/StateApp",
-  trailingSlash: true,
 };
 
 export default nextConfig;

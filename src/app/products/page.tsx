@@ -165,9 +165,17 @@ function ProductsContent() {
         .map((c) => decodeURIComponent(c.trim()))
         .filter(Boolean) || [];
 
+    // Normalize for comparison
+    const normalizeCategory = (str: string) => str.trim();
+    const normalizedCategory = normalizeCategory(category);
+
     let newCategories;
-    if (currentCategories.includes(category)) {
-      newCategories = currentCategories.filter((c) => c !== category);
+    if (
+      currentCategories.some((c) => normalizeCategory(c) === normalizedCategory)
+    ) {
+      newCategories = currentCategories.filter(
+        (c) => normalizeCategory(c) !== normalizedCategory
+      );
     } else {
       newCategories = [...new Set([...currentCategories, category])];
     }
@@ -282,7 +290,7 @@ function ProductsContent() {
 
   return (
     <div className="min-h-screen bg-white" key="products-page-container">
-      <div className="max-w-7xl mx-auto px-4">
+      <div className="max-w-7xl mx-auto px-4 w-full overflow-hidden">
         {/* Breadcrumb */}
         <nav className="flex py-4 text-sm">
           <Link
@@ -300,7 +308,7 @@ function ProductsContent() {
           </span>
         </nav>
 
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row gap-8 w-full overflow-hidden">
           {/* Left Sidebar */}
           <FilterSidebar
             key="filter-sidebar"
@@ -319,7 +327,7 @@ function ProductsContent() {
           />
 
           {/* Main Content */}
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 max-w-full overflow-hidden">
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-2xl font-bold text-gray-900">All Products</h1>
               {!loading && (
@@ -330,7 +338,7 @@ function ProductsContent() {
             </div>
 
             {/* Products Grid */}
-            <div className="min-h-screen pb-16">
+            <div className="min-h-screen max-w-full overflow-hidden">
               {loading ? (
                 <div className="flex justify-center items-center h-64">
                   <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-300 border-t-black"></div>
@@ -338,7 +346,12 @@ function ProductsContent() {
               ) : (
                 <div
                   key="products-grid"
-                  className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-6 mb-8"
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8"
+                  style={{
+                    width: "100%",
+                    maxWidth: "100%",
+                    overflow: "hidden",
+                  }}
                 >
                   {products.map((product, index) => (
                     <ProductCard

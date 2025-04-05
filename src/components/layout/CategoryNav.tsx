@@ -36,8 +36,23 @@ export default function CategoryNav({
   }, []);
 
   const handleCategoryClick = (category: string) => {
+    // First replace spaces with hyphens in the category name
     const formattedCategory = category.toLowerCase().replace(/\s+/g, "-");
-    router.push(`/products/${formattedCategory}`);
+
+    // Use encodeURIComponent to properly handle special characters like commas
+    // For Speigelau category, use a special case to ensure correct formatting
+    if (
+      category.includes("Speigelau") ||
+      category.includes("Masters Reserve")
+    ) {
+      console.log("Special category detected:", category);
+      // For this specific category, we know the exact format in the database
+      const specialCategoryUrl = "glassware-speigelau-masters-reserve";
+      router.push(`/products/${specialCategoryUrl}`);
+    } else {
+      router.push(`/products/${encodeURIComponent(formattedCategory)}`);
+    }
+
     if (onClose) {
       onClose();
     }

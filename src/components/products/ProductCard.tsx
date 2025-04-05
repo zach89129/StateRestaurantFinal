@@ -82,16 +82,38 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <Link href={`/product/${product.sku}`} key={`product-link-${product.id}`}>
-      <div className="group relative border rounded-lg p-2 sm:p-4 hover:shadow-lg transition-shadow bg-white h-full flex flex-col justify-between">
+      <div
+        className="group relative border rounded-lg p-2 sm:p-4 hover:shadow-lg transition-shadow bg-white h-full flex flex-col justify-between"
+        style={{ maxWidth: "100%", width: "100%", overflow: "hidden" }}
+      >
         {/* Top content section */}
         <div className="flex flex-col">
-          {/* Image - Fixed height */}
-          <div className="aspect-square bg-gray-100 mb-2 sm:mb-4 flex items-center justify-center overflow-hidden rounded">
-            <img
-              src={product.images[0]?.src || "/noImageState.jpg"}
-              alt={product.title}
-              className="object-contain h-full w-full p-1 sm:p-2 group-hover:scale-105 transition-transform duration-200"
-            />
+          {/* Image container with fixed dimensions */}
+          <div
+            className="h-44 w-full max-w-[250px] mx-auto bg-white mb-2 sm:mb-4 flex items-center justify-center overflow-hidden rounded border border-gray-100"
+            style={{ maxHeight: "176px" }}
+          >
+            <div
+              className="flex items-center justify-center w-full h-full p-3"
+              style={{ maxWidth: "100%" }}
+            >
+              <img
+                src={product.images[0]?.src || "/noImageState.jpg"}
+                alt={product.title}
+                className="max-h-36 max-w-[200px] w-auto h-auto object-contain group-hover:scale-105 transition-transform duration-200"
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "144px",
+                  width: "auto",
+                  height: "auto",
+                  objectFit: "contain",
+                  objectPosition: "center",
+                  display: "block",
+                  margin: "0 auto",
+                }}
+                loading="lazy"
+              />
+            </div>
           </div>
 
           {/* Product Info */}
@@ -131,18 +153,18 @@ export default function ProductCard({ product }: ProductCardProps) {
 
             {/* Filter Links - Fixed height section */}
             <div className="space-y-1 mt-2 min-h-[60px] sm:min-h-[72px]">
-              <button
+              {/* <button
                 onClick={handleMoreLikeThis}
                 className="text-xs text-blue-600 hover:text-blue-800 block w-full text-left"
               >
                 More Like This : {product.category}
-              </button>
+              </button> */}
               {hasCollection && (
                 <button
                   onClick={handleMoreFromCollection}
                   className="mt-2 text-xs text-blue-600 hover:text-blue-800 block w-full text-left"
                 >
-                  More From Collection:{" "}
+                  More Like This:{" "}
                   {product.tags.match(/AQCAT_([^,]+)/)?.[1].toLowerCase()}
                 </button>
               )}

@@ -63,6 +63,14 @@ export default function FilterSidebar({
       .some((m) => normalizeString(m) === normalizedManufacturer);
   };
 
+  // Helper function to check if a category is selected
+  const isCategorySelected = (category: string) => {
+    const normalizedCategory = normalizeString(category);
+    return selectedCategories
+      .map((c) => decodeURIComponent(c))
+      .some((c) => normalizeString(c) === normalizedCategory);
+  };
+
   const FilterContent = () => (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -96,7 +104,7 @@ export default function FilterSidebar({
                     <input
                       type="checkbox"
                       className="h-4 w-4 rounded border-gray-300"
-                      checked={selectedCategories.includes(category)}
+                      checked={isCategorySelected(category)}
                       onChange={() => onCategoryChange(category)}
                     />
                     <span className="ml-2 text-sm text-black">{category}</span>

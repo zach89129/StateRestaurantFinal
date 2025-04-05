@@ -28,7 +28,7 @@ const featuredCollections = [
   {
     title: "Food Displays and Risers",
     body: "State Restaurant offer a wide variety of food displays and risers.",
-    href: "/collections/food-displays-and-risers",
+    href: "/products/buffet-items/",
     buttonText: "View Products",
     image: "/StateFoodDisplay.webp",
   },
