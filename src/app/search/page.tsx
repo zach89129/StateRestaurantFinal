@@ -83,30 +83,12 @@ function SearchContent() {
       .filter(Boolean)
       .map((c) => decodeURIComponent(c)) || [];
 
-  // Add state to track initial filter options
-  const [initialSortOptions, setInitialSortOptions] = useState<SortOptions>({
-    categories: [],
-    manufacturers: [],
-    patterns: [],
-    collections: [],
-    hasStockItems: false,
-    hasQuickShip: false,
-  });
-
   // Update the search effect
   useEffect(() => {
     const fetchSearchResults = async () => {
       if (!searchTerm) {
         setProducts([]);
         setSortOptions({
-          categories: [],
-          manufacturers: [],
-          patterns: [],
-          collections: [],
-          hasStockItems: false,
-          hasQuickShip: false,
-        });
-        setInitialSortOptions({
           categories: [],
           manufacturers: [],
           patterns: [],
@@ -134,31 +116,17 @@ function SearchContent() {
           setProducts(data.products);
           setPagination(data.pagination);
 
-          // If this is the initial search (no filters applied), save these options
-          const hasNoFilters =
-            !params.get("category") &&
-            !params.get("manufacturer") &&
-            !params.get("pattern") &&
-            !params.get("tags");
-
-          if (hasNoFilters && data.filters) {
-            const initialOptions = {
+          // Use the dynamic filter options returned from the API
+          if (data.filters) {
+            const filterOptions = {
               categories: data.filters.availableCategories || [],
               manufacturers: data.filters.availableManufacturers || [],
               patterns: data.filters.availablePatterns || [],
               collections: data.filters.availableCollections || [],
-              hasStockItems: data.filters.hasStockItems,
-              hasQuickShip: data.filters.hasQuickShip,
+              hasStockItems: data.filters.hasStockItems || false,
+              hasQuickShip: data.filters.hasQuickShip || false,
             };
-            setInitialSortOptions(initialOptions);
-            setSortOptions(initialOptions);
-          } else if (data.filters) {
-            // For filtered results, use initial options but update stock/quickship status
-            setSortOptions((prev) => ({
-              ...initialSortOptions,
-              hasStockItems: data.filters.hasStockItems,
-              hasQuickShip: data.filters.hasQuickShip,
-            }));
+            setSortOptions(filterOptions);
           }
         } else {
           console.error("Search failed:", data.error);
@@ -172,28 +140,12 @@ function SearchContent() {
             hasStockItems: false,
             hasQuickShip: false,
           });
-          setInitialSortOptions({
-            categories: [],
-            manufacturers: [],
-            patterns: [],
-            collections: [],
-            hasStockItems: false,
-            hasQuickShip: false,
-          });
         }
       } catch (error) {
         console.error("Error fetching search results:", error);
         setProducts([]);
         // Clear filter options on error
         setSortOptions({
-          categories: [],
-          manufacturers: [],
-          patterns: [],
-          collections: [],
-          hasStockItems: false,
-          hasQuickShip: false,
-        });
-        setInitialSortOptions({
           categories: [],
           manufacturers: [],
           patterns: [],
@@ -452,7 +404,7 @@ function SearchContent() {
                   <nav className="flex items-center gap-1">
                     {/* Previous button */}
                     <button
-                      key="prev"
+                      key="prev-button"
                       onClick={() =>
                         handlePageChange(Math.max(1, pagination.page - 1))
                       }
@@ -462,7 +414,6 @@ function SearchContent() {
                           ? "border-gray-200 text-gray-400 cursor-not-allowed"
                           : "border-gray-300 text-gray-700 hover:bg-gray-50"
                       }`}
-                      aria-label="Previous page"
                     >
                       ‹
                     </button>
@@ -526,15 +477,11 @@ function SearchContent() {
                           <button
                             key={`page-${page}`}
                             onClick={() => handlePageChange(page)}
-                            className={`px-3 py-1 rounded border ${
-                              page === pagination.page
-                                ? "bg-zinc-900 text-white border-zinc-900"
+                            className={`px-2 py-1 rounded border ${
+                              page === currentPage
+                                ? "bg-gray-900 text-white border-gray-900"
                                 : "border-gray-300 text-gray-700 hover:bg-gray-50"
                             }`}
-                            aria-label={`Go to page ${page}`}
-                            aria-current={
-                              page === pagination.page ? "page" : undefined
-                            }
                           >
                             {page}
                           </button>
@@ -544,19 +491,18 @@ function SearchContent() {
 
                     {/* Next button */}
                     <button
-                      key="next"
+                      key="next-button"
                       onClick={() =>
                         handlePageChange(
                           Math.min(pagination.totalPages, pagination.page + 1)
                         )
                       }
-                      disabled={pagination.page === pagination.totalPages}
+                      disabled={pagination.page >= pagination.totalPages}
                       className={`px-2 py-1 rounded border ${
-                        pagination.page === pagination.totalPages
+                        pagination.page >= pagination.totalPages
                           ? "border-gray-200 text-gray-400 cursor-not-allowed"
                           : "border-gray-300 text-gray-700 hover:bg-gray-50"
                       }`}
-                      aria-label="Next page"
                     >
                       ›
                     </button>

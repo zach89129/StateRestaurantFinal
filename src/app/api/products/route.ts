@@ -541,6 +541,194 @@ export async function GET(request: NextRequest) {
     // Convert any remaining BigInt values to strings
     const safeProducts = convertBigIntToString(serializedProducts);
 
+    // Get the available manufacturers, patterns, and collections from the filtered products
+    let availableManufacturers: string[] = [];
+    let availablePatterns: string[] = [];
+    let availableCollections: string[] = [];
+    let availableCategories: string[] = [];
+    let hasStockItems = false;
+    let hasQuickShip = false;
+
+    // If there are no filters applied, fetch all available options
+    const noFiltersApplied =
+      categories.length === 0 &&
+      manufacturers.length === 0 &&
+      patterns.length === 0 &&
+      collectionTags.length === 0 &&
+      stockAndQuickShipTags.length === 0;
+
+    if (noFiltersApplied) {
+      // Fetch all available options
+      const [
+        allCategories,
+        allManufacturers,
+        allPatterns,
+        allCollections,
+        stockItemCheck,
+        quickShipCheck,
+      ] = await Promise.all([
+        // Get all categories
+        prisma.product.findMany({
+          select: { category: true },
+          distinct: ["category"],
+          where: { category: { not: null } },
+        }),
+        // Get all manufacturers
+        prisma.product.findMany({
+          select: { manufacturer: true },
+          distinct: ["manufacturer"],
+          where: { manufacturer: { not: null } },
+        }),
+        // Get all patterns
+        prisma.product.findMany({
+          select: { tags: true },
+          where: { tags: { contains: "PATTERN_" } },
+        }),
+        // Get all collections
+        prisma.product.findMany({
+          select: { tags: true },
+          where: { tags: { contains: "AQCAT_" } },
+        }),
+        // Check for stock items
+        prisma.product.findFirst({
+          where: { tags: { contains: "Stock Item" } },
+        }),
+        // Check for quick ship
+        prisma.product.findFirst({
+          where: { tags: { contains: "Quick Ship" } },
+        }),
+      ]);
+
+      availableCategories = allCategories
+        .map((c) => c.category)
+        .filter(
+          (category): category is string =>
+            category !== null && category !== undefined
+        )
+        .sort();
+
+      availableManufacturers = allManufacturers
+        .map((m) => m.manufacturer)
+        .filter(
+          (manufacturer): manufacturer is string =>
+            manufacturer !== null && manufacturer !== undefined
+        )
+        .sort();
+
+      // Extract patterns
+      const patternsSet = new Set<string>();
+      allPatterns.forEach((product) => {
+        const tags = product.tags?.split(",") || [];
+        tags.forEach((tag) => {
+          const trimmedTag = tag.trim();
+          if (trimmedTag.startsWith("PATTERN_")) {
+            patternsSet.add(trimmedTag.replace("PATTERN_", ""));
+          }
+        });
+      });
+      availablePatterns = Array.from(patternsSet).sort();
+
+      // Extract collections
+      const collectionsSet = new Set<string>();
+      allCollections.forEach((product) => {
+        const tags = product.tags?.split(",") || [];
+        tags.forEach((tag) => {
+          const trimmedTag = tag.trim();
+          if (trimmedTag.startsWith("AQCAT_")) {
+            collectionsSet.add(trimmedTag.replace("AQCAT_", ""));
+          }
+        });
+      });
+      availableCollections = Array.from(collectionsSet).sort();
+
+      hasStockItems = !!stockItemCheck;
+      hasQuickShip = !!quickShipCheck;
+    } else {
+      // Use the current filtered products to determine available options
+      // First get all products that match the filters (without pagination)
+      const allFilteredProducts = await prisma.product.findMany({
+        where: whereClause,
+        select: {
+          category: true,
+          manufacturer: true,
+          tags: true,
+        },
+      });
+
+      availableManufacturers = [
+        ...new Set(
+          allFilteredProducts
+            .map((p) => p.manufacturer)
+            .filter(
+              (manufacturer): manufacturer is string =>
+                manufacturer !== null && manufacturer !== undefined
+            )
+        ),
+      ].sort();
+
+      // Extract patterns from products
+      const availablePatternsSet = new Set<string>();
+      allFilteredProducts.forEach((product) => {
+        const tags = product.tags?.split(",") || [];
+        tags.forEach((tag) => {
+          const trimmedTag = tag.trim();
+          if (trimmedTag.startsWith("PATTERN_")) {
+            availablePatternsSet.add(trimmedTag.replace("PATTERN_", ""));
+          }
+        });
+      });
+      availablePatterns = Array.from(availablePatternsSet).sort();
+
+      // Extract collections from products
+      const availableCollectionsSet = new Set<string>();
+      allFilteredProducts.forEach((product) => {
+        const tags = product.tags?.split(",") || [];
+        tags.forEach((tag) => {
+          const trimmedTag = tag.trim();
+          if (trimmedTag.startsWith("AQCAT_")) {
+            availableCollectionsSet.add(trimmedTag.replace("AQCAT_", ""));
+          }
+        });
+      });
+      availableCollections = Array.from(availableCollectionsSet).sort();
+
+      // Check for stock items and quick ship
+      hasStockItems = allFilteredProducts.some((p) =>
+        p.tags?.includes("Stock Item")
+      );
+      hasQuickShip = allFilteredProducts.some((p) =>
+        p.tags?.includes("Quick Ship")
+      );
+
+      // Get available categories within the filtered products
+      availableCategories = [
+        ...new Set(
+          allFilteredProducts
+            .map((p) => p.category)
+            .filter(
+              (category): category is string =>
+                category !== null && category !== undefined
+            )
+        ),
+      ].sort();
+
+      // If category filter is applied, we need to show all categories
+      if (categories.length > 0) {
+        const allCategories = await prisma.product.findMany({
+          select: { category: true },
+          distinct: ["category"],
+          where: { category: { not: null } },
+        });
+        availableCategories = allCategories
+          .map((c) => c.category)
+          .filter(
+            (category): category is string =>
+              category !== null && category !== undefined
+          )
+          .sort();
+      }
+    }
+
     // Ensure all response fields are defined
     const response = {
       success: true,
@@ -560,6 +748,13 @@ export async function GET(request: NextRequest) {
           ...(collectionTags || []),
           ...(stockAndQuickShipTags || []),
         ],
+        // Add available filter options based on current filtered products
+        availableCategories,
+        availableManufacturers,
+        availablePatterns,
+        availableCollections,
+        hasStockItems,
+        hasQuickShip,
       },
     };
 

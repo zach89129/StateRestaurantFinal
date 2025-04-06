@@ -96,31 +96,16 @@ function ProductsContent() {
         setProducts(data.products);
         setPagination(data.pagination);
 
-        // Update filter options if provided
+        // Update filter options with the available options from this filtered set
         if (data.filters) {
-          setSortOptions((prev) => ({
-            ...prev,
-            categories: Array.from(
-              new Set([
-                ...prev.categories,
-                ...(data.filters.appliedCategories || []),
-              ])
-            ),
-            manufacturers: Array.from(
-              new Set([
-                ...prev.manufacturers,
-                ...(data.filters.appliedManufacturers || []),
-              ])
-            ),
-            patterns: Array.from(
-              new Set([
-                ...prev.patterns,
-                ...(data.filters.appliedPatterns || []).map((p: string) =>
-                  p.replace("PATTERN_", "")
-                ),
-              ])
-            ),
-          }));
+          setSortOptions({
+            categories: data.filters.availableCategories || [],
+            manufacturers: data.filters.availableManufacturers || [],
+            patterns: data.filters.availablePatterns || [],
+            collections: data.filters.availableCollections || [],
+            hasStockItems: data.filters.hasStockItems || false,
+            hasQuickShip: data.filters.hasQuickShip || false,
+          });
         }
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -131,24 +116,6 @@ function ProductsContent() {
 
     fetchProducts();
   }, [searchParams]);
-
-  // Fetch initial filter options
-  useEffect(() => {
-    const fetchOptions = async () => {
-      try {
-        const response = await fetch("/api/products/options");
-        const data = await response.json();
-
-        if (response.ok && data.success) {
-          setSortOptions(data.options);
-        }
-      } catch (error) {
-        console.error("Error fetching filter options:", error);
-      }
-    };
-
-    fetchOptions();
-  }, []);
 
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());

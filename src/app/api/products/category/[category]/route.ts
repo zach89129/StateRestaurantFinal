@@ -76,7 +76,7 @@ export async function GET(request: Request, context: RouteParams) {
           category: product.category || "",
           manufacturer: product.manufacturer || "",
           description: product.description || "",
-          tags: product.tags ? `,${product.tags},` : "",
+          tags: product.tags || "",
           images: product.images?.map((img) => ({ src: img.url })) || [],
         }));
 
@@ -84,12 +84,16 @@ export async function GET(request: Request, context: RouteParams) {
           success: true,
           products: formattedProducts,
           filters: {
-            categories: [speigelauCategory],
-            manufacturers: [], // We'll skip computing these for this special case
-            patterns: [],
-            collections: [],
+            availableCategories: [speigelauCategory],
+            availableManufacturers: [],
+            availablePatterns: [],
+            availableCollections: [],
             hasStockItems: false,
             hasQuickShip: false,
+            appliedCategories: [speigelauCategory],
+            appliedManufacturers: [],
+            appliedPatterns: [],
+            appliedTags: [],
           },
           pagination: {
             total,
@@ -242,57 +246,136 @@ export async function GET(request: Request, context: RouteParams) {
     const pageSize = parseInt(searchParams.get("pageSize") || "24");
     const skip = (page - 1) * pageSize;
 
-    // First get all products in this category for filter calculation
-    const allCategoryProducts = await prisma.product.findMany({
-      where: {
-        category: categoryToUse,
-      },
-      select: {
-        category: true,
-        manufacturer: true,
-        tags: true,
-      },
-    });
+    // Determine if any additional filters beyond category are applied
+    const noAdditionalFilters = conditions.length === 0;
 
-    console.log(
-      "All products tags:",
-      allCategoryProducts.map((p) => p.tags)
-    );
+    let manufacturers: string[] = [];
+    let patterns: string[] = [];
+    let collections: string[] = [];
+    let hasStockItems = false;
+    let hasQuickShip = false;
 
-    // Calculate filter options
-    const manufacturers = [
-      ...new Set(allCategoryProducts.map((p) => p.manufacturer)),
-    ].filter(Boolean);
+    if (noAdditionalFilters) {
+      // If no additional filters, fetch all possible options for this category
+      const [allCategoryProducts, stockItemCheck, quickShipCheck] =
+        await Promise.all([
+          // Get all products in this category for full filter options
+          prisma.product.findMany({
+            where: { category: categoryToUse },
+            select: { manufacturer: true, tags: true },
+          }),
+          // Check for stock items
+          prisma.product.findFirst({
+            where: {
+              category: categoryToUse,
+              tags: { contains: "Stock Item" },
+            },
+          }),
+          // Check for quick ship
+          prisma.product.findFirst({
+            where: {
+              category: categoryToUse,
+              tags: { contains: "Quick Ship" },
+            },
+          }),
+        ]);
 
-    // Extract patterns from tags
-    const patterns = [
-      ...new Set(
-        allCategoryProducts
-          .map((p) => p.tags?.split(",").map((t) => t.trim()) || [])
-          .flat()
-          .filter((tag) => tag?.startsWith("PATTERN_"))
-          .map((tag) => tag?.replace("PATTERN_", ""))
-      ),
-    ].filter(Boolean);
+      // Get manufacturers from all products in this category
+      manufacturers = [
+        ...new Set(
+          allCategoryProducts
+            .map((p) => p.manufacturer)
+            .filter(
+              (manufacturer): manufacturer is string =>
+                manufacturer !== null && manufacturer !== undefined
+            )
+        ),
+      ].sort();
 
-    // Extract collections from tags
-    const collections = [
-      ...new Set(
-        allCategoryProducts
-          .map((p) => p.tags?.split(",").map((t) => t.trim()) || [])
-          .flat()
-          .filter((tag) => tag?.startsWith("AQCAT_"))
-          .map((tag) => tag?.replace("AQCAT_", ""))
-      ),
-    ].filter(Boolean);
+      // Extract patterns from all products in this category
+      const patternsSet = new Set<string>();
+      allCategoryProducts.forEach((product) => {
+        const tags = product.tags?.split(",") || [];
+        tags.forEach((tag) => {
+          const trimmedTag = tag.trim();
+          if (trimmedTag.startsWith("PATTERN_")) {
+            patternsSet.add(trimmedTag.replace("PATTERN_", ""));
+          }
+        });
+      });
+      patterns = Array.from(patternsSet).sort();
 
-    // Check for stock items and quick ship
-    const hasStockItems = allCategoryProducts.some((p) =>
-      p.tags?.includes("Stock Item")
-    );
-    const hasQuickShip = allCategoryProducts.some((p) =>
-      p.tags?.includes("Quick Ship")
-    );
+      // Extract collections from all products in this category
+      const collectionsSet = new Set<string>();
+      allCategoryProducts.forEach((product) => {
+        const tags = product.tags?.split(",") || [];
+        tags.forEach((tag) => {
+          const trimmedTag = tag.trim();
+          if (trimmedTag.startsWith("AQCAT_")) {
+            collectionsSet.add(trimmedTag.replace("AQCAT_", ""));
+          }
+        });
+      });
+      collections = Array.from(collectionsSet).sort();
+
+      hasStockItems = !!stockItemCheck;
+      hasQuickShip = !!quickShipCheck;
+    } else {
+      // If additional filters applied, use all filtered products for options
+      // Get all filtered products (without pagination) for filter extraction
+      const allFilteredProducts = await prisma.product.findMany({
+        where,
+        select: {
+          manufacturer: true,
+          tags: true,
+        },
+      });
+
+      // Extract manufacturers from all filtered products
+      manufacturers = [
+        ...new Set(
+          allFilteredProducts
+            .map((p) => p.manufacturer)
+            .filter(
+              (manufacturer): manufacturer is string =>
+                manufacturer !== null && manufacturer !== undefined
+            )
+        ),
+      ].sort();
+
+      // Extract patterns from all filtered products
+      const patternsSet = new Set<string>();
+      allFilteredProducts.forEach((product) => {
+        const tags = product.tags?.split(",") || [];
+        tags.forEach((tag) => {
+          const trimmedTag = tag.trim();
+          if (trimmedTag.startsWith("PATTERN_")) {
+            patternsSet.add(trimmedTag.replace("PATTERN_", ""));
+          }
+        });
+      });
+      patterns = Array.from(patternsSet).sort();
+
+      // Extract collections from all filtered products
+      const collectionsSet = new Set<string>();
+      allFilteredProducts.forEach((product) => {
+        const tags = product.tags?.split(",") || [];
+        tags.forEach((tag) => {
+          const trimmedTag = tag.trim();
+          if (trimmedTag.startsWith("AQCAT_")) {
+            collectionsSet.add(trimmedTag.replace("AQCAT_", ""));
+          }
+        });
+      });
+      collections = Array.from(collectionsSet).sort();
+
+      hasStockItems = allFilteredProducts.some((p) =>
+        p.tags?.includes("Stock Item")
+      );
+      hasQuickShip = allFilteredProducts.some((p) =>
+        p.tags?.includes("Quick Ship")
+      );
+    }
 
     // Get paginated products for display
     const products = await prisma.product.findMany({
@@ -323,7 +406,7 @@ export async function GET(request: Request, context: RouteParams) {
       category: product.category || "",
       manufacturer: product.manufacturer || "",
       description: product.description || "",
-      tags: product.tags ? `,${product.tags},` : "",
+      tags: product.tags || "",
       images: product.images?.map((img) => ({ src: img.url })) || [],
     }));
 
@@ -331,12 +414,19 @@ export async function GET(request: Request, context: RouteParams) {
       success: true,
       products: formattedProducts,
       filters: {
-        categories: [categoryToUse], // Only the current category
-        manufacturers: manufacturers.sort(),
-        patterns: patterns.sort(),
-        collections: collections.sort(),
+        availableCategories: [categoryToUse], // Only the current category
+        availableManufacturers: manufacturers,
+        availablePatterns: patterns,
+        availableCollections: collections,
         hasStockItems,
         hasQuickShip,
+        // Also include applied filters for consistency with main API
+        appliedCategories: [categoryToUse],
+        appliedManufacturers: manufacturer
+          ? decodeURIComponent(manufacturer).split(",")
+          : [],
+        appliedPatterns: pattern ? decodeURIComponent(pattern).split(",") : [],
+        appliedTags: tags || [],
       },
       pagination: {
         total,

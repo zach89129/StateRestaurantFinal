@@ -29,6 +29,14 @@ interface SortOptions {
   hasQuickShip: boolean;
 }
 
+interface PaginationInfo {
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasMore: boolean;
+}
+
 interface Props {
   category: string;
 }
@@ -46,6 +54,13 @@ export default function CategoryContent({ category }: Props) {
     collections: [],
     hasStockItems: false,
     hasQuickShip: false,
+  });
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    total: 0,
+    page: 1,
+    pageSize: 24,
+    totalPages: 0,
+    hasMore: false,
   });
 
   // Track selected filters
@@ -69,6 +84,21 @@ export default function CategoryContent({ category }: Props) {
         const data = await response.json();
         if (data.success) {
           setProducts(data.products);
+          if (data.pagination) {
+            setPagination(data.pagination);
+          }
+
+          // Update filter options with each product fetch to ensure they're current
+          if (data.filters) {
+            setSortOptions({
+              categories: data.filters.availableCategories || [],
+              manufacturers: data.filters.availableManufacturers || [],
+              patterns: data.filters.availablePatterns || [],
+              collections: data.filters.availableCollections || [],
+              hasStockItems: data.filters.hasStockItems || false,
+              hasQuickShip: data.filters.hasQuickShip || false,
+            });
+          }
         }
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -78,30 +108,6 @@ export default function CategoryContent({ category }: Props) {
 
     fetchProducts();
   }, [category, searchParams]);
-
-  // Fetch filter options
-  useEffect(() => {
-    const fetchOptions = async () => {
-      try {
-        const response = await fetch(`/api/products/category/${category}`);
-        const data = await response.json();
-        if (data.success) {
-          setSortOptions({
-            categories: data.filters.categories || [],
-            manufacturers: data.filters.manufacturers || [],
-            patterns: data.filters.patterns || [],
-            collections: data.filters.collections || [],
-            hasStockItems: data.filters.hasStockItems || false,
-            hasQuickShip: data.filters.hasQuickShip || false,
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching options:", error);
-      }
-    };
-
-    fetchOptions();
-  }, [category]);
 
   const handleCategoryChange = (selectedCategory: string) => {
     const params = new URLSearchParams(searchParams);
@@ -178,7 +184,18 @@ export default function CategoryContent({ category }: Props) {
   };
 
   const handleClearAll = () => {
-    router.push(`/products/${category}`, { scroll: false });
+    const params = new URLSearchParams();
+    router.push(`/products/${category}?${params.toString()}`, {
+      scroll: false,
+    });
+  };
+
+  const handlePageChange = (newPage: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", newPage.toString());
+    router.push(`/products/${category}?${params.toString()}`, {
+      scroll: false,
+    });
   };
 
   const categoryTitle = category
@@ -208,11 +225,13 @@ export default function CategoryContent({ category }: Props) {
             <h1 className="text-2xl font-bold text-gray-900">
               {categoryTitle}
             </h1>
-            <span className="text-gray-600">{products.length} Products</span>
+            <span className="text-gray-600">
+              {pagination.total || products.length} Products
+            </span>
           </div>
           <button
             onClick={() => setIsFilterOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#B87B5C] text-white hover:bg-[#A66D4F]"
+            className="lg:hidden flex items-center gap-2 px-4 py-2 rounded-lg bg-[#B87B5C] text-white hover:bg-[#A66D4F]"
           >
             <svg
               className="w-5 h-5"
@@ -279,6 +298,123 @@ export default function CategoryContent({ category }: Props) {
                     >
                       Clear all filters
                     </button>
+                  </div>
+                )}
+
+                {/* Pagination */}
+                {!loading && pagination.totalPages > 1 && (
+                  <div className="mt-8 mb-4 flex flex-col items-center">
+                    <div className="text-sm text-gray-500 mb-2">
+                      Page {pagination.page} of {pagination.totalPages} | Total
+                      Items: {pagination.total} | Items per page:{" "}
+                      {pagination.pageSize}
+                    </div>
+                    <nav className="flex items-center gap-1">
+                      {/* Previous button */}
+                      <button
+                        key="prev-button"
+                        onClick={() =>
+                          handlePageChange(Math.max(1, pagination.page - 1))
+                        }
+                        disabled={pagination.page === 1}
+                        className={`px-2 py-1 rounded border ${
+                          pagination.page === 1
+                            ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                            : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        ‹
+                      </button>
+
+                      {/* Page numbers - display up to 7 pages with ellipsis for large page counts */}
+                      {(() => {
+                        const currentPage = pagination.page;
+                        const totalPages = pagination.totalPages;
+
+                        // Always show first page
+                        const pages = [1];
+
+                        if (totalPages <= 7) {
+                          // If 7 or fewer pages, show all
+                          for (let i = 2; i <= totalPages; i++) {
+                            pages.push(i);
+                          }
+                        } else {
+                          // More than 7 pages, show strategy:
+                          // Always show first, last, current, and pages around current
+
+                          // Add ellipsis after first page if needed
+                          if (currentPage > 3) {
+                            pages.push(-1); // -1 represents ellipsis
+                          }
+
+                          // Pages around current
+                          const startPage = Math.max(2, currentPage - 1);
+                          const endPage = Math.min(
+                            totalPages - 1,
+                            currentPage + 1
+                          );
+
+                          for (let i = startPage; i <= endPage; i++) {
+                            pages.push(i);
+                          }
+
+                          // Add ellipsis before last page if needed
+                          if (currentPage < totalPages - 2) {
+                            pages.push(-2); // -2 represents second ellipsis
+                          }
+
+                          // Always show last page
+                          pages.push(totalPages);
+                        }
+
+                        return pages.map((page) => {
+                          if (page < 0) {
+                            // Render ellipsis
+                            return (
+                              <span
+                                key={`ellipsis-${page}`}
+                                className="px-2 py-1"
+                              >
+                                …
+                              </span>
+                            );
+                          }
+
+                          return (
+                            <button
+                              key={`page-${page}`}
+                              onClick={() => handlePageChange(page)}
+                              className={`px-2 py-1 rounded border ${
+                                page === currentPage
+                                  ? "bg-gray-900 text-white border-gray-900"
+                                  : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          );
+                        });
+                      })()}
+
+                      {/* Next button */}
+                      <button
+                        key="next-button"
+                        onClick={() =>
+                          handlePageChange(
+                            Math.min(pagination.totalPages, pagination.page + 1)
+                          )
+                        }
+                        disabled={pagination.page >= pagination.totalPages}
+                        className={`px-2 py-1 rounded border ${
+                          pagination.page >= pagination.totalPages
+                            ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                            : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        ›
+                      </button>
+                    </nav>
                   </div>
                 )}
               </>

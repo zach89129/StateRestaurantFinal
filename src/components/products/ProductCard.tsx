@@ -59,14 +59,13 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const handleMoreOfPattern = (e: React.MouseEvent) => {
     e.preventDefault();
-    // Extract everything after "PATTERN_" until the end of the string or next tag separator
-    const patternMatch = product.tags.match(
-      /PATTERN_([^,]*(?:,[^,]*)*?)(?:,\s*\w+_|$)/
-    );
+    // Extract everything after "PATTERN_" until the next comma
+    const patternMatch = product.tags.match(/PATTERN_([^,]+)/);
     if (patternMatch) {
-      const pattern = `PATTERN_${patternMatch[1]}`;
-      const encodedPattern = encodeURIComponent(pattern);
-      router.push(`/products?tags=${encodedPattern}&page=1`);
+      // Use pattern parameter instead of tags
+      const patternName = patternMatch[1];
+      const encodedPattern = encodeURIComponent(patternName);
+      router.push(`/products?pattern=${encodedPattern}&page=1`);
     }
   };
 
@@ -76,24 +75,17 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const handleMoreFromCollection = (e: React.MouseEvent) => {
     e.preventDefault();
-    // Extract everything after "AQCAT_" until the end of the string or next tag separator
-    const collectionMatch = product.tags.match(
-      /AQCAT_([^,]*(?:,[^,]*)*?)(?:,\s*\w+_|$)/
-    );
+    // Extract everything after "AQCAT_" until the next comma followed by a word with underscore
+    const collectionMatch = product.tags.match(/AQCAT_([^,]+(?:,\s*[^,\s]+)*)/);
     if (collectionMatch) {
-      // Use the full AQCAT_ tag for exact matching, ensuring we capture any commas in the name
-      const fullTagRaw = `AQCAT_${collectionMatch[1]}`;
+      // Get the collection name without any trailing commas or spaces
+      const collectionName = collectionMatch[1].trim().replace(/,\s*$/, "");
 
-      // Get the actual tag format from the database and log it for debugging
-      console.log("Raw tag from database:", fullTagRaw);
+      // Create the full tag
+      const fullTag = `AQCAT_${collectionName}`;
 
-      // Normalize by ensuring consistent space after comma
-      const fullTagText = fullTagRaw.replace(/,\s*/g, ", ");
-      console.log("Normalized tag:", fullTagText);
-
-      // Now encode the tag for URL
-      const encodedTag = encodeURIComponent(fullTagText);
-      console.log("Encoded tag for URL:", encodedTag);
+      // Encode for URL
+      const encodedTag = encodeURIComponent(fullTag);
 
       // Force a direct database match by adding a special parameter
       router.push(`/products?page=1&tags=${encodedTag}&exact=true`);
@@ -186,11 +178,13 @@ export default function ProductCard({ product }: ProductCardProps) {
                 >
                   More Like This:{" "}
                   {(() => {
-                    // Extract the collection name after AQCAT_ prefix, preserving any commas
+                    // Extract the collection name with improved regex
                     const match = product.tags.match(
-                      /AQCAT_([^,]*(?:,[^,]*)*?)(?:,\s*\w+_|$)/
+                      /AQCAT_([^,]+(?:,\s*[^,\s]+)*)/
                     );
-                    return match ? match[1].toLowerCase() : "";
+                    return match
+                      ? match[1].trim().replace(/,\s*$/, "").toLowerCase()
+                      : "";
                   })()}
                 </button>
               )}
@@ -201,10 +195,8 @@ export default function ProductCard({ product }: ProductCardProps) {
                 >
                   More of This Pattern :{" "}
                   {(() => {
-                    // Extract the pattern name after PATTERN_ prefix, preserving any commas
-                    const match = product.tags.match(
-                      /PATTERN_([^,]*(?:,[^,]*)*?)(?:,\s*\w+_|$)/
-                    );
+                    // Extract the pattern name after PATTERN_ prefix, but before any comma
+                    const match = product.tags.match(/PATTERN_([^,]+)/);
                     return match ? match[1].toLowerCase() : "";
                   })()}
                 </button>
