@@ -3,89 +3,50 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const [
-      categories,
-      manufacturers,
-      patterns,
-      collections,
-      stockItems,
-      quickShip,
-    ] = await Promise.all([
-      prisma.product.findMany({
-        select: { category: true },
-        distinct: ["category"],
-        where: {
-          category: {
-            not: null,
+    const [categories, manufacturers, patterns, collections, quickShip] =
+      await Promise.all([
+        prisma.product.findMany({
+          select: { category: true },
+          distinct: ["category"],
+          where: {
+            category: {
+              not: null,
+            },
           },
-        },
-      }),
-      prisma.product.findMany({
-        select: { manufacturer: true },
-        distinct: ["manufacturer"],
-        where: {
-          manufacturer: {
-            not: null,
+        }),
+        prisma.product.findMany({
+          select: { manufacturer: true },
+          distinct: ["manufacturer"],
+          where: {
+            manufacturer: {
+              not: null,
+            },
           },
-        },
-      }),
-      prisma.product.findMany({
-        select: { tags: true },
-        where: {
-          tags: {
-            contains: "PATTERN_",
+        }),
+        prisma.product.findMany({
+          select: { pattern: true },
+          distinct: ["pattern"],
+          where: {
+            pattern: {
+              not: null,
+            },
           },
-        },
-      }),
-      prisma.product.findMany({
-        select: { tags: true },
-        where: {
-          tags: {
-            contains: "AQCAT_",
+        }),
+        prisma.product.findMany({
+          select: { aqcat: true },
+          distinct: ["aqcat"],
+          where: {
+            aqcat: {
+              not: null,
+            },
           },
-        },
-      }),
-      prisma.product.findMany({
-        select: { tags: true },
-        where: {
-          tags: {
-            contains: "Stock Item",
+        }),
+        prisma.product.findFirst({
+          where: {
+            quickship: true,
           },
-        },
-      }),
-      prisma.product.findMany({
-        select: { tags: true },
-        where: {
-          tags: {
-            contains: "Quick Ship",
-          },
-        },
-      }),
-    ]);
-
-    // Process tags to extract unique values
-    const patternSet = new Set<string>();
-    const collectionSet = new Set<string>();
-    const hasStockItems = stockItems.length > 0;
-    const hasQuickShip = quickShip.length > 0;
-
-    patterns.forEach((product) => {
-      const tags = product.tags?.split(",") || [];
-      tags.forEach((tag) => {
-        if (tag.includes("PATTERN_")) {
-          patternSet.add(tag.split("PATTERN_")[1].trim());
-        }
-      });
-    });
-
-    collections.forEach((product) => {
-      const tags = product.tags?.split(",") || [];
-      tags.forEach((tag) => {
-        if (tag.includes("AQCAT_")) {
-          collectionSet.add(tag.split("AQCAT_")[1].trim());
-        }
-      });
-    });
+        }),
+      ]);
 
     return NextResponse.json({
       success: true,
@@ -98,10 +59,15 @@ export async function GET() {
           .map((m) => m.manufacturer)
           .filter(Boolean)
           .sort(),
-        patterns: Array.from(patternSet).sort(),
-        collections: Array.from(collectionSet).sort(),
-        hasStockItems,
-        hasQuickShip,
+        patterns: patterns
+          .map((p) => p.pattern)
+          .filter(Boolean)
+          .sort(),
+        collections: collections
+          .map((c) => c.aqcat)
+          .filter(Boolean)
+          .sort(),
+        hasQuickShip: !!quickShip,
       },
     });
   } catch (error) {

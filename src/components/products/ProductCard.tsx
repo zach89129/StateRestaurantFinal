@@ -9,7 +9,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 interface Product {
-  id: number;
+  trx_product_id: number;
   sku: string;
   title: string;
   description: string;
@@ -17,8 +17,10 @@ interface Product {
   category: string;
   uom: string;
   qtyAvailable: number;
-  tags: string;
-  images: { src: string }[];
+  aqcat: string | null;
+  pattern: string | null;
+  quickship: boolean;
+  images: { url: string }[];
 }
 
 interface ProductCardProps {
@@ -37,13 +39,13 @@ export default function ProductCard({ product }: ProductCardProps) {
 
     addItem(
       {
-        id: String(product.id),
+        id: String(product.trx_product_id),
         sku: product.sku,
         title: product.title,
         manufacturer: product.manufacturer,
         category: product.category,
         uom: product.uom,
-        imageSrc: product.images[0].src,
+        imageSrc: product.images[0]?.url || "/noImageState.jpg",
       },
       quantity
     );
@@ -51,49 +53,31 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const handleMoreLikeThis = (e: React.MouseEvent) => {
     e.preventDefault();
-    const encodedCategory = encodeURIComponent(
-      encodeURIComponent(product.category)
-    );
-    router.push(`/products?category=${encodedCategory}&page=1`);
+    const base64Category = btoa(product.category);
+    router.push(`/products?category_b64=${base64Category}&page=1`);
   };
 
   const handleMoreOfPattern = (e: React.MouseEvent) => {
     e.preventDefault();
-    // Extract everything after "PATTERN_" until the next comma
-    const patternMatch = product.tags.match(/PATTERN_([^,]+)/);
-    if (patternMatch) {
-      // Use pattern parameter instead of tags
-      const patternName = patternMatch[1];
-      const encodedPattern = encodeURIComponent(patternName);
-      router.push(`/products?pattern=${encodedPattern}&page=1`);
+    if (product.pattern) {
+      const base64Pattern = btoa(product.pattern);
+      router.push(`/products?pattern_b64=${base64Pattern}&page=1`);
     }
   };
 
-  const hasPattern = product.tags.includes("PATTERN_");
-
-  const hasCollection = product.tags.includes("AQCAT_");
-
   const handleMoreFromCollection = (e: React.MouseEvent) => {
     e.preventDefault();
-    // Extract everything after "AQCAT_" until the next comma followed by a word with underscore
-    const collectionMatch = product.tags.match(/AQCAT_([^,]+(?:,\s*[^,\s]+)*)/);
-    if (collectionMatch) {
-      // Get the collection name without any trailing commas or spaces
-      const collectionName = collectionMatch[1].trim().replace(/,\s*$/, "");
-
-      // Create the full tag
-      const fullTag = `AQCAT_${collectionName}`;
-
-      // Encode for URL
-      const encodedTag = encodeURIComponent(fullTag);
-
-      // Force a direct database match by adding a special parameter
-      router.push(`/products?page=1&tags=${encodedTag}&exact=true`);
+    if (product.aqcat) {
+      const base64Collection = btoa(product.aqcat);
+      router.push(`/products?collection_b64=${base64Collection}&page=1`);
     }
   };
 
   return (
-    <Link href={`/product/${product.sku}`} key={`product-link-${product.id}`}>
+    <Link
+      href={`/product/${product.sku}`}
+      key={`product-link-${product.trx_product_id}`}
+    >
       <div
         className="group relative border rounded-lg p-2 sm:p-4 hover:shadow-lg transition-shadow bg-white h-full flex flex-col justify-between"
         style={{ maxWidth: "100%", width: "100%", overflow: "hidden" }}
@@ -110,7 +94,7 @@ export default function ProductCard({ product }: ProductCardProps) {
               style={{ maxWidth: "100%" }}
             >
               <img
-                src={product.images[0]?.src || "/noImageState.jpg"}
+                src={product.images[0]?.url || "/noImageState.jpg"}
                 alt={product.title}
                 className="max-h-36 max-w-[200px] w-auto h-auto object-contain group-hover:scale-105 transition-transform duration-200"
                 style={{
@@ -165,40 +149,20 @@ export default function ProductCard({ product }: ProductCardProps) {
 
             {/* Filter Links - Fixed height section */}
             <div className="space-y-1 mt-2 min-h-[60px] sm:min-h-[72px]">
-              {/* <button
-                onClick={handleMoreLikeThis}
-                className="text-xs text-blue-600 hover:text-blue-800 block w-full text-left"
-              >
-                More Like This : {product.category}
-              </button> */}
-              {hasCollection && (
+              {product.aqcat && (
                 <button
                   onClick={handleMoreFromCollection}
                   className="mt-2 text-xs text-blue-600 hover:text-blue-800 block w-full text-left"
                 >
-                  More Like This:{" "}
-                  {(() => {
-                    // Extract the collection name with improved regex
-                    const match = product.tags.match(
-                      /AQCAT_([^,]+(?:,\s*[^,\s]+)*)/
-                    );
-                    return match
-                      ? match[1].trim().replace(/,\s*$/, "").toLowerCase()
-                      : "";
-                  })()}
+                  More Like This: {product.aqcat}
                 </button>
               )}
-              {hasPattern && (
+              {product.pattern && (
                 <button
                   onClick={handleMoreOfPattern}
                   className="text-xs text-blue-600 hover:text-blue-800 block w-full text-left capitalize"
                 >
-                  More of This Pattern :{" "}
-                  {(() => {
-                    // Extract the pattern name after PATTERN_ prefix, but before any comma
-                    const match = product.tags.match(/PATTERN_([^,]+)/);
-                    return match ? match[1].toLowerCase() : "";
-                  })()}
+                  More of This Pattern: {product.pattern.toLowerCase()}
                 </button>
               )}
             </div>
@@ -206,31 +170,24 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {/* Cart Controls - Always at the bottom */}
-        <div className="pt-4 mt-4 border-t border-gray-100">
-          {session?.user ? (
-            <div
-              className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2"
-              onClick={(e) => e.preventDefault()}
-            >
-              <div className="flex-1">
-                <QuantityInput
-                  onQuantityChange={setQuantity}
-                  initialQuantity={1}
-                  className="w-full"
-                  preventPropagation={true}
-                />
-              </div>
-              <button
-                onClick={handleAddToCart}
-                className="bg-blue-600 text-white text-xs sm:text-sm px-3 py-1.5 rounded hover:bg-blue-700 transition-colors w-full sm:w-auto"
-              >
-                Add to Cart
-              </button>
+        <div className="mt-4">
+          <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <QuantityInput
+                onQuantityChange={setQuantity}
+                initialQuantity={1}
+                className="w-full"
+                preventPropagation={true}
+              />
             </div>
-          ) : (
-            // Placeholder for consistent height when not logged in
-            <div className="h-8 sm:h-10"></div>
-          )}
+            <button
+              onClick={handleAddToCart}
+              className="flex-shrink-0 bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition-colors whitespace-nowrap"
+              disabled={product.qtyAvailable <= 0}
+            >
+              Add to Cart
+            </button>
+          </div>
         </div>
       </div>
     </Link>

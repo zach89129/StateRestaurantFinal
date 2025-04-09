@@ -19,8 +19,10 @@ interface Product {
   category: string;
   uom: string;
   qtyAvailable: number;
-  tags: string;
-  images: { src: string }[];
+  aqcat: string | null;
+  pattern: string | null;
+  quickship: boolean;
+  images: { url: string }[];
 }
 
 interface SortOptions {
@@ -28,7 +30,6 @@ interface SortOptions {
   manufacturers: string[];
   patterns: string[];
   collections: string[];
-  hasStockItems: boolean;
   hasQuickShip: boolean;
 }
 
@@ -43,45 +44,37 @@ interface PaginationInfo {
 function SearchContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const searchTerm = searchParams.get("q") || "";
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    total: 0,
+    page: 1,
+    pageSize: 24,
+    totalPages: 1,
+    hasMore: false,
+  });
   const [sortOptions, setSortOptions] = useState<SortOptions>({
     categories: [],
     manufacturers: [],
     patterns: [],
     collections: [],
-    hasStockItems: false,
     hasQuickShip: false,
   });
-  const [pagination, setPagination] = useState<PaginationInfo>({
-    total: 0,
-    page: 1,
-    pageSize: 24,
-    totalPages: 0,
-    hasMore: false,
-  });
 
-  // Add new state for filter drawer
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const { isSearchVisible } = useSearch();
-
-  // Track selected filters
-  const selectedManufacturers =
-    searchParams.get("manufacturer")?.split(",").filter(Boolean) || [];
-  const selectedPatterns = (
-    searchParams.get("tags")?.split(",").filter(Boolean) || []
-  )
-    .filter((tag) => tag.startsWith("PATTERN_"))
-    .map((tag) => tag.replace("PATTERN_", ""));
-  const selectedTags =
-    searchParams.get("tags")?.split(",").filter(Boolean) || [];
+  const searchTerm = searchParams.get("q") || "";
   const selectedCategories =
-    searchParams
-      .get("category")
-      ?.split(",")
-      .filter(Boolean)
-      .map((c) => decodeURIComponent(c)) || [];
+    searchParams.get("category_b64")?.split(",").filter(Boolean) || [];
+  const selectedManufacturers =
+    searchParams.get("manufacturer_b64")?.split(",").filter(Boolean) || [];
+  const selectedPatterns =
+    searchParams.get("pattern_b64")?.split(",").filter(Boolean) || [];
+  const selectedCollections =
+    searchParams.get("collection_b64")?.split(",").filter(Boolean) || [];
+  const selectedQuickShip = searchParams.get("quickShip") === "true";
+
+  const { isSearchVisible } = useSearch();
 
   // Update the search effect
   useEffect(() => {
@@ -93,7 +86,6 @@ function SearchContent() {
           manufacturers: [],
           patterns: [],
           collections: [],
-          hasStockItems: false,
           hasQuickShip: false,
         });
         setLoading(false);
@@ -123,7 +115,6 @@ function SearchContent() {
               manufacturers: data.filters.availableManufacturers || [],
               patterns: data.filters.availablePatterns || [],
               collections: data.filters.availableCollections || [],
-              hasStockItems: data.filters.hasStockItems || false,
               hasQuickShip: data.filters.hasQuickShip || false,
             };
             setSortOptions(filterOptions);
@@ -137,7 +128,6 @@ function SearchContent() {
             manufacturers: [],
             patterns: [],
             collections: [],
-            hasStockItems: false,
             hasQuickShip: false,
           });
         }
@@ -150,7 +140,6 @@ function SearchContent() {
           manufacturers: [],
           patterns: [],
           collections: [],
-          hasStockItems: false,
           hasQuickShip: false,
         });
       } finally {
@@ -166,26 +155,17 @@ function SearchContent() {
     params.set("page", "1");
 
     const currentCategories =
-      params
-        .get("category")
-        ?.split(",")
-        .map((c) => decodeURIComponent(c.trim()))
-        .filter(Boolean) || [];
+      params.get("category_b64")?.split(",").filter(Boolean) || [];
+    const base64Category = btoa(category);
 
-    let newCategories;
-    if (currentCategories.includes(category)) {
-      newCategories = currentCategories.filter((c) => c !== category);
-    } else {
-      newCategories = [...new Set([...currentCategories, category])];
-    }
+    const newCategories = currentCategories.includes(base64Category)
+      ? currentCategories.filter((c) => c !== base64Category)
+      : [...currentCategories, base64Category];
 
     if (newCategories.length > 0) {
-      params.set(
-        "category",
-        newCategories.map((c) => encodeURIComponent(c)).join(",")
-      );
+      params.set("category_b64", newCategories.join(","));
     } else {
-      params.delete("category");
+      params.delete("category_b64");
     }
 
     router.push(`/search?${params.toString()}`, { scroll: false });
@@ -196,35 +176,17 @@ function SearchContent() {
     params.set("page", "1");
 
     const currentManufacturers =
-      params
-        .get("manufacturer")
-        ?.split(",")
-        .map((m) => decodeURIComponent(m))
-        .filter(Boolean) || [];
+      params.get("manufacturer_b64")?.split(",").filter(Boolean) || [];
+    const base64Manufacturer = btoa(manufacturer);
 
-    const normalizeString = (str: string) => str.trim();
-    const normalizedManufacturer = normalizeString(manufacturer);
-
-    const isSelected = currentManufacturers.some(
-      (m) => normalizeString(m) === normalizedManufacturer
-    );
-
-    let newManufacturers;
-    if (isSelected) {
-      newManufacturers = currentManufacturers.filter(
-        (m) => normalizeString(m) !== normalizedManufacturer
-      );
-    } else {
-      newManufacturers = [...new Set([...currentManufacturers, manufacturer])];
-    }
+    const newManufacturers = currentManufacturers.includes(base64Manufacturer)
+      ? currentManufacturers.filter((m) => m !== base64Manufacturer)
+      : [...currentManufacturers, base64Manufacturer];
 
     if (newManufacturers.length > 0) {
-      params.set(
-        "manufacturer",
-        newManufacturers.map((m) => encodeURIComponent(m)).join(",")
-      );
+      params.set("manufacturer_b64", newManufacturers.join(","));
     } else {
-      params.delete("manufacturer");
+      params.delete("manufacturer_b64");
     }
 
     router.push(`/search?${params.toString()}`, { scroll: false });
@@ -234,43 +196,52 @@ function SearchContent() {
     const params = new URLSearchParams(searchParams);
     params.set("page", "1");
 
-    // Add tags parameter if not present
-    const currentTags = params.get("tags")?.split(",").filter(Boolean) || [];
-    const patternTag = `PATTERN_${pattern}`;
+    const currentPatterns =
+      params.get("pattern_b64")?.split(",").filter(Boolean) || [];
+    const base64Pattern = btoa(pattern);
 
-    let newTags;
-    if (currentTags.includes(patternTag)) {
-      newTags = currentTags.filter((t) => t !== patternTag);
-    } else {
-      newTags = [...currentTags, patternTag];
-    }
+    const newPatterns = currentPatterns.includes(base64Pattern)
+      ? currentPatterns.filter((p) => p !== base64Pattern)
+      : [...currentPatterns, base64Pattern];
 
-    if (newTags.length > 0) {
-      params.set("tags", newTags.join(","));
+    if (newPatterns.length > 0) {
+      params.set("pattern_b64", newPatterns.join(","));
     } else {
-      params.delete("tags");
+      params.delete("pattern_b64");
     }
 
     router.push(`/search?${params.toString()}`, { scroll: false });
   };
 
-  const handleTagChange = (tag: string) => {
+  const handleCollectionChange = (collection: string) => {
     const params = new URLSearchParams(searchParams);
     params.set("page", "1");
 
-    const currentTags = params.get("tags")?.split(",").filter(Boolean) || [];
+    const currentCollections =
+      params.get("collection_b64")?.split(",").filter(Boolean) || [];
+    const base64Collection = btoa(collection);
 
-    let newTags;
-    if (currentTags.includes(tag)) {
-      newTags = currentTags.filter((t) => t !== tag);
+    const newCollections = currentCollections.includes(base64Collection)
+      ? currentCollections.filter((c) => c !== base64Collection)
+      : [...currentCollections, base64Collection];
+
+    if (newCollections.length > 0) {
+      params.set("collection_b64", newCollections.join(","));
     } else {
-      newTags = [...currentTags, tag];
+      params.delete("collection_b64");
     }
 
-    if (newTags.length > 0) {
-      params.set("tags", newTags.join(","));
+    router.push(`/search?${params.toString()}`, { scroll: false });
+  };
+
+  const handleQuickShipChange = (value: boolean) => {
+    const params = new URLSearchParams(searchParams);
+    params.set("page", "1");
+
+    if (value) {
+      params.set("quickShip", "true");
     } else {
-      params.delete("tags");
+      params.delete("quickShip");
     }
 
     router.push(`/search?${params.toString()}`, { scroll: false });
@@ -317,11 +288,13 @@ function SearchContent() {
             selectedCategories={selectedCategories}
             selectedManufacturers={selectedManufacturers}
             selectedPatterns={selectedPatterns}
-            selectedTags={selectedTags}
+            selectedCollections={selectedCollections}
+            selectedQuickShip={selectedQuickShip}
             onCategoryChange={handleCategoryChange}
             onManufacturerChange={handleManufacturerChange}
             onPatternChange={handlePatternChange}
-            onTagChange={handleTagChange}
+            onCollectionChange={handleCollectionChange}
+            onQuickShipChange={handleQuickShipChange}
             onClearAll={handleClearAll}
             onClose={() => setIsFilterOpen(false)}
             isOpen={isFilterOpen}
@@ -372,7 +345,7 @@ function SearchContent() {
                   >
                     {products.map((product) => (
                       <ProductCard
-                        key={`search-product-${product.id}`}
+                        key={`search-product-${product.trx_product_id}`}
                         product={product}
                       />
                     ))}

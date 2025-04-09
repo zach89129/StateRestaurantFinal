@@ -7,6 +7,8 @@ export interface Product {
   category: string;
   uom: string;
   qtyAvailable: number;
-  tags: string;
-  imageSrc: string;
+  aqcat: string | null;
+  pattern: string | null;
+  quickship: boolean;
+  images: { url: string }[];
 }

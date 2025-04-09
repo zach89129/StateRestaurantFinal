@@ -13,7 +13,9 @@ type SerializedProduct = {
   category: string | null;
   uom: string | null;
   qtyAvailable: number;
-  tags: string | null;
+  aqcat: string | null;
+  pattern: string | null;
+  quickship: boolean;
   images: {
     id: string;
     url: string;
@@ -56,7 +58,9 @@ function serializeProduct(product: any): SerializedProduct {
     category: product.category,
     uom: product.uom,
     qtyAvailable: product.qtyAvailable ? Number(product.qtyAvailable) : 0,
-    tags: product.tags,
+    aqcat: product.aqcat,
+    pattern: product.pattern,
+    quickship: product.quickship || false,
     images: product.images.map((img: any) => ({
       id: String(img.id),
       url: img.url,
@@ -208,7 +212,9 @@ export async function POST(
       category,
       uom,
       qtyAvailable,
-      tags,
+      aqcat,
+      pattern,
+      quickship,
       images,
     } = body;
 
@@ -222,7 +228,9 @@ export async function POST(
         category,
         uom,
         qtyAvailable,
-        tags,
+        aqcat: aqcat || null,
+        pattern: pattern || null,
+        quickship: quickship || false,
         images: {
           createMany: {
             data: images.map((url: string) => ({ url })),
@@ -270,7 +278,9 @@ export async function PUT(
       category,
       uom,
       qtyAvailable,
-      tags,
+      aqcat,
+      pattern,
+      quickship,
       images,
     } = body;
 
@@ -289,7 +299,9 @@ export async function PUT(
         category,
         uom,
         qtyAvailable,
-        tags,
+        aqcat: aqcat || null,
+        pattern: pattern || null,
+        quickship: quickship || false,
         images: {
           createMany: {
             data: images.map((url: string) => ({ url })),

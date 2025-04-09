@@ -14,9 +14,12 @@ model Product {
   description   String?
   manufacturer  String?
   category      String?
+  aqcat         String?        @map("aqcat") // Collection category
+  pattern       String?        @map("pattern") // Pattern name without prefix
+  quickship     Boolean        @default(false) @map("quickship") // Quick ship status
   uom           String?
   qtyAvailable  Int?           @map("qty_available")
-  tags          String?
+  tags          String?        // Keep for any other tags
   images        ProductImage[]
   venueProducts VenueProduct[] @relation("ProductToVenueProduct")
 

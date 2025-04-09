@@ -7,9 +7,19 @@ export async function GET(request: NextRequest) {
     const searchTerm = searchParams.get("q") || "";
     const page = parseInt(searchParams.get("page") || "1");
     const pageSize = parseInt(searchParams.get("pageSize") || "24");
-    const categories = searchParams.get("category")?.split(",") || [];
-    const manufacturers = searchParams.get("manufacturer")?.split(",") || [];
-    const tags = searchParams.get("tags")?.split(",") || [];
+    const categories = (
+      searchParams.get("category_b64")?.split(",").filter(Boolean) || []
+    ).map((c) => atob(c));
+    const manufacturers = (
+      searchParams.get("manufacturer_b64")?.split(",").filter(Boolean) || []
+    ).map((m) => atob(m));
+    const patterns = (
+      searchParams.get("pattern_b64")?.split(",").filter(Boolean) || []
+    ).map((p) => atob(p));
+    const collections = (
+      searchParams.get("collection_b64")?.split(",").filter(Boolean) || []
+    ).map((c) => atob(c));
+    const quickShip = searchParams.get("quickShip") === "true";
 
     // Calculate offset
     const offset = (page - 1) * pageSize;
@@ -23,7 +33,8 @@ export async function GET(request: NextRequest) {
         { manufacturer: { contains: searchTerm } },
         { category: { contains: searchTerm } },
         { uom: { contains: searchTerm } },
-        { tags: { contains: searchTerm } },
+        { aqcat: { contains: searchTerm } },
+        { pattern: { contains: searchTerm } },
       ],
     };
 
@@ -41,17 +52,25 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    // Add tags filter if present
-    if (tags.length > 0) {
-      whereClause.AND = [
-        {
-          OR: tags.map((tag) => ({
-            tags: {
-              contains: tag,
-            },
-          })),
-        },
-      ];
+    // Add collection filter if present
+    if (collections.length > 0) {
+      whereClause.aqcat = {
+        in: collections.map((c) => decodeURIComponent(c)),
+      };
+    }
+
+    // Add pattern filter if present
+    if (patterns.length > 0) {
+      whereClause.pattern = {
+        in: patterns.map((p) => decodeURIComponent(p)),
+      };
+    }
+
+    // Add quick ship filter if present
+    if (quickShip) {
+      whereClause.quickship = {
+        equals: true,
+      };
     }
 
     // Get total count for pagination
@@ -73,22 +92,24 @@ export async function GET(request: NextRequest) {
     // Convert BigInt to number in the products array and format response
     const serializedProducts = products.map((product) => ({
       ...product,
+      trx_product_id: Number(product.id),
       id: Number(product.id),
       qtyAvailable: Number(product.qtyAvailable),
-      images: product.images.map((img) => ({ src: img.url })),
+      images: product.images.map((img) => ({ url: img.url })),
     }));
 
     // Determine if any filters are applied
     const noFiltersApplied =
       categories.length === 0 &&
       manufacturers.length === 0 &&
-      tags.length === 0;
+      collections.length === 0 &&
+      patterns.length === 0 &&
+      !quickShip;
 
     let availableCategories: string[] = [];
     let availableManufacturers: string[] = [];
     let availablePatterns: string[] = [];
     let availableCollections: string[] = [];
-    let hasStockItems = false;
     let hasQuickShip = false;
 
     if (noFiltersApplied && searchTerm) {
@@ -99,7 +120,9 @@ export async function GET(request: NextRequest) {
         select: {
           category: true,
           manufacturer: true,
-          tags: true,
+          pattern: true,
+          aqcat: true,
+          quickship: true,
         },
       });
 
@@ -126,38 +149,25 @@ export async function GET(request: NextRequest) {
         ),
       ].sort();
 
-      // Extract patterns from matching products
-      const patternsSet = new Set<string>();
-      allSearchMatchingProducts.forEach((product) => {
-        const tags = product.tags?.split(",") || [];
-        tags.forEach((tag) => {
-          const trimmedTag = tag.trim();
-          if (trimmedTag.startsWith("PATTERN_")) {
-            patternsSet.add(trimmedTag.replace("PATTERN_", ""));
-          }
-        });
-      });
-      availablePatterns = Array.from(patternsSet).sort();
+      // Get patterns directly from pattern column
+      availablePatterns = [
+        ...new Set(
+          allSearchMatchingProducts
+            .map((p) => p.pattern)
+            .filter((p): p is string => p !== null)
+        ),
+      ].sort();
 
-      // Extract collections from matching products
-      const collectionsSet = new Set<string>();
-      allSearchMatchingProducts.forEach((product) => {
-        const tags = product.tags?.split(",") || [];
-        tags.forEach((tag) => {
-          const trimmedTag = tag.trim();
-          if (trimmedTag.startsWith("AQCAT_")) {
-            collectionsSet.add(trimmedTag.replace("AQCAT_", ""));
-          }
-        });
-      });
-      availableCollections = Array.from(collectionsSet).sort();
+      // Get collections directly from aqcat column
+      availableCollections = [
+        ...new Set(
+          allSearchMatchingProducts
+            .map((p) => p.aqcat)
+            .filter((c): c is string => c !== null)
+        ),
+      ].sort();
 
-      hasStockItems = allSearchMatchingProducts.some((p) =>
-        p.tags?.includes("Stock Item")
-      );
-      hasQuickShip = allSearchMatchingProducts.some((p) =>
-        p.tags?.includes("Quick Ship")
-      );
+      hasQuickShip = allSearchMatchingProducts.some((p) => p.quickship);
     } else {
       // Get available filter options from all filtered search results, not just the current page
       const allFilteredProducts = await prisma.product.findMany({
@@ -165,7 +175,9 @@ export async function GET(request: NextRequest) {
         select: {
           category: true,
           manufacturer: true,
-          tags: true,
+          pattern: true,
+          aqcat: true,
+          quickship: true,
         },
       });
 
@@ -188,44 +200,25 @@ export async function GET(request: NextRequest) {
         )
         .sort();
 
-      // Extract patterns from all filtered products
-      const availablePatternsArray = allFilteredProducts
-        .map((p) =>
-          p.tags
-            ?.split(",")
-            .filter((tag) => tag.startsWith("PATTERN_"))
-            .map((tag) => tag.replace("PATTERN_", ""))
-        )
-        .flat()
-        .filter(
-          (pattern): pattern is string =>
-            pattern !== null && pattern !== undefined
-        );
+      // Get patterns directly from pattern column
+      availablePatterns = [
+        ...new Set(
+          allFilteredProducts
+            .map((p) => p.pattern)
+            .filter((p): p is string => p !== null)
+        ),
+      ].sort();
 
-      availablePatterns = [...new Set(availablePatternsArray)].sort();
+      // Get collections directly from aqcat column
+      availableCollections = [
+        ...new Set(
+          allFilteredProducts
+            .map((p) => p.aqcat)
+            .filter((c): c is string => c !== null)
+        ),
+      ].sort();
 
-      // Extract collections from all filtered products
-      const availableCollectionsArray = allFilteredProducts
-        .map((p) =>
-          p.tags
-            ?.split(",")
-            .filter((tag) => tag.startsWith("AQCAT_"))
-            .map((tag) => tag.replace("AQCAT_", ""))
-        )
-        .flat()
-        .filter(
-          (collection): collection is string =>
-            collection !== null && collection !== undefined
-        );
-
-      availableCollections = [...new Set(availableCollectionsArray)].sort();
-
-      hasStockItems = allFilteredProducts.some((p) =>
-        p.tags?.includes("Stock Item")
-      );
-      hasQuickShip = allFilteredProducts.some((p) =>
-        p.tags?.includes("Quick Ship")
-      );
+      hasQuickShip = allFilteredProducts.some((p) => p.quickship);
     }
 
     // Calculate pagination info
@@ -247,14 +240,18 @@ export async function GET(request: NextRequest) {
         availableManufacturers,
         availablePatterns,
         availableCollections,
-        hasStockItems,
         hasQuickShip,
+        appliedCategories: categories || [],
+        appliedManufacturers: manufacturers || [],
+        appliedCollection: collections.join(",") || "",
+        appliedPattern: patterns.join(",") || "",
+        appliedQuickShip: quickShip,
       },
     });
   } catch (error) {
-    console.error("Error searching products:", error);
+    console.error("Error in search:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to search products" },
+      { error: "Internal Server Error" },
       { status: 500 }
     );
   }

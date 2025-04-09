@@ -61,7 +61,13 @@ export async function POST(request: NextRequest) {
           if (product.uom !== undefined) updateData.uom = product.uom;
           if (product.qty_available !== undefined)
             updateData.qtyAvailable = product.qty_available;
-          if (product.tags !== undefined) updateData.tags = product.tags || "";
+          if (product.tags !== undefined) updateData.tags = product.tags;
+          if (product.metaData?.aqcat !== undefined)
+            updateData.aqcat = product.metaData.aqcat;
+          if (product.metaData?.pattern !== undefined)
+            updateData.pattern = product.metaData.pattern;
+          if (product.metaData?.quickShip !== undefined)
+            updateData.quickship = product.metaData.quickShip;
 
           // Handle image updates
           if (product.images?.length) {
@@ -126,7 +132,9 @@ export async function POST(request: NextRequest) {
               category: product.category,
               uom: product.uom,
               qtyAvailable: product.qty_available,
-              tags: product.tags || "",
+              aqcat: product.metaData?.aqcat,
+              pattern: product.metaData?.pattern,
+              quickship: product.metaData?.quickShip || false,
               images: product.images?.length
                 ? {
                     createMany: {
@@ -139,8 +147,8 @@ export async function POST(request: NextRequest) {
           });
 
           results.push({
-            ...newProduct,
             trx_product_id: Number(newProduct.id),
+            ...newProduct,
             images: newProduct.images.map((img) => ({ src: img.url })),
           });
         }
@@ -177,42 +185,37 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1");
     const pageSize = parseInt(searchParams.get("pageSize") || "24");
     const sort = searchParams.get("sort") || "";
-    const categories =
-      searchParams
-        .get("category")
-        ?.split(",")
-        .filter(Boolean)
-        .map((c) => decodeURIComponent(c).trim()) || [];
-    const manufacturers =
-      searchParams
-        .get("manufacturer")
-        ?.split(",")
-        .filter(Boolean)
-        .map((m) => decodeURIComponent(m).trim()) || [];
-    const tags = searchParams.get("tags")?.split(",").filter(Boolean) || [];
 
-    // Get tags parameter and parse it
-    const tagsParam = searchParams.get("tags");
-    const isExactMatch = searchParams.get("exact") === "true";
-    console.log("Raw tags parameter:", tagsParam);
-    console.log("Exact match requested:", isExactMatch);
+    // Handle base64 encoded category
+    const categoryB64 = searchParams.get("category_b64");
+    const categories = categoryB64
+      ? [atob(categoryB64)]
+      : searchParams
+          .get("category")
+          ?.split(",")
+          .filter(Boolean)
+          .map((c) => decodeURIComponent(c).trim()) || [];
 
-    let processedTags: string[] = [];
+    // Handle base64 encoded manufacturer
+    const manufacturerB64 = searchParams.get("manufacturer_b64");
+    const manufacturers = manufacturerB64
+      ? [atob(manufacturerB64)]
+      : searchParams
+          .get("manufacturer")
+          ?.split(",")
+          .filter(Boolean)
+          .map((m) => decodeURIComponent(m).trim()) || [];
 
-    if (
-      tagsParam &&
-      tagsParam.startsWith("AQCAT_") &&
-      (tagsParam.includes("%2C") || isExactMatch)
-    ) {
-      // This is likely a single AQCAT_ tag with URL-encoded commas
-      console.log("Detected AQCAT_ tag with special handling");
-      processedTags = [tagsParam];
-    } else {
-      // Normal tag splitting
-      processedTags = tags;
-    }
+    // Get collection and pattern filters with base64 support
+    const collectionB64 = searchParams.get("collection_b64");
+    const collection = collectionB64 ? atob(collectionB64) : null;
 
-    console.log("Processed tags array:", processedTags);
+    const patternB64 = searchParams.get("pattern_b64");
+    const pattern = patternB64
+      ? atob(patternB64)
+      : searchParams.get("pattern")?.trim();
+
+    const quickShip = searchParams.get("quickShip") === "true";
 
     // Calculate offset
     const offset = (page - 1) * pageSize;
@@ -223,243 +226,44 @@ export async function GET(request: NextRequest) {
 
     // Add category filter if present
     if (categories.length > 0) {
-      const categoryCondition = {
-        OR: categories.map((category) => ({
-          category: {
-            not: null,
-            contains: category.toLowerCase(),
-          },
-        })),
-      };
-      conditions.push(categoryCondition);
-      console.log(
-        "Category condition:",
-        JSON.stringify(categoryCondition, null, 2)
-      );
+      conditions.push({
+        category: {
+          in: categories,
+        },
+      });
     }
 
     // Add manufacturer filter if present
     if (manufacturers.length > 0) {
       conditions.push({
-        OR: manufacturers.map((manufacturer) => ({
-          manufacturer: {
-            not: null,
-            contains: manufacturer.toLowerCase(),
-          },
-        })),
+        manufacturer: {
+          in: manufacturers,
+        },
       });
     }
 
-    // Separate tags by type
-    console.log("Original tags from URL:", processedTags);
-
-    // First decode any URL-encoded tags
-    const decodedTags = processedTags.map((tag) => decodeURIComponent(tag));
-    console.log("Decoded tags:", decodedTags);
-
-    const patternTags = decodedTags.filter((tag) => tag.startsWith("PATTERN_"));
-    console.log("Pattern tags:", patternTags);
-
-    const stockAndQuickShipTags = decodedTags.filter((tag) =>
-      ["Stock Item", "Quick Ship", "Stock Item / Quick Ship"].includes(tag)
-    );
-    console.log("Stock/QuickShip tags:", stockAndQuickShipTags);
-
-    const collectionTags = decodedTags.filter((tag) => {
-      // If it's an AQCAT_ tag, include it
-      if (tag.startsWith("AQCAT_")) {
-        return true;
-      }
-
-      // If it doesn't have any special prefix and isn't a stock/quick ship tag
-      if (
-        !tag.startsWith("PATTERN_") &&
-        !["Stock Item", "Quick Ship", "Stock Item / Quick Ship"].includes(tag)
-      ) {
-        return true;
-      }
-
-      return false;
-    });
-    console.log("Collection tags:", collectionTags);
-
-    // Add null/empty tag handling for proper filtering
-    if (
-      decodedTags.includes("null") ||
-      decodedTags.includes("undefined") ||
-      decodedTags.includes("")
-    ) {
+    // Add collection filter if present
+    if (collection) {
       conditions.push({
-        OR: [{ tags: null }, { tags: "" }],
+        aqcat: collection,
       });
     }
 
-    // Get patterns from the pattern parameter
-    const patterns =
-      searchParams.get("pattern")?.split(",").filter(Boolean) || [];
-    if (patterns.length > 0) {
+    // Add pattern filter if present
+    if (pattern) {
       conditions.push({
-        OR: patterns.map((pattern) => ({
-          AND: [
-            {
-              tags: {
-                not: null,
-              },
-            },
-            {
-              tags: {
-                contains: `PATTERN_${pattern}`,
-              },
-            },
-          ],
-        })),
+        pattern: {
+          equals: pattern,
+        },
       });
     }
 
-    // Add collection tags with OR condition
-    if (collectionTags.length > 0) {
-      // Log the exact collection tags we're looking for to help debug
-      console.log("Collection tags to match:", collectionTags);
-
-      // Check if we have a single AQCAT_ tag that might contain a comma
-      if (
-        collectionTags.length === 1 &&
-        collectionTags[0].startsWith("AQCAT_")
-      ) {
-        const singleTag = collectionTags[0];
-        console.log("Single AQCAT_ tag detected:", singleTag);
-
-        // Log the exact tag we're looking for to compare with database values
-        console.log("Looking for tag in database exactly as:", singleTag);
-
-        // If exact match is requested, use direct equality or contains with specific formatting
-        if (isExactMatch) {
-          console.log("Using strict exact matching for AQCAT_ tag");
-
-          // Normalize the tag, removing URL encoding
-          const decodedTag = decodeURIComponent(singleTag);
-          console.log("Decoded tag for direct comparison:", decodedTag);
-
-          // Direct equality match
-          conditions.push({
-            OR: [
-              // Exact match as the only tag
-              { tags: { equals: decodedTag } },
-              // Match surrounded by commas (tag in the middle of a list)
-              { tags: { contains: `,${decodedTag},` } },
-              // Match at start with comma after
-              { tags: { startsWith: `${decodedTag},` } },
-              // Match at end with comma before
-              { tags: { endsWith: `,${decodedTag}` } },
-            ],
-          });
-
-          console.log("Using direct equality conditions");
-          // Continue processing instead of returning
-        } else {
-          // Handle non-exact match case here
-          // For debugging, let's see what tags exist in the database
-          const searchTagBase = singleTag.includes("%20")
-            ? singleTag.replace(/%20/g, " ")
-            : singleTag;
-
-          console.log(
-            "Non-exact match - using search tag base:",
-            searchTagBase
-          );
-
-          // Add more flexible matching conditions
-          conditions.push({
-            OR: [
-              // Exact match
-              { tags: { equals: decodeURIComponent(singleTag) } },
-              // More flexible matching for similar tags
-              { tags: { contains: searchTagBase.split("%2C")[0] } },
-            ],
-          });
-        }
-      } else {
-        conditions.push({
-          OR: collectionTags.map((tag) => {
-            // For URL-encoded tags, decode them first
-            const decodedTag = decodeURIComponent(tag);
-            console.log(
-              `Processing collection tag: ${tag}, decoded: ${decodedTag}`
-            );
-
-            // For tags that already include AQCAT_, use exact matching
-            if (decodedTag.startsWith("AQCAT_")) {
-              console.log(`Using exact match for AQCAT_ tag: ${decodedTag}`);
-              return {
-                OR: [
-                  // Match where the tag appears exactly, surrounded by commas or at start/end
-                  {
-                    tags: {
-                      contains: `,${decodedTag},`,
-                    },
-                  },
-                  // Match at the start of the tags string, followed by a comma
-                  {
-                    tags: {
-                      startsWith: `${decodedTag},`,
-                    },
-                  },
-                  // Match at the end of the tags string, preceded by a comma
-                  {
-                    tags: {
-                      endsWith: `,${decodedTag}`,
-                    },
-                  },
-                  // Match as the only tag
-                  {
-                    tags: {
-                      equals: decodedTag,
-                    },
-                  },
-                ],
-              };
-            }
-
-            // For regular collection tags (without AQCAT_ prefix), use the old approach but with more precision
-            console.log(`Using regular match for tag: ${decodedTag}`);
-            const tagWithPrefix = `AQCAT_${decodedTag}`;
-            return {
-              OR: [
-                {
-                  tags: {
-                    contains: `,${tagWithPrefix},`,
-                  },
-                },
-                {
-                  tags: {
-                    startsWith: `${tagWithPrefix},`,
-                  },
-                },
-                {
-                  tags: {
-                    endsWith: `,${tagWithPrefix}`,
-                  },
-                },
-                {
-                  tags: {
-                    equals: tagWithPrefix,
-                  },
-                },
-              ],
-            };
-          }),
-        });
-      }
-    }
-
-    // Add stock/quick ship tags with OR condition
-    if (stockAndQuickShipTags.length > 0) {
+    // Add quick ship filter if present
+    if (quickShip) {
       conditions.push({
-        OR: stockAndQuickShipTags.map((tag) => ({
-          tags: {
-            contains: tag,
-          },
-        })),
+        quickship: {
+          equals: true,
+        },
       });
     }
 
@@ -467,95 +271,37 @@ export async function GET(request: NextRequest) {
     if (conditions.length > 0) {
       whereClause.AND = conditions;
     }
-    console.log("Final where clause:", JSON.stringify(whereClause, null, 2));
 
     // Get total count for pagination
-    const total = await prisma.product
-      .count({
-        where: whereClause,
-      })
-      .catch((error) => {
-        console.error("Error counting products:", error);
-        throw new Error("Failed to count products");
-      });
-
-    console.log("Total products found:", total);
-    console.log("Page size:", pageSize);
-    console.log("Current page:", page);
-
-    // Build order by clause
-    let orderBy: Prisma.ProductOrderByWithRelationInput = { title: "asc" };
-    if (sort === "name-desc") {
-      orderBy = { title: "desc" };
-    }
-
-    // Calculate skip value
-    const skip = (page - 1) * pageSize;
-    console.log("Skip value:", skip, "Take value:", pageSize);
-
-    // Fetch products
-    console.log("Executing query with params:", {
+    const total = await prisma.product.count({
       where: whereClause,
-      orderBy,
-      skip: skip,
-      take: pageSize,
     });
 
-    const products = await prisma.product
-      .findMany({
-        where: whereClause,
-        orderBy,
-        skip: skip,
-        take: pageSize,
-        include: {
-          images: true,
-        },
-      })
-      .catch((error) => {
-        console.error("Error fetching products:", error);
-        throw new Error("Failed to fetch products");
-      });
+    // Get products with pagination
+    const products = await prisma.product.findMany({
+      where: whereClause,
+      include: {
+        images: true,
+      },
+      skip: offset,
+      take: pageSize,
+      orderBy: { title: sort === "name-desc" ? "desc" : "asc" },
+    });
 
-    console.log("Query returned products:", products.length);
-
-    // Convert BigInt to number and format the response
-    const serializedProducts = products.map((product) => ({
-      ...product,
-      trx_product_id: Number(product.id),
-      id: undefined,
-      qtyAvailable: product.qtyAvailable ? Number(product.qtyAvailable) : 0,
-      category: product.category || "",
-      manufacturer: product.manufacturer || "",
-      description: product.description || "",
-      tags: product.tags || "",
-      images: product.images?.map((img) => ({ src: img.url })) || [],
-    }));
-
-    // Calculate pagination info
-    const totalPages = Math.ceil(total / pageSize);
-    const hasMore = page < totalPages;
-
-    console.log("Total pages calculated:", totalPages);
-    console.log("Has more pages:", hasMore);
-
-    // Convert any remaining BigInt values to strings
-    const safeProducts = convertBigIntToString(serializedProducts);
-
-    // Get the available manufacturers, patterns, and collections from the filtered products
+    // For filter options, get all available values
+    let availableCategories: string[] = [];
     let availableManufacturers: string[] = [];
     let availablePatterns: string[] = [];
     let availableCollections: string[] = [];
-    let availableCategories: string[] = [];
-    let hasStockItems = false;
     let hasQuickShip = false;
 
     // If there are no filters applied, fetch all available options
     const noFiltersApplied =
       categories.length === 0 &&
       manufacturers.length === 0 &&
-      patterns.length === 0 &&
-      collectionTags.length === 0 &&
-      stockAndQuickShipTags.length === 0;
+      !collection &&
+      !pattern &&
+      !quickShip;
 
     if (noFiltersApplied) {
       // Fetch all available options
@@ -564,7 +310,6 @@ export async function GET(request: NextRequest) {
         allManufacturers,
         allPatterns,
         allCollections,
-        stockItemCheck,
         quickShipCheck,
       ] = await Promise.all([
         // Get all categories
@@ -581,77 +326,53 @@ export async function GET(request: NextRequest) {
         }),
         // Get all patterns
         prisma.product.findMany({
-          select: { tags: true },
-          where: { tags: { contains: "PATTERN_" } },
+          select: { pattern: true },
+          distinct: ["pattern"],
+          where: { pattern: { not: null } },
         }),
         // Get all collections
         prisma.product.findMany({
-          select: { tags: true },
-          where: { tags: { contains: "AQCAT_" } },
+          select: { aqcat: true },
+          distinct: ["aqcat"],
+          where: { aqcat: { not: null } },
         }),
-        // Check for stock items
+        // Check for quick ship items
         prisma.product.findFirst({
-          where: { tags: { contains: "Stock Item" } },
-        }),
-        // Check for quick ship
-        prisma.product.findFirst({
-          where: { tags: { contains: "Quick Ship" } },
+          where: { quickship: true },
         }),
       ]);
 
       availableCategories = allCategories
         .map((c) => c.category)
-        .filter(
-          (category): category is string =>
-            category !== null && category !== undefined
-        )
+        .filter((c): c is string => c !== null)
         .sort();
 
       availableManufacturers = allManufacturers
         .map((m) => m.manufacturer)
-        .filter(
-          (manufacturer): manufacturer is string =>
-            manufacturer !== null && manufacturer !== undefined
-        )
+        .filter((m): m is string => m !== null)
         .sort();
 
-      // Extract patterns
-      const patternsSet = new Set<string>();
-      allPatterns.forEach((product) => {
-        const tags = product.tags?.split(",") || [];
-        tags.forEach((tag) => {
-          const trimmedTag = tag.trim();
-          if (trimmedTag.startsWith("PATTERN_")) {
-            patternsSet.add(trimmedTag.replace("PATTERN_", ""));
-          }
-        });
-      });
-      availablePatterns = Array.from(patternsSet).sort();
+      availablePatterns = allPatterns
+        .map((p) => p.pattern)
+        .filter((p): p is string => p !== null)
+        .sort();
 
-      // Extract collections
-      const collectionsSet = new Set<string>();
-      allCollections.forEach((product) => {
-        const tags = product.tags?.split(",") || [];
-        tags.forEach((tag) => {
-          const trimmedTag = tag.trim();
-          if (trimmedTag.startsWith("AQCAT_")) {
-            collectionsSet.add(trimmedTag.replace("AQCAT_", ""));
-          }
-        });
-      });
-      availableCollections = Array.from(collectionsSet).sort();
+      availableCollections = allCollections
+        .map((c) => c.aqcat)
+        .filter((c): c is string => c !== null)
+        .sort();
 
-      hasStockItems = !!stockItemCheck;
       hasQuickShip = !!quickShipCheck;
     } else {
       // Use the current filtered products to determine available options
-      // First get all products that match the filters (without pagination)
       const allFilteredProducts = await prisma.product.findMany({
         where: whereClause,
         select: {
           category: true,
           manufacturer: true,
-          tags: true,
+          pattern: true,
+          aqcat: true,
+          quickship: true,
         },
       });
 
@@ -659,46 +380,27 @@ export async function GET(request: NextRequest) {
         ...new Set(
           allFilteredProducts
             .map((p) => p.manufacturer)
-            .filter(
-              (manufacturer): manufacturer is string =>
-                manufacturer !== null && manufacturer !== undefined
-            )
+            .filter((m): m is string => m !== null)
         ),
       ].sort();
 
-      // Extract patterns from products
-      const availablePatternsSet = new Set<string>();
-      allFilteredProducts.forEach((product) => {
-        const tags = product.tags?.split(",") || [];
-        tags.forEach((tag) => {
-          const trimmedTag = tag.trim();
-          if (trimmedTag.startsWith("PATTERN_")) {
-            availablePatternsSet.add(trimmedTag.replace("PATTERN_", ""));
-          }
-        });
-      });
-      availablePatterns = Array.from(availablePatternsSet).sort();
+      availablePatterns = [
+        ...new Set(
+          allFilteredProducts
+            .map((p) => p.pattern)
+            .filter((p): p is string => p !== null)
+        ),
+      ].sort();
 
-      // Extract collections from products
-      const availableCollectionsSet = new Set<string>();
-      allFilteredProducts.forEach((product) => {
-        const tags = product.tags?.split(",") || [];
-        tags.forEach((tag) => {
-          const trimmedTag = tag.trim();
-          if (trimmedTag.startsWith("AQCAT_")) {
-            availableCollectionsSet.add(trimmedTag.replace("AQCAT_", ""));
-          }
-        });
-      });
-      availableCollections = Array.from(availableCollectionsSet).sort();
+      availableCollections = [
+        ...new Set(
+          allFilteredProducts
+            .map((p) => p.aqcat)
+            .filter((c): c is string => c !== null)
+        ),
+      ].sort();
 
-      // Check for stock items and quick ship
-      hasStockItems = allFilteredProducts.some((p) =>
-        p.tags?.includes("Stock Item")
-      );
-      hasQuickShip = allFilteredProducts.some((p) =>
-        p.tags?.includes("Quick Ship")
-      );
+      hasQuickShip = allFilteredProducts.some((p) => p.quickship);
 
       // Get available categories within the filtered products
       availableCategories = [
@@ -729,40 +431,52 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Ensure all response fields are defined
-    const response = {
+    // Map the products to include trx_product_id and maintain all fields
+    const mappedProducts = products.map((product) => {
+      const { id, ...rest } = product;
+      return {
+        ...rest,
+        trx_product_id: Number(id),
+        qtyAvailable: product.qtyAvailable ? Number(product.qtyAvailable) : 0,
+        category: product.category || "",
+        manufacturer: product.manufacturer || "",
+        description: product.description || "",
+        images: product.images.map((img) => ({ url: img.url })),
+      };
+    });
+
+    // Convert BigInt values to strings
+    const safeProducts = convertBigIntToString(mappedProducts);
+
+    // Calculate pagination info
+    const totalPages = Math.ceil(total / pageSize);
+    const hasMore = page < totalPages;
+
+    return NextResponse.json({
       success: true,
-      products: safeProducts || [],
+      products: safeProducts,
       pagination: {
-        total: total || 0,
-        page: page || 1,
-        pageSize: pageSize || 24,
-        totalPages: totalPages || 0,
-        hasMore: hasMore || false,
+        total,
+        page,
+        pageSize,
+        totalPages,
+        hasMore,
       },
       filters: {
         appliedCategories: categories || [],
         appliedManufacturers: manufacturers || [],
-        appliedPatterns: patternTags || [],
-        appliedTags: [
-          ...(collectionTags || []),
-          ...(stockAndQuickShipTags || []),
-        ],
-        // Add available filter options based on current filtered products
+        appliedPattern: pattern || "",
+        appliedCollection: collection || "",
+        appliedQuickShip: quickShip,
         availableCategories,
         availableManufacturers,
         availablePatterns,
         availableCollections,
-        hasStockItems,
         hasQuickShip,
       },
-    };
-
-    return NextResponse.json(response);
+    });
   } catch (error) {
     console.error("Error in GET /api/products:", error);
-
-    // Return a properly formatted error response
     return NextResponse.json(
       {
         success: false,

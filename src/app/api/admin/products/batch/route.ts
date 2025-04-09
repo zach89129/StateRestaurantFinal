@@ -79,10 +79,11 @@ export async function PUT(request: NextRequest) {
       data: {
         ...(data.category && { category: data.category }),
         ...(data.manufacturer && { manufacturer: data.manufacturer }),
-        ...(data.tags && { tags: data.tags }),
-        ...(typeof data.qtyAvailable === "number" && {
-          qtyAvailable: data.qtyAvailable,
-        }),
+        ...(data.uom && { uom: data.uom }),
+        ...(data.qtyAvailable && { qtyAvailable: data.qtyAvailable }),
+        ...(data.aqcat !== undefined && { aqcat: data.aqcat }),
+        ...(data.pattern !== undefined && { pattern: data.pattern }),
+        ...(data.quickship !== undefined && { quickship: data.quickship }),
       },
     });
 

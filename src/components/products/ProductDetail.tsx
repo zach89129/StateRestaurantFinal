@@ -6,20 +6,25 @@ import { useCart } from "@/contexts/CartContext";
 import Link from "next/link";
 import QuantityInput from "./QuantityInput";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import { useRouter } from "next/navigation";
+
+interface Product {
+  id: number;
+  sku: string;
+  title: string;
+  description: string;
+  manufacturer: string;
+  category: string;
+  uom: string;
+  qtyAvailable: number;
+  aqcat: string | null;
+  pattern: string | null;
+  quickship: boolean;
+  images: { src: string }[];
+}
 
 interface ProductDetailProps {
-  product: {
-    id: number;
-    sku: string;
-    title: string;
-    description: string;
-    manufacturer: string;
-    category: string;
-    uom: string;
-    qtyAvailable: number;
-    tags: string;
-    images: { src: string }[];
-  };
+  product: Product;
 }
 
 export default function ProductDetail({ product }: ProductDetailProps) {
@@ -27,6 +32,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const router = useRouter();
 
   const nextImage = () => {
     setCurrentImageIndex((prev) =>
@@ -53,6 +59,20 @@ export default function ProductDetail({ product }: ProductDetailProps) {
       },
       quantity
     );
+  };
+
+  const handleMoreOfPattern = () => {
+    if (product.pattern) {
+      const encodedPattern = encodeURIComponent(product.pattern);
+      router.push(`/products?pattern=${encodedPattern}&page=1`);
+    }
+  };
+
+  const handleMoreFromCollection = () => {
+    if (product.aqcat) {
+      const encodedCollection = encodeURIComponent(product.aqcat);
+      router.push(`/products?collection=${encodedCollection}&page=1`);
+    }
   };
 
   return (
@@ -166,6 +186,52 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                 </div>
               )}
 
+              {/* Additional Product Info */}
+              <div className="pt-6 border-t">
+                <h3 className="text-sm font-medium text-gray-900 mb-4">
+                  Items Sold As
+                </h3>
+                <p className="text-sm text-gray-600">CS(2DZ) of 2 DZ</p>
+              </div>
+
+              <div className="mt-6">
+                <div className="text-base text-gray-700">
+                  <p>Manufacturer: {product.manufacturer}</p>
+                  <p>Category: {product.category}</p>
+                  <p>Unit of Measure: {product.uom}</p>
+                  <p>Available Quantity: {product.qtyAvailable}</p>
+                </div>
+              </div>
+
+              {product.quickship && (
+                <div className="mt-6">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    Quick Ship Available
+                  </span>
+                </div>
+              )}
+
+              <div className="mt-6">
+                <div className="flex flex-col space-y-4">
+                  {product.aqcat && (
+                    <button
+                      onClick={handleMoreFromCollection}
+                      className="text-blue-600 hover:text-blue-800 text-left"
+                    >
+                      More Like This: {product.aqcat}
+                    </button>
+                  )}
+                  {product.pattern && (
+                    <button
+                      onClick={handleMoreOfPattern}
+                      className="text-blue-600 hover:text-blue-800 text-left capitalize"
+                    >
+                      More of This Pattern: {product.pattern.toLowerCase()}
+                    </button>
+                  )}
+                </div>
+              </div>
+
               {/* Add to Cart Section - Only show if logged in */}
               {session?.user ? (
                 <div className="pt-6 border-t">
@@ -174,11 +240,14 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                       <QuantityInput
                         onQuantityChange={setQuantity}
                         initialQuantity={1}
+                        className="w-32"
+                        preventPropagation={true}
                       />
                     </div>
                     <button
                       onClick={handleAddToCart}
                       className="bg-blue-600 text-white px-8 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                      disabled={product.qtyAvailable <= 0}
                     >
                       Add to Cart
                     </button>
@@ -198,14 +267,6 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                   </p>
                 </div>
               )}
-
-              {/* Additional Product Info */}
-              <div className="pt-6 border-t">
-                <h3 className="text-sm font-medium text-gray-900 mb-4">
-                  Items Sold As
-                </h3>
-                <p className="text-sm text-gray-600">CS(2DZ) of 2 DZ</p>
-              </div>
             </div>
           </div>
         </div>

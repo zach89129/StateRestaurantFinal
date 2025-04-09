@@ -17,8 +17,10 @@ export async function GET(request: Request, context: RouteParams) {
         category: decodedCategory,
       },
       select: {
-        tags: true,
         manufacturer: true,
+        pattern: true,
+        aqcat: true,
+        quickship: true,
       },
     });
 
@@ -27,31 +29,20 @@ export async function GET(request: Request, context: RouteParams) {
       ...new Set(products.map((p) => p.manufacturer)),
     ].filter(Boolean);
 
-    // Extract patterns from tags
+    // Extract patterns
     const patterns = products
-      .map((p) => {
-        const tags = p.tags?.split(",").map((t) => t.trim()) || [];
-        return tags
-          .filter((tag) => tag.startsWith("PATTERN_"))
-          .map((tag) => tag.replace("PATTERN_", ""));
-      })
-      .flat();
+      .map((p) => p.pattern)
+      .filter((p): p is string => p !== null);
     const uniquePatterns = [...new Set(patterns)];
 
-    // Check if any products have stock items or quick ship
-    const hasStockItems = products.some(
-      (p) => p.tags?.includes("Stock Item") || false
-    );
-    const hasQuickShip = products.some(
-      (p) => p.tags?.includes("Quick Ship") || false
-    );
+    // Check if any products have quick ship
+    const hasQuickShip = products.some((p) => p.quickship);
 
     return NextResponse.json({
       success: true,
       options: {
         manufacturers: manufacturers.sort(),
         patterns: uniquePatterns.sort(),
-        hasStockItems,
         hasQuickShip,
       },
     });

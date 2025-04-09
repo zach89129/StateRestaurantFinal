@@ -18,7 +18,9 @@ interface VenueProduct {
   qtyAvailable: number | null;
   price: number | null;
   images: { src: string }[];
-  tags: string | null;
+  aqcat: string | null;
+  pattern: string | null;
+  quickship: boolean;
 }
 
 interface VenueProductsResponse {
@@ -35,7 +37,9 @@ interface VenueProductsResponse {
     qtyAvailable: bigint | number | null;
     price: number | null;
     images: { src: string }[];
-    tags: string | null;
+    aqcat: string | null;
+    pattern: string | null;
+    quickship: boolean;
   }[];
 }
 
@@ -61,7 +65,9 @@ export default function VenuePage({
   const [selectedManufacturers, setSelectedManufacturers] = useState<string[]>(
     []
   );
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedPatterns, setSelectedPatterns] = useState<string[]>([]);
+  const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
+  const [selectedQuickShip, setSelectedQuickShip] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -145,16 +151,32 @@ export default function VenuePage({
     );
   };
 
-  const handleTagChange = (tag: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+  const handlePatternChange = (pattern: string) => {
+    setSelectedPatterns((prev) =>
+      prev.includes(pattern)
+        ? prev.filter((p) => p !== pattern)
+        : [...prev, pattern]
     );
+  };
+
+  const handleCollectionChange = (collection: string) => {
+    setSelectedCollections((prev) =>
+      prev.includes(collection)
+        ? prev.filter((c) => c !== collection)
+        : [...prev, collection]
+    );
+  };
+
+  const handleQuickShipChange = () => {
+    setSelectedQuickShip(!selectedQuickShip);
   };
 
   const handleClearAll = () => {
     setSelectedCategories([]);
     setSelectedManufacturers([]);
-    setSelectedTags([]);
+    setSelectedPatterns([]);
+    setSelectedCollections([]);
+    setSelectedQuickShip(false);
   };
 
   const getSortOptions = (products: VenueProduct[]) => {
@@ -162,33 +184,20 @@ export default function VenuePage({
     const manufacturers = new Set<string>();
     const patterns = new Set<string>();
     const collections = new Set<string>();
-    const otherTags = new Set<string>();
 
-    // Process tags
     products.forEach((product) => {
       if (product.category) categories.add(product.category);
       if (product.manufacturer) manufacturers.add(product.manufacturer);
-      const tags = product.tags?.split(",").map((t) => t.trim()) || [];
-      tags.forEach((tag) => {
-        if (tag.startsWith("PATTERN_")) {
-          patterns.add(tag.replace("PATTERN_", ""));
-        } else if (tag.startsWith("AQCAT_")) {
-          collections.add(tag.replace("AQCAT_", ""));
-        } else {
-          otherTags.add(tag);
-        }
-      });
+      if (product.pattern) patterns.add(product.pattern);
+      if (product.aqcat) collections.add(product.aqcat);
     });
 
     return {
       categories: Array.from(categories).sort(),
       manufacturers: Array.from(manufacturers).sort(),
-      tags: Array.from(otherTags).sort(),
       patterns: Array.from(patterns).sort(),
       collections: Array.from(collections).sort(),
-      hasStockItems: products.some((p) =>
-        p.tags?.includes("Stock Item / Quick Ship")
-      ),
+      hasQuickShip: products.some((p) => p.quickship),
     };
   };
 
@@ -208,12 +217,23 @@ export default function VenuePage({
         selectedManufacturers.length === 0 ||
         selectedManufacturers.includes(product.manufacturer || "");
 
-      const matchesTags =
-        selectedTags.length === 0 ||
-        selectedTags.some((tag) => product.tags?.includes(tag));
+      const matchesPattern =
+        selectedPatterns.length === 0 ||
+        (product.pattern && selectedPatterns.includes(product.pattern));
+
+      const matchesCollection =
+        selectedCollections.length === 0 ||
+        (product.aqcat && selectedCollections.includes(product.aqcat));
+
+      const matchesQuickShip = !selectedQuickShip || product.quickship;
 
       return (
-        searchMatch && matchesCategory && matchesManufacturer && matchesTags
+        searchMatch &&
+        matchesCategory &&
+        matchesManufacturer &&
+        matchesPattern &&
+        matchesCollection &&
+        matchesQuickShip
       );
     }) || [];
 
@@ -297,10 +317,14 @@ export default function VenuePage({
           sortOptions={getSortOptions(venue.products)}
           selectedCategories={selectedCategories}
           selectedManufacturers={selectedManufacturers}
-          selectedTags={selectedTags}
+          selectedPatterns={selectedPatterns}
+          selectedCollections={selectedCollections}
+          selectedQuickShip={selectedQuickShip}
           onCategoryChange={handleCategoryChange}
           onManufacturerChange={handleManufacturerChange}
-          onTagChange={handleTagChange}
+          onPatternChange={handlePatternChange}
+          onCollectionChange={handleCollectionChange}
+          onQuickShipChange={handleQuickShipChange}
           onClearAll={handleClearAll}
           isOpen={isFilterOpen}
           onClose={() => setIsFilterOpen(false)}

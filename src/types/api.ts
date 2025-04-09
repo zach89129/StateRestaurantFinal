@@ -47,6 +47,11 @@ export interface ProductInput {
     uom?: string;
     qty_available?: number;
     tags?: string;
+    metaData?: {
+      aqcat?: string;
+      pattern?: string;
+      quickShip?: boolean;
+    };
     images?: { src: string }[];
   }[];
 }

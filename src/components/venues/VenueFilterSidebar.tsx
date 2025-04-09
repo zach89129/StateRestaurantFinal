@@ -6,20 +6,23 @@ import CollapsibleSection from "../ui/CollapsibleSection";
 interface SortOptions {
   categories: string[];
   manufacturers: string[];
-  tags: string[];
   patterns: string[];
   collections: string[];
-  hasStockItems: boolean;
+  hasQuickShip: boolean;
 }
 
 interface VenueFilterSidebarProps {
   sortOptions: SortOptions;
   selectedCategories: string[];
   selectedManufacturers: string[];
-  selectedTags: string[];
+  selectedPatterns: string[];
+  selectedCollections: string[];
+  selectedQuickShip: boolean;
   onCategoryChange: (category: string) => void;
   onManufacturerChange: (manufacturer: string) => void;
-  onTagChange: (tag: string) => void;
+  onPatternChange: (pattern: string) => void;
+  onCollectionChange: (collection: string) => void;
+  onQuickShipChange: (value: boolean) => void;
   onClearAll: () => void;
   isOpen: boolean;
   onClose: () => void;
@@ -31,10 +34,14 @@ export default function VenueFilterSidebar({
   sortOptions,
   selectedCategories,
   selectedManufacturers,
-  selectedTags,
+  selectedPatterns,
+  selectedCollections,
+  selectedQuickShip,
   onCategoryChange,
   onManufacturerChange,
-  onTagChange,
+  onPatternChange,
+  onCollectionChange,
+  onQuickShipChange,
   onClearAll,
   isOpen,
   onClose,
@@ -43,11 +50,21 @@ export default function VenueFilterSidebar({
 }: VenueFilterSidebarProps) {
   const [categorySearch, setCategorySearch] = useState("");
   const [manufacturerSearch, setManufacturerSearch] = useState("");
+  const [patternSearch, setPatternSearch] = useState("");
+  const [collectionSearch, setCollectionSearch] = useState("");
 
   const filterItems = (items: string[], searchTerm: string) => {
     return items.filter((item) =>
       item.toLowerCase().includes(searchTerm.toLowerCase())
     );
+  };
+
+  const handleClearAll = () => {
+    onClearAll();
+    setCategorySearch("");
+    setManufacturerSearch("");
+    setPatternSearch("");
+    setCollectionSearch("");
   };
 
   return (
@@ -143,9 +160,11 @@ export default function VenueFilterSidebar({
             <div className="flex items-center justify-between mb-4">
               {(selectedCategories.length > 0 ||
                 selectedManufacturers.length > 0 ||
-                selectedTags.length > 0) && (
+                selectedPatterns.length > 0 ||
+                selectedCollections.length > 0 ||
+                selectedQuickShip) && (
                 <button
-                  onClick={onClearAll}
+                  onClick={handleClearAll}
                   className="text-sm text-gray-600 hover:text-gray-900"
                 >
                   Clear all
@@ -174,6 +193,64 @@ export default function VenueFilterSidebar({
                         />
                         <span className="ml-2 text-sm text-gray-900">
                           {category}
+                        </span>
+                      </label>
+                    )
+                  )}
+                </div>
+              </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection title="PATTERNS" defaultOpen={true}>
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  placeholder="Search patterns"
+                  className="w-full px-3 py-2 border rounded text-sm text-gray-500"
+                  value={patternSearch}
+                  onChange={(e) => setPatternSearch(e.target.value)}
+                />
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {filterItems(sortOptions.patterns, patternSearch).map(
+                    (pattern) => (
+                      <label key={pattern} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-gray-300"
+                          checked={selectedPatterns.includes(pattern)}
+                          onChange={() => onPatternChange(pattern)}
+                        />
+                        <span className="ml-2 text-sm text-gray-900">
+                          {pattern}
+                        </span>
+                      </label>
+                    )
+                  )}
+                </div>
+              </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection title="COLLECTIONS" defaultOpen={true}>
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  placeholder="Search collections"
+                  className="w-full px-3 py-2 border rounded text-sm text-gray-500"
+                  value={collectionSearch}
+                  onChange={(e) => setCollectionSearch(e.target.value)}
+                />
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {filterItems(sortOptions.collections, collectionSearch).map(
+                    (collection) => (
+                      <label key={collection} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-gray-300"
+                          checked={selectedCollections.includes(collection)}
+                          onChange={() => onCollectionChange(collection)}
+                        />
+                        <span className="ml-2 text-sm text-gray-900">
+                          {collection}
                         </span>
                       </label>
                     )
@@ -212,21 +289,18 @@ export default function VenueFilterSidebar({
               </div>
             </CollapsibleSection>
 
-            {sortOptions.hasStockItems && (
-              <CollapsibleSection
-                title="STOCK ITEM / QUICK SHIP"
-                defaultOpen={true}
-              >
+            {sortOptions.hasQuickShip && (
+              <CollapsibleSection title="QUICK SHIP" defaultOpen={true}>
                 <div className="space-y-2">
                   <label className="flex items-center">
                     <input
                       type="checkbox"
                       className="h-4 w-4 rounded border-gray-300"
-                      checked={selectedTags.includes("Stock Item / Quick Ship")}
-                      onChange={() => onTagChange("Stock Item / Quick Ship")}
+                      checked={selectedQuickShip}
+                      onChange={() => onQuickShipChange(!selectedQuickShip)}
                     />
                     <span className="ml-2 text-sm text-gray-900">
-                      Stock Item / Quick Ship
+                      Quick Ship Available
                     </span>
                   </label>
                 </div>

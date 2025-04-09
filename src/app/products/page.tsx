@@ -10,6 +10,7 @@ import { useSearch } from "@/contexts/SearchContext";
 
 interface Product {
   id: number;
+  trx_product_id: number;
   sku: string;
   title: string;
   description: string;
@@ -17,8 +18,10 @@ interface Product {
   category: string;
   uom: string;
   qtyAvailable: number;
-  tags: string;
-  images: { src: string }[];
+  aqcat: string | null;
+  pattern: string | null;
+  quickship: boolean;
+  images: { url: string }[];
 }
 
 interface PaginationInfo {
@@ -71,13 +74,14 @@ function ProductsContent() {
 
   // Track selected filters from URL params
   const selectedCategories =
-    searchParams.get("category")?.split(",").filter(Boolean) || [];
+    searchParams.get("category_b64")?.split(",").filter(Boolean) || [];
   const selectedManufacturers =
-    searchParams.get("manufacturer")?.split(",").filter(Boolean) || [];
+    searchParams.get("manufacturer_b64")?.split(",").filter(Boolean) || [];
   const selectedPatterns =
-    searchParams.get("pattern")?.split(",").filter(Boolean) || [];
-  const selectedTags =
-    searchParams.get("tags")?.split(",").filter(Boolean) || [];
+    searchParams.get("pattern_b64")?.split(",").filter(Boolean) || [];
+  const selectedCollections =
+    searchParams.get("collection_b64")?.split(",").filter(Boolean) || [];
+  const selectedQuickShip = searchParams.get("quickShip") === "true";
 
   // Fetch products with current filters and pagination
   useEffect(() => {
@@ -126,37 +130,18 @@ function ProductsContent() {
   const handleCategoryChange = (category: string) => {
     const params = new URLSearchParams(searchParams.toString());
     const currentCategories =
-      params
-        .get("category")
-        ?.split(",")
-        .map((c) => decodeURIComponent(c.trim()))
-        .filter(Boolean) || [];
+      params.get("category_b64")?.split(",").filter(Boolean) || [];
+    const base64Category = btoa(category);
 
-    // Normalize for comparison
-    const normalizeCategory = (str: string) => str.trim();
-    const normalizedCategory = normalizeCategory(category);
-
-    let newCategories;
-    if (
-      currentCategories.some((c) => normalizeCategory(c) === normalizedCategory)
-    ) {
-      newCategories = currentCategories.filter(
-        (c) => normalizeCategory(c) !== normalizedCategory
-      );
-    } else {
-      newCategories = [...new Set([...currentCategories, category])];
-    }
+    const newCategories = currentCategories.includes(base64Category)
+      ? currentCategories.filter((c) => c !== base64Category)
+      : [...currentCategories, base64Category];
 
     if (newCategories.length > 0) {
-      params.set(
-        "category",
-        newCategories.map((c) => encodeURIComponent(c)).join(",")
-      );
+      params.set("category_b64", newCategories.join(","));
     } else {
-      params.delete("category");
+      params.delete("category_b64");
     }
-
-    // Reset to first page when filter changes
     params.set("page", "1");
     router.push(`/products?${params.toString()}`, { scroll: false });
   };
@@ -164,40 +149,18 @@ function ProductsContent() {
   const handleManufacturerChange = (manufacturer: string) => {
     const params = new URLSearchParams(searchParams.toString());
     const currentManufacturers =
-      params
-        .get("manufacturer")
-        ?.split(",")
-        .map((m) => decodeURIComponent(m))
-        .filter(Boolean) || [];
+      params.get("manufacturer_b64")?.split(",").filter(Boolean) || [];
+    const base64Manufacturer = btoa(manufacturer);
 
-    // Normalize the manufacturer name for comparison
-    const normalizeString = (str: string) => str.trim();
-    const normalizedManufacturer = normalizeString(manufacturer);
-
-    // Check if the manufacturer is already selected (exact match)
-    const isSelected = currentManufacturers.some(
-      (m) => normalizeString(m) === normalizedManufacturer
-    );
-
-    let newManufacturers;
-    if (isSelected) {
-      newManufacturers = currentManufacturers.filter(
-        (m) => normalizeString(m) !== normalizedManufacturer
-      );
-    } else {
-      // Use the original manufacturer name when adding
-      newManufacturers = [...new Set([...currentManufacturers, manufacturer])];
-    }
+    const newManufacturers = currentManufacturers.includes(base64Manufacturer)
+      ? currentManufacturers.filter((m) => m !== base64Manufacturer)
+      : [...currentManufacturers, base64Manufacturer];
 
     if (newManufacturers.length > 0) {
-      params.set(
-        "manufacturer",
-        newManufacturers.map((m) => encodeURIComponent(m)).join(",")
-      );
+      params.set("manufacturer_b64", newManufacturers.join(","));
     } else {
-      params.delete("manufacturer");
+      params.delete("manufacturer_b64");
     }
-
     params.set("page", "1");
     router.push(`/products?${params.toString()}`, { scroll: false });
   };
@@ -205,50 +168,55 @@ function ProductsContent() {
   const handlePatternChange = (pattern: string) => {
     const params = new URLSearchParams(searchParams.toString());
     const currentPatterns =
-      params.get("pattern")?.split(",").filter(Boolean) || [];
+      params.get("pattern_b64")?.split(",").filter(Boolean) || [];
+    const base64Pattern = btoa(pattern);
 
-    let newPatterns;
-    if (currentPatterns.includes(pattern)) {
-      newPatterns = currentPatterns.filter((p) => p !== pattern);
-    } else {
-      newPatterns = [...currentPatterns, pattern];
-    }
+    const newPatterns = currentPatterns.includes(base64Pattern)
+      ? currentPatterns.filter((p) => p !== base64Pattern)
+      : [...currentPatterns, base64Pattern];
 
     if (newPatterns.length > 0) {
-      params.set("pattern", newPatterns.join(","));
+      params.set("pattern_b64", newPatterns.join(","));
     } else {
-      params.delete("pattern");
+      params.delete("pattern_b64");
     }
-
-    // Reset to first page when filter changes
     params.set("page", "1");
     router.push(`/products?${params.toString()}`, { scroll: false });
   };
 
-  const handleTagChange = (tag: string) => {
+  const handleCollectionChange = (collection: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    const currentTags = params.get("tags")?.split(",").filter(Boolean) || [];
+    const currentCollections =
+      params.get("collection_b64")?.split(",").filter(Boolean) || [];
+    const base64Collection = btoa(collection);
 
-    let newTags;
-    if (currentTags.includes(tag)) {
-      newTags = currentTags.filter((t) => t !== tag);
+    const newCollections = currentCollections.includes(base64Collection)
+      ? currentCollections.filter((c) => c !== base64Collection)
+      : [...currentCollections, base64Collection];
+
+    if (newCollections.length > 0) {
+      params.set("collection_b64", newCollections.join(","));
     } else {
-      newTags = [...currentTags, tag];
+      params.delete("collection_b64");
     }
-
-    if (newTags.length > 0) {
-      params.set("tags", newTags.join(","));
-    } else {
-      params.delete("tags");
-    }
-
-    // Reset to first page when filter changes
     params.set("page", "1");
-    router.push(`/products?${params}`, { scroll: false });
+    router.push(`/products?${params.toString()}`, { scroll: false });
+  };
+
+  const handleQuickShipChange = (value: boolean) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) {
+      params.set("quickShip", "true");
+    } else {
+      params.delete("quickShip");
+    }
+    params.set("page", "1");
+    router.push(`/products?${params.toString()}`, { scroll: false });
   };
 
   const clearAllFilters = () => {
-    router.push("/products", { scroll: false });
+    // Reset to base URL with only page=1
+    router.push("/products?page=1", { scroll: false });
   };
 
   const toggleFilter = () => {
@@ -277,21 +245,29 @@ function ProductsContent() {
 
         <div className="flex flex-col lg:flex-row gap-8 w-full overflow-hidden">
           {/* Left Sidebar */}
-          <FilterSidebar
-            key="filter-sidebar"
-            sortOptions={sortOptions}
-            selectedCategories={selectedCategories}
-            selectedManufacturers={selectedManufacturers}
-            selectedPatterns={selectedPatterns}
-            selectedTags={selectedTags}
-            onCategoryChange={handleCategoryChange}
-            onManufacturerChange={handleManufacturerChange}
-            onPatternChange={handlePatternChange}
-            onTagChange={handleTagChange}
-            onClearAll={clearAllFilters}
-            isOpen={isFilterOpen}
-            onClose={() => setIsFilterOpen(false)}
-          />
+          <div
+            className={`lg:w-1/4 ${
+              isSearchVisible ? "hidden lg:block" : "block"
+            }`}
+          >
+            <FilterSidebar
+              key="filter-sidebar"
+              sortOptions={sortOptions}
+              selectedCategories={selectedCategories}
+              selectedManufacturers={selectedManufacturers}
+              selectedPatterns={selectedPatterns}
+              selectedCollections={selectedCollections}
+              selectedQuickShip={selectedQuickShip}
+              onCategoryChange={handleCategoryChange}
+              onManufacturerChange={handleManufacturerChange}
+              onPatternChange={handlePatternChange}
+              onCollectionChange={handleCollectionChange}
+              onQuickShipChange={handleQuickShipChange}
+              onClearAll={clearAllFilters}
+              isOpen={isFilterOpen}
+              onClose={() => setIsFilterOpen(false)}
+            />
+          </div>
 
           {/* Main Content */}
           <div className="flex-1 min-h-0 max-w-full overflow-hidden">
@@ -322,7 +298,7 @@ function ProductsContent() {
                 >
                   {products.map((product, index) => (
                     <ProductCard
-                      key={`${product.id}-${index}`}
+                      key={`${product.trx_product_id}-${index}`}
                       product={product}
                     />
                   ))}
