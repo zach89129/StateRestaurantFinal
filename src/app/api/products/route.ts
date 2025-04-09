@@ -189,7 +189,19 @@ export async function GET(request: NextRequest) {
     // Handle base64 encoded category
     const categoryB64 = searchParams.get("category_b64");
     const categories = categoryB64
-      ? [atob(categoryB64)]
+      ? categoryB64
+          .split(",")
+          .map((cat) => {
+            try {
+              return Buffer.from(decodeURIComponent(cat), "base64")
+                .toString("utf-8")
+                .trim();
+            } catch (e) {
+              console.error("Error decoding category:", cat, e);
+              return "";
+            }
+          })
+          .filter(Boolean)
       : searchParams
           .get("category")
           ?.split(",")

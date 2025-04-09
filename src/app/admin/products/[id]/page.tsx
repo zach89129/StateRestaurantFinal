@@ -15,6 +15,9 @@ interface Product {
   qtyAvailable: number | null;
   tags: string | null;
   imageSrc: string | null;
+  aqcat: string | null;
+  pattern: string | null;
+  quickship: boolean;
 }
 
 export default function EditProductPage({
@@ -55,34 +58,41 @@ export default function EditProductPage({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!product) return;
+    setError("");
 
-    setSaving(true);
-    setError(null);
+    if (!product) return;
 
     try {
       const response = await fetch("/api/admin/products", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(product),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: product.id,
+          sku: product.sku,
+          title: product.title,
+          description: product.description,
+          manufacturer: product.manufacturer,
+          category: product.category,
+          uom: product.uom,
+          qtyAvailable: product.qtyAvailable,
+          aqcat: product.aqcat,
+          pattern: product.pattern,
+          quickship: product.quickship,
+          images: product.imageSrc ? [product.imageSrc] : [],
+        }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || "Failed to update product");
+        throw new Error("Failed to update product");
       }
 
       router.push("/admin/products");
-    } catch (error) {
-      console.error("Error updating product:", error);
-      setError(
-        error instanceof Error ? error.message : "Failed to update product"
-      );
-    } finally {
-      setSaving(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
     }
   };
 
@@ -261,6 +271,61 @@ export default function EditProductPage({
             onChange={handleInputChange}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
           />
+        </div>
+
+        <div>
+          <label
+            htmlFor="aqcat"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Collection (AQCAT)
+          </label>
+          <input
+            type="text"
+            id="aqcat"
+            name="aqcat"
+            value={product.aqcat || ""}
+            onChange={handleInputChange}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="pattern"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Pattern
+          </label>
+          <input
+            type="text"
+            id="pattern"
+            name="pattern"
+            value={product.pattern || ""}
+            onChange={handleInputChange}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          />
+        </div>
+
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="quickship"
+            name="quickship"
+            checked={product.quickship}
+            onChange={(e) =>
+              setProduct((prev) =>
+                prev ? { ...prev, quickship: e.target.checked } : null
+              )
+            }
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <label
+            htmlFor="quickship"
+            className="ml-2 block text-sm font-medium text-gray-700"
+          >
+            Quick Ship Available
+          </label>
         </div>
 
         <div>

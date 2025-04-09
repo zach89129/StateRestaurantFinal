@@ -7,21 +7,7 @@ import Link from "next/link";
 import QuantityInput from "./QuantityInput";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
-
-interface Product {
-  id: number;
-  sku: string;
-  title: string;
-  description: string;
-  manufacturer: string;
-  category: string;
-  uom: string;
-  qtyAvailable: number;
-  aqcat: string | null;
-  pattern: string | null;
-  quickship: boolean;
-  images: { src: string }[];
-}
+import { Product } from "@/types/product";
 
 interface ProductDetailProps {
   product: Product;
@@ -55,7 +41,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
         manufacturer: product.manufacturer,
         category: product.category,
         uom: product.uom,
-        imageSrc: product.images[0].src,
+        imageSrc: product.images[0].url,
       },
       quantity
     );
@@ -63,15 +49,15 @@ export default function ProductDetail({ product }: ProductDetailProps) {
 
   const handleMoreOfPattern = () => {
     if (product.pattern) {
-      const encodedPattern = encodeURIComponent(product.pattern);
-      router.push(`/products?pattern=${encodedPattern}&page=1`);
+      const encodedPattern = btoa(product.pattern);
+      router.push(`/products?pattern_b64=${encodedPattern}&page=1`);
     }
   };
 
   const handleMoreFromCollection = () => {
     if (product.aqcat) {
-      const encodedCollection = encodeURIComponent(product.aqcat);
-      router.push(`/products?collection=${encodedCollection}&page=1`);
+      const encodedCollection = btoa(product.aqcat);
+      router.push(`/products?collection_b64=${encodedCollection}&page=1`);
     }
   };
 
@@ -97,62 +83,53 @@ export default function ProductDetail({ product }: ProductDetailProps) {
             {/* Left Column - Image Gallery */}
             <div className="space-y-4">
               {/* Main Image */}
-              <div className="relative bg-white rounded-lg overflow-hidden p-2">
-                <div className="aspect-square bg-gray-50 flex items-center justify-center p-4 relative">
-                  {product.images.length > 0 ? (
-                    <>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={product.images[currentImageIndex].src}
-                        alt={`${product.title} - Image ${
-                          currentImageIndex + 1
-                        }`}
-                        className="object-contain w-full h-full transition-opacity duration-300 max-h-[500px]"
-                      />
-                      {/* Navigation Arrows */}
-                      {product.images.length > 1 && (
-                        <>
-                          <button
-                            onClick={previousImage}
-                            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-md transition-all"
-                            aria-label="Previous image"
-                          >
-                            <ChevronLeftIcon className="h-6 w-6 text-gray-800" />
-                          </button>
-                          <button
-                            onClick={nextImage}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-md transition-all"
-                            aria-label="Next image"
-                          >
-                            <ChevronRightIcon className="h-6 w-6 text-gray-800" />
-                          </button>
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    <div className="text-gray-400">No image available</div>
-                  )}
-                </div>
+              <div className="relative h-64 w-full overflow-hidden rounded-lg bg-gray-100">
+                {product.images.length > 0 ? (
+                  <img
+                    src={product.images[currentImageIndex].url}
+                    alt={product.title}
+                    className="h-full w-full object-contain"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center">
+                    <span className="text-gray-400">No image available</span>
+                  </div>
+                )}
+                {product.images.length > 1 && (
+                  <>
+                    <button
+                      onClick={previousImage}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-2 text-gray-800 shadow-md hover:bg-white"
+                    >
+                      <ChevronLeftIcon className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={nextImage}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-2 text-gray-800 shadow-md hover:bg-white"
+                    >
+                      <ChevronRightIcon className="h-5 w-5" />
+                    </button>
+                  </>
+                )}
               </div>
 
               {/* Thumbnails */}
               {product.images.length > 1 && (
-                <div className="flex gap-3 overflow-x-auto pb-4 pt-5 px-2 snap-x">
+                <div className="mt-4 flex space-x-2 overflow-x-auto">
                   {product.images.map((image, index) => (
                     <button
                       key={index}
                       onClick={() => setCurrentImageIndex(index)}
-                      className={`flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden snap-start p-1 bg-white ${
+                      className={`h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg ${
                         currentImageIndex === index
-                          ? "ring-2 ring-blue-500 ring-offset-2"
-                          : "ring-1 ring-gray-200 hover:ring-gray-300"
+                          ? "ring-2 ring-blue-500"
+                          : ""
                       }`}
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={image.src}
-                        alt={`${product.title} thumbnail ${index + 1}`}
-                        className="w-full h-full object-contain rounded-md"
+                        src={image.url}
+                        alt={`${product.title} - ${index + 1}`}
+                        className="h-full w-full object-cover"
                       />
                     </button>
                   ))}

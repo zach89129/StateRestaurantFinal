@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import ProductDetail from "@/components/products/ProductDetail";
+import { Product } from "@/types/product";
 import { prisma } from "@/lib/prisma";
 
 interface PageProps {
@@ -27,7 +28,7 @@ export default async function ProductPage({ params }: PageProps) {
     notFound();
   }
 
-  const formattedProduct = {
+  const formattedProduct: Product = {
     id: Number(product.id),
     sku: product.sku,
     title: product.title,
@@ -35,9 +36,11 @@ export default async function ProductPage({ params }: PageProps) {
     manufacturer: product.manufacturer || "",
     category: product.category || "",
     uom: product.uom || "",
-    qtyAvailable: product.qtyAvailable || 0,
-    tags: product.tags || "",
-    images: product.images.map((img) => ({ src: img.url })),
+    qtyAvailable: product.qtyAvailable ? Number(product.qtyAvailable) : 0,
+    aqcat: product.aqcat || "",
+    pattern: product.pattern || "",
+    quickship: product.quickship || false,
+    images: product.images.map((img) => ({ url: img.url })),
   };
 
   return <ProductDetail product={formattedProduct} />;
