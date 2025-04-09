@@ -3,16 +3,13 @@ import { prisma } from "@/lib/prisma";
 import { convertBigIntToString } from "@/utils/convertBigIntToString";
 import { Prisma } from "@prisma/client";
 
-interface RouteParams {
+interface RouteContext {
   params: {
     category: string;
   };
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { category: string } }
-) {
+export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const searchParams = new URL(request.url).searchParams;
     const page = parseInt(searchParams.get("page") || "1");
@@ -27,7 +24,7 @@ export async function GET(
       searchParams.get("collection_b64")?.split(",").filter(Boolean) || []
     ).map((c) => atob(c));
     const quickShip = searchParams.get("quickShip") === "true";
-    const category = decodeURIComponent(params.category);
+    const category = decodeURIComponent(context.params.category);
 
     // Calculate offset for pagination
     const offset = (page - 1) * pageSize;
