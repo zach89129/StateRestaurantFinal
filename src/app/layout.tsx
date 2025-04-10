@@ -23,6 +23,9 @@ export const metadata = {
   },
 };
 
+// Set environment variables for the client
+export const dynamic = "force-dynamic"; // Disables static optimization for this page
+
 export default function RootLayout({
   children,
 }: {
