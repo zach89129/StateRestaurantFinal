@@ -103,21 +103,6 @@ export default function VendorCatalogsPage() {
 
             <div className="bg-zinc-50 p-8 rounded-lg shadow-md">
               <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Supplemental Catalog
-              </h2>
-              <p className="text-gray-700 leading-relaxed">
-                Our supplemental catalog contains an expanded listing of
-                products representing additional categories such as
-                refrigeration, sanitation, transport, light equipment, and heavy
-                equipment. You will also find some additional tabletop and
-                kitchen items that may not be included in our primary catalog.
-                This is available upon request, reach out to us to get your
-                copy.
-              </p>
-            </div>
-
-            <div className="bg-zinc-50 p-8 rounded-lg shadow-md">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
                 Important Information
               </h2>
               <p className="text-gray-700 leading-relaxed">
