@@ -5,10 +5,13 @@ import { CartProvider } from "@/contexts/CartContext";
 import SessionHelper from "@/components/auth/SessionHelper";
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  // Determine if we're in production or development
+  const isProduction = process.env.NODE_ENV === "production";
+
   return (
     <SessionProvider
-      // Use more reasonable refresh interval to prevent loops
-      refetchInterval={30} // Check every 30 seconds instead of 5
+      // Less aggressive refresh for production
+      refetchInterval={isProduction ? 60 : 30}
       refetchOnWindowFocus={true}
       refetchWhenOffline={false}
     >

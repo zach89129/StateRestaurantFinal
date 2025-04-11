@@ -8,6 +8,16 @@ export async function middleware(request: NextRequest) {
   console.log("Cookies received:", request.cookies.toString());
   console.log("Request URL:", request.url);
 
+  // Log specific cookies to check for session token
+  const sessionCookie =
+    request.cookies.get("__Secure-next-auth.session-token") ||
+    request.cookies.get("next-auth.session-token");
+
+  console.log("Session cookie found:", sessionCookie ? "Yes" : "No");
+  if (sessionCookie) {
+    console.log("Session cookie name:", sessionCookie.name);
+  }
+
   // Check if this is a POST request to one of our API endpoints that requires an API key
   const requiresApiKey =
     request.method === "POST" &&
@@ -38,6 +48,7 @@ export async function middleware(request: NextRequest) {
     const token = await getToken({
       req: request,
       secret: process.env.NEXTAUTH_SECRET,
+      secureCookie: true,
     });
 
     console.log("Token found:", token ? "Yes" : "No");
