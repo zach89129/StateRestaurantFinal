@@ -112,27 +112,27 @@ export const authOptions: AuthOptions = {
       name: `next-auth.session-token`,
       options: {
         httpOnly: true,
-        sameSite: "lax",
+        sameSite: "none",
         path: "/",
-        secure: process.env.NODE_ENV === "production", // Only secure in production
+        secure: true,
       },
     },
     callbackUrl: {
       name: `next-auth.callback-url`,
       options: {
         httpOnly: true,
-        sameSite: "lax",
+        sameSite: "none",
         path: "/",
-        secure: process.env.NODE_ENV === "production",
+        secure: true,
       },
     },
     csrfToken: {
       name: `next-auth.csrf-token`,
       options: {
         httpOnly: true,
-        sameSite: "lax",
+        sameSite: "none",
         path: "/",
-        secure: process.env.NODE_ENV === "production",
+        secure: true,
       },
     },
   },
@@ -142,6 +142,9 @@ export const authOptions: AuthOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
+      console.log("JWT callback - token:", token);
+      console.log("JWT callback - user:", user);
+
       if (user) {
         token.sub = user.id;
         token.email = user.email;
@@ -149,11 +152,19 @@ export const authOptions: AuthOptions = {
         token.isSuperuser = user.isSuperuser;
         token.trxCustomerId = user.trxCustomerId;
         token.name = user.email; // Add name to ensure compatibility
+
+        // Add explicit expiration time
+        token.iat = Math.floor(Date.now() / 1000);
+        token.exp = Math.floor(Date.now() / 1000) + 24 * 60 * 60; // 24 hours
       }
 
+      console.log("JWT callback - updated token:", token);
       return token;
     },
     async session({ session, token }) {
+      console.log("Session callback - session:", session);
+      console.log("Session callback - token:", token);
+
       if (token && session.user) {
         session.user.id = token.sub as string;
         session.user.email = token.email as string;
@@ -165,8 +176,14 @@ export const authOptions: AuthOptions = {
         session.user.isSuperuser = token.isSuperuser as boolean;
         session.user.trxCustomerId = token.trxCustomerId as string;
         session.user.name = token.email as string; // Add name to ensure compatibility
+
+        // Add session expiry
+        session.expires = new Date(
+          Date.now() + 24 * 60 * 60 * 1000
+        ).toISOString();
       }
 
+      console.log("Session callback - updated session:", session);
       return session;
     },
     async redirect({ url, baseUrl }) {

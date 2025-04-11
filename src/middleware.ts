@@ -4,6 +4,10 @@ import { getToken } from "next-auth/jwt";
 // import { verifyApiKey } from "@/lib/api-auth";
 
 export async function middleware(request: NextRequest) {
+  console.log("Middleware running for path:", request.nextUrl.pathname);
+  console.log("Cookies received:", request.cookies.toString());
+  console.log("Request URL:", request.url);
+
   // Check if this is a POST request to one of our API endpoints that requires an API key
   const requiresApiKey =
     request.method === "POST" &&
@@ -12,72 +16,75 @@ export async function middleware(request: NextRequest) {
       request.nextUrl.pathname === "/api/customers");
 
   if (requiresApiKey) {
-    // Temporarily commenting out API key verification
-    /*
-    const apiKey = request.headers.get("x-api-key");
-    console.log("Received API Key:", apiKey);
-    console.log("Request path:", request.nextUrl.pathname);
-    console.log("Request method:", request.method);
+    return NextResponse.next();
+  }
 
-    if (!apiKey) {
-      console.log("No API key provided");
-      return NextResponse.json({ error: "Missing API key" }, { status: 401 });
-    }
+  // Check if this is a next-auth API route or callback
+  const isAuthRoute =
+    request.nextUrl.pathname.startsWith("/api/auth") ||
+    request.nextUrl.pathname.includes("/callback");
 
-    const isValid = await verifyApiKey(apiKey, process.env.API_KEY_HASH!);
-    console.log("API Key validation result:", isValid);
-    console.log("Stored hash:", process.env.API_KEY_HASH);
-    console.log("Salt used:", process.env.API_KEY_SALT);
-
-    if (!isValid) {
-      console.log("Invalid API key");
-      return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
-    }
-
-    console.log("API key validation successful");
-    */
+  if (isAuthRoute) {
+    console.log(
+      "Auth route detected, bypassing auth check:",
+      request.nextUrl.pathname
+    );
     return NextResponse.next();
   }
 
   // Handle authentication for protected routes
+  console.log("Getting token for path:", request.nextUrl.pathname);
+  try {
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
 
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
+    console.log("Token found:", token ? "Yes" : "No");
+    if (token) {
+      console.log("User email:", token.email);
+    }
 
-  // Check if this is a next-auth session check
-  const isAuthCheck = request.nextUrl.pathname.startsWith("/api/auth");
-  if (isAuthCheck) {
+    // Check if trying to access protected routes
+    const isProtectedRoute =
+      request.nextUrl.pathname.startsWith("/reorder") ||
+      request.nextUrl.pathname.startsWith("/venues") ||
+      (request.nextUrl.pathname.startsWith("/api/venue-products") &&
+        request.method === "GET");
+
+    if (isProtectedRoute && !token) {
+      console.log(
+        "Redirecting to login, no token found for protected route:",
+        request.nextUrl.pathname
+      );
+      const url = new URL("/login", request.url);
+      url.searchParams.set("callbackUrl", request.nextUrl.pathname);
+      return NextResponse.redirect(url);
+    }
+
+    // Check if trying to access admin routes
+    const isAdminPath = request.nextUrl.pathname.startsWith("/admin");
+    if (isAdminPath) {
+      if (!token) {
+        console.log(
+          "Redirecting to login, no token found for admin route:",
+          request.nextUrl.pathname
+        );
+        return NextResponse.redirect(new URL("/login", request.url));
+      }
+
+      if (token.email !== process.env.SUPERUSER_ACCT) {
+        console.log("Redirecting to home, not a superuser:", token.email);
+        return NextResponse.redirect(new URL("/", request.url));
+      }
+    }
+
+    return NextResponse.next();
+  } catch (error) {
+    console.error("Error in auth middleware:", error);
+    // Allow request to continue if there's an error with auth
     return NextResponse.next();
   }
-
-  // Check if trying to access protected routes
-  const isProtectedRoute =
-    request.nextUrl.pathname.startsWith("/reorder") ||
-    request.nextUrl.pathname.startsWith("/venues") ||
-    (request.nextUrl.pathname.startsWith("/api/venue-products") &&
-      request.method === "GET");
-
-  if (isProtectedRoute && !token) {
-    const url = new URL("/login", request.url);
-    url.searchParams.set("callbackUrl", request.nextUrl.pathname);
-    return NextResponse.redirect(url);
-  }
-
-  // Check if trying to access admin routes
-  const isAdminPath = request.nextUrl.pathname.startsWith("/admin");
-  if (isAdminPath) {
-    if (!token) {
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
-
-    if (token.email !== process.env.SUPERUSER_ACCT) {
-      return NextResponse.redirect(new URL("/", request.url));
-    }
-  }
-
-  return NextResponse.next();
 }
 
 export const config = {
