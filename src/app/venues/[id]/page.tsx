@@ -408,8 +408,8 @@ export default function VenuePage({
                               onQuantityChange={(quantity) =>
                                 handleQuantityChange(product.id, quantity)
                               }
-                              initialQuantity={quantities[product.id] || 1}
-                              max={product.qtyAvailable || 9999}
+                              initialQuantity={1}
+                              max={9999}
                             />
                             <button
                               onClick={() => handleAddToCart(product)}
@@ -495,8 +495,8 @@ export default function VenuePage({
                           onQuantityChange={(quantity) =>
                             handleQuantityChange(product.id, quantity)
                           }
-                          initialQuantity={quantities[product.id] || 1}
-                          max={product.qtyAvailable || 9999}
+                          initialQuantity={1}
+                          max={9999}
                         />
                       </div>
                       <button
