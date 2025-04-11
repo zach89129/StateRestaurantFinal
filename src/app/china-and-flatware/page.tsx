@@ -1,5 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @next/next/no-img-element */
+"use client";
+
 const vendors = [
   {
     name: "Arc Cardinal",
@@ -137,6 +139,9 @@ export default function ChinaAndFlatwarePage() {
             {vendors.map((vendor) => (
               <div
                 key={vendor.name}
+                onClick={() => {
+                  window.open(vendor.url, "_blank");
+                }}
                 className="group bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300"
               >
                 <div className="h-24 sm:h-32 lg:h-40 bg-white p-3 sm:p-4 flex items-center justify-center">

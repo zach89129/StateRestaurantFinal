@@ -9,9 +9,12 @@ export async function middleware(request: NextRequest) {
   console.log("Request URL:", request.url);
 
   // Log specific cookies to check for session token
-  const sessionCookie =
-    request.cookies.get("__Secure-next-auth.session-token") ||
-    request.cookies.get("next-auth.session-token");
+  const sessionCookieName =
+    process.env.NODE_ENV === "production"
+      ? "__Secure-next-auth.session-token"
+      : "next-auth.session-token";
+
+  const sessionCookie = request.cookies.get(sessionCookieName);
 
   console.log("Session cookie found:", sessionCookie ? "Yes" : "No");
   if (sessionCookie) {

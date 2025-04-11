@@ -1,13 +1,12 @@
 /* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @next/next/no-img-element */
-import Image from "next/image";
 export default function ShowroomPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
       <div className="relative bg-zinc-900 text-white py-20">
         <div className="absolute inset-0 z-0 opacity-50">
-          <Image
+          <img
             src="/StateHeroImage.webp"
             alt="Showroom Background"
             className="w-full h-full object-cover"

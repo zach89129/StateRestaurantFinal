@@ -50,9 +50,15 @@ export default function VerifyOTP() {
       // Get the origin for the complete callback URL
       const origin =
         typeof window !== "undefined" ? window.location.origin : "";
-      const fullCallbackUrl = callbackUrl.startsWith("/")
-        ? `${origin}${callbackUrl}`
-        : callbackUrl;
+      let fullCallbackUrl = callbackUrl;
+
+      // Only prepend origin if it's a relative path and doesn't already have origin
+      if (callbackUrl.startsWith("/")) {
+        fullCallbackUrl = `${origin}${callbackUrl}`;
+      } else if (!callbackUrl.startsWith("http")) {
+        // If it's not an absolute URL and not a relative URL, make it absolute
+        fullCallbackUrl = `${origin}/${callbackUrl}`;
+      }
 
       console.log("Using callback URL:", fullCallbackUrl);
 

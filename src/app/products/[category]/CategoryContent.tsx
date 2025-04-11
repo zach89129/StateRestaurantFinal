@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import FilterSidebar from "@/components/products/FilterSidebar";
 import ProductCard from "@/components/products/ProductCard";
 import Link from "next/link";
+import { useSearch } from "@/contexts/SearchContext";
 
 interface Product {
   trx_product_id: number;
@@ -63,6 +64,7 @@ export default function CategoryContent({ category }: Props) {
     totalPages: 0,
     hasMore: false,
   });
+  const { isSearchVisible } = useSearch();
 
   // Track selected filters from URL params using base64
   const selectedCategories =
@@ -372,7 +374,9 @@ export default function CategoryContent({ category }: Props) {
         {/* Mobile Filter Button */}
         <button
           onClick={() => setIsFilterOpen(!isFilterOpen)}
-          className="fixed right-4 bottom-4 z-30 md:hidden flex items-center gap-2 px-4 py-3 bg-copper text-white border border-copper rounded-full shadow-lg hover:bg-copper-hover"
+          className={`fixed right-4 top-[100px] z-30 md:hidden flex items-center gap-2 px-4 py-3 bg-copper text-white border border-copper rounded-full shadow-lg hover:bg-copper-hover ${
+            isSearchVisible ? "top-[150px]" : "top-[100px]"
+          }  transition-all duration-300 ease-in-out`}
         >
           <svg
             className="w-5 h-5"

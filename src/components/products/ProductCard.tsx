@@ -171,23 +171,34 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         {/* Cart Controls - Always at the bottom */}
         <div className="mt-4">
-          <div className="flex items-center gap-2">
-            <div className="flex-1">
-              <QuantityInput
-                onQuantityChange={setQuantity}
-                initialQuantity={1}
-                className="w-full"
-                preventPropagation={true}
-              />
+          {session?.user ? (
+            <div className="flex items-center gap-2">
+              <div className="flex-1">
+                <QuantityInput
+                  onQuantityChange={setQuantity}
+                  initialQuantity={1}
+                  className="w-full"
+                  preventPropagation={true}
+                />
+              </div>
+              <button
+                onClick={handleAddToCart}
+                className="flex-shrink-0 bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition-colors whitespace-nowrap"
+              >
+                Add to Cart
+              </button>
             </div>
-            <button
-              onClick={handleAddToCart}
-              className="flex-shrink-0 bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition-colors whitespace-nowrap"
-              disabled={product.qtyAvailable <= 0}
-            >
-              Add to Cart
-            </button>
-          </div>
+          ) : (
+            <div className="text-center">
+              <Link
+                href="/login"
+                className="text-blue-600 hover:text-blue-800 text-sm"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Login to purchase
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </Link>

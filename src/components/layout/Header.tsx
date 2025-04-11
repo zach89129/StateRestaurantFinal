@@ -70,11 +70,19 @@ export default function Header() {
     };
   }, []);
 
+  // Close mobile dropdowns when search becomes visible
+  useEffect(() => {
+    if (isSearchVisible) {
+      setIsMobileDropdownOpen(false);
+      setIsMobileVenueDropdownOpen(false);
+    }
+  }, [isSearchVisible]);
+
   return (
     <header className="bg-zinc-800 sticky top-0 z-50 shadow-md w-full">
       {/* Top bar */}
       <div className="bg-zinc-800 py-2 text-sm w-full">
-        <div className="container flex justify-end items-center ml-8">
+        <div className="container mx-auto px-4 flex justify-end items-center">
           <div className="flex gap-4">
             {session ? (
               <>
@@ -127,9 +135,16 @@ export default function Header() {
               </Link>
 
               {/* Mobile Controls */}
-              <div className="flex items-center gap-3 mr-[-2rem]">
+              <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setIsSearchVisible(!isSearchVisible)}
+                  onClick={() => {
+                    setIsSearchVisible(!isSearchVisible);
+                    if (!isSearchVisible) {
+                      // Close mobile dropdowns when opening search
+                      setIsMobileDropdownOpen(false);
+                      setIsMobileVenueDropdownOpen(false);
+                    }
+                  }}
                   className="text-white p-2 hover:text-blue-200"
                 >
                   <svg

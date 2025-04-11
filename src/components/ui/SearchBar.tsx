@@ -1,7 +1,7 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { FormEvent, useState, useEffect } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 interface SearchBarProps {
   disabled?: boolean;
@@ -9,7 +9,14 @@ interface SearchBarProps {
 
 export default function SearchBar({ disabled = false }: SearchBarProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Clear search input when URL changes or page loads
+  useEffect(() => {
+    setSearchTerm("");
+  }, [pathname, searchParams]);
 
   const handleSearch = (e: FormEvent) => {
     e.preventDefault();

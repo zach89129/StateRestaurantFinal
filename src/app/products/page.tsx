@@ -244,12 +244,8 @@ function ProductsContent() {
         </nav>
 
         <div className="flex flex-col lg:flex-row gap-8 w-full overflow-hidden">
-          {/* Left Sidebar */}
-          <div
-            className={`lg:w-1/4 ${
-              isSearchVisible ? "hidden lg:block" : "block"
-            }`}
-          >
+          {/* Left Sidebar - Make visible on lg screens by default (not hidden) */}
+          <div className="lg:w-1/4">
             <FilterSidebar
               key="filter-sidebar"
               sortOptions={sortOptions}
