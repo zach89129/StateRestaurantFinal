@@ -11,7 +11,7 @@ import { useSearch } from "@/contexts/SearchContext";
 import CategoryNav from "./CategoryNav";
 
 export default function Header() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileDropdownOpen, setIsMobileDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -25,6 +25,23 @@ export default function Header() {
   const isVenuePage = pathname?.includes("/venues/");
   const dropdownRef = useRef<HTMLLIElement>(null);
   const venueDropdownRef = useRef<HTMLLIElement>(null);
+
+  // Force refresh session when component mounts
+  useEffect(() => {
+    const updateSession = async () => {
+      if (status === "loading") {
+        await update();
+      }
+    };
+
+    updateSession();
+  }, [status, update]);
+
+  // Debug session
+  useEffect(() => {
+    console.log("Header session status:", status);
+    console.log("Header session data:", session);
+  }, [session, status]);
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: "/" });

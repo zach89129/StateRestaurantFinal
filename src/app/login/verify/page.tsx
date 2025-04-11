@@ -45,17 +45,35 @@ export default function VerifyOTP() {
 
     try {
       // Proceed directly with sign in, NextAuth will handle validation
+      console.log("Attempting signIn with credentials:", { email, otp });
+
+      // Get the origin for the complete callback URL
+      const origin =
+        typeof window !== "undefined" ? window.location.origin : "";
+      const fullCallbackUrl = callbackUrl.startsWith("/")
+        ? `${origin}${callbackUrl}`
+        : callbackUrl;
+
+      console.log("Using callback URL:", fullCallbackUrl);
+
       const result = await signIn("credentials", {
         email,
         otp,
         redirect: false,
-        callbackUrl: callbackUrl.startsWith("/")
-          ? `${window.location.origin}${callbackUrl}`
-          : callbackUrl,
+        callbackUrl: fullCallbackUrl,
       });
+
+      console.log("SignIn result:", result);
 
       if (result?.error) {
         throw new Error(result.error);
+      }
+
+      // Force a page refresh to ensure session is picked up
+      if (result?.url) {
+        console.log("Redirecting to:", result.url);
+        window.location.href = result.url;
+        return;
       }
 
       // Check if user is superuser to determine where to redirect
@@ -66,7 +84,7 @@ export default function VerifyOTP() {
           const data = await response.json();
 
           if (data.isSuperuser) {
-            router.push("/admin");
+            window.location.href = "/admin";
             return;
           }
         }
@@ -75,14 +93,12 @@ export default function VerifyOTP() {
         // Continue with normal flow if role check fails
       }
 
-      // If there's a callback URL from a protected route, use that
+      // If there's a callback URL from a protected route, use it
       if (callbackUrl && callbackUrl !== "/") {
-        router.push(callbackUrl);
+        window.location.href = callbackUrl;
       } else {
-        router.push("/");
+        window.location.href = "/";
       }
-
-      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
