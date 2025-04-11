@@ -13,7 +13,6 @@ export async function POST(req: NextRequest) {
 
   try {
     const bodyText = await req.text();
-    console.log("Raw request body:", bodyText);
 
     let body: CustomerInput;
     try {
@@ -30,7 +29,6 @@ export async function POST(req: NextRequest) {
 
       try {
         body = JSON.parse(fixedBodyText);
-        console.log("Successfully parsed with fixed JSON:", fixedBodyText);
       } catch (secondError) {
         return NextResponse.json(
           { error: `Invalid JSON format: ${parseError.message}` },

@@ -9,7 +9,6 @@ interface DeleteProductsFromVenueBody {
 export async function DELETE(request: NextRequest) {
   try {
     const body = (await request.json()) as DeleteProductsFromVenueBody;
-    console.log("Received body:", body);
 
     if (
       !body.trx_venue_id ||

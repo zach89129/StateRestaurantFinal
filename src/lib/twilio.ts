@@ -39,9 +39,6 @@ export const sendOTP = async (phoneNumber: string, otp: string) => {
       from: process.env.TWILIO_PHONE_NUMBER,
     });
 
-    console.log(
-      `OTP sent successfully to ${formattedPhone}. SID: ${message.sid}`
-    );
     return message.sid;
   } catch (error: unknown) {
     const twilioError = error as TwilioError;

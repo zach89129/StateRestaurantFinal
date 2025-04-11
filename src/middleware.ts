@@ -40,10 +40,17 @@ export async function middleware(request: NextRequest) {
   }
 
   // Handle authentication for protected routes
+
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
   });
+
+  // Check if this is a next-auth session check
+  const isAuthCheck = request.nextUrl.pathname.startsWith("/api/auth");
+  if (isAuthCheck) {
+    return NextResponse.next();
+  }
 
   // Check if trying to access protected routes
   const isProtectedRoute =

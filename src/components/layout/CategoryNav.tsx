@@ -45,7 +45,6 @@ export default function CategoryNav({
       category.includes("Speigelau") ||
       category.includes("Masters Reserve")
     ) {
-      console.log("Special category detected:", category);
       // For this specific category, we know the exact format in the database
       const specialCategoryUrl = "glassware-speigelau-masters-reserve";
       router.push(`/products/${specialCategoryUrl}`);

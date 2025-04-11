@@ -15,7 +15,6 @@ export async function POST(request: Request) {
 
   try {
     const body: VenueProductInput = await request.json();
-    console.log("Received body:", body);
 
     if (!body.venue_products || !Array.isArray(body.venue_products)) {
       return NextResponse.json(
@@ -215,8 +214,6 @@ export async function GET(request: NextRequest) {
           images: product.images.map((img) => ({ src: img.url })),
         })) || [];
 
-      console.log("Product with image:", products[0]);
-
       return NextResponse.json({
         success: true,
         trxVenueId: venue.trxVenueId,
@@ -248,7 +245,6 @@ export async function GET(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log("Received body:", body);
 
     if (!body.trx_venue_ids || !Array.isArray(body.trx_venue_ids)) {
       return NextResponse.json(

@@ -82,10 +82,6 @@ export default function VenuePage({
         }
         const data = (await response.json()) as VenueProductsResponse;
         if (data.success) {
-          console.log(
-            "First product image URL:",
-            data.products[0]?.images[0]?.src
-          );
           setVenue({
             id: resolvedParams.id,
             venueName: data.venueName,

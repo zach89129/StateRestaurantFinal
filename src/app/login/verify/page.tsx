@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 
 export default function VerifyOTP() {
   const [otp, setOtp] = useState("");
@@ -12,11 +12,22 @@ export default function VerifyOTP() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email");
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
+  const { data: session, status } = useSession();
 
   useEffect(() => {
     if (!email) {
       router.push("/login");
       return;
+    }
+
+    // If user is already authenticated, redirect them
+    if (status === "authenticated" && session) {
+      if (callbackUrl && callbackUrl !== "/") {
+        router.push(callbackUrl);
+      } else {
+        router.push("/");
+      }
     }
 
     // Countdown timer for resend button
@@ -25,7 +36,7 @@ export default function VerifyOTP() {
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [countdown, email, router]);
+  }, [countdown, email, router, status, session, callbackUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,18 +49,35 @@ export default function VerifyOTP() {
         email,
         otp,
         redirect: false,
+        callbackUrl: callbackUrl.startsWith("/")
+          ? `${window.location.origin}${callbackUrl}`
+          : callbackUrl,
       });
 
       if (result?.error) {
         throw new Error(result.error);
       }
 
-      // Check if user is superuser
-      const response = await fetch("/api/auth/check-role");
-      const data = await response.json();
+      // Check if user is superuser to determine where to redirect
+      try {
+        const response = await fetch("/api/auth/check-role");
 
-      if (data.isSuperuser) {
-        router.push("/admin");
+        if (response.ok) {
+          const data = await response.json();
+
+          if (data.isSuperuser) {
+            router.push("/admin");
+            return;
+          }
+        }
+      } catch (roleError) {
+        console.error("Error checking role:", roleError);
+        // Continue with normal flow if role check fails
+      }
+
+      // If there's a callback URL from a protected route, use that
+      if (callbackUrl && callbackUrl !== "/") {
+        router.push(callbackUrl);
       } else {
         router.push("/");
       }

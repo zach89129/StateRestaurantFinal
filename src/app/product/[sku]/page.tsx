@@ -22,7 +22,6 @@ export default async function ProductPage({ params }: PageProps) {
       images: true,
     },
   });
-  console.log(product);
 
   if (!product) {
     notFound();

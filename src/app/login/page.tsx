@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function InitialLogin() {
   const [email, setEmail] = useState("");
@@ -11,6 +11,8 @@ export default function InitialLogin() {
     code?: string;
   } | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,8 +30,6 @@ export default function InitialLogin() {
       });
 
       const emailData = await checkEmailResponse.json();
-
-      console.log(emailData);
 
       if (!checkEmailResponse.ok) {
         if (checkEmailResponse.status === 404) {
@@ -74,7 +74,11 @@ export default function InitialLogin() {
       }
 
       // If OTP sent successfully, redirect to verification page
-      router.push(`/login/verify?email=${encodeURIComponent(email)}`);
+      router.push(
+        `/login/verify?email=${encodeURIComponent(
+          email
+        )}&callbackUrl=${encodeURIComponent(callbackUrl)}`
+      );
     } catch (err) {
       setError({
         message: err instanceof Error ? err.message : "An error occurred",

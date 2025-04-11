@@ -49,9 +49,6 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    console.log("Search range:", String(minValue), "to", String(maxValue));
-    console.log("Found products:", products);
-
     return NextResponse.json({
       products: products.map((product) => ({
         ...product,

@@ -25,80 +25,81 @@ export const authOptions: AuthOptions = {
         otp: { label: "Verification Code", type: "text" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.otp) {
-          console.log("Missing credentials:", {
-            email: credentials?.email,
-            otp: credentials?.otp,
-          });
-          throw new Error("Email and verification code required");
-        }
+        try {
+          if (!credentials?.email || !credentials?.otp) {
+            throw new Error("Email and verification code required");
+          }
 
-        const normalizedEmail = credentials.email.toLowerCase();
-        console.log("Attempting OTP validation:", {
-          email: normalizedEmail,
-          otp: credentials.otp,
-        });
+          const normalizedEmail = credentials.email.toLowerCase();
 
-        // Get stored OTP
-        const storedData = await getOTP(normalizedEmail);
-        console.log("Stored OTP data from database:", storedData);
+          // Get stored OTP
+          const storedData = await getOTP(normalizedEmail);
 
-        if (!storedData) {
-          console.log("No stored OTP found in database");
-          throw new Error("Verification code expired or not found");
-        }
+          if (!storedData) {
+            throw new Error("Verification code expired or not found");
+          }
 
-        // Validate OTP
-        const isValidOTP = storedData.otp === credentials.otp;
-        console.log("OTP validation result:", {
-          storedOTP: storedData.otp,
-          receivedOTP: credentials.otp,
-          isValid: isValidOTP,
-          timestamp: new Date(storedData.timestamp).toISOString(),
-        });
+          // Validate OTP
+          const isValidOTP = storedData.otp === credentials.otp;
 
-        if (!isValidOTP) {
-          throw new Error("Invalid verification code");
-        }
+          if (!isValidOTP) {
+            throw new Error("Invalid verification code");
+          }
 
-        // Get customer data
-        const customer = await prisma.customer.findUnique({
-          where: { email: normalizedEmail },
-          include: {
-            venues: {
-              select: {
-                trxVenueId: true,
-                venueName: true,
+          try {
+            // Get customer data
+            const customer = await prisma.customer.findUnique({
+              where: { email: normalizedEmail },
+              include: {
+                venues: {
+                  select: {
+                    trxVenueId: true,
+                    venueName: true,
+                  },
+                },
               },
-            },
-          },
-        });
+            });
 
-        if (!customer) {
-          console.log("Customer not found for email:", normalizedEmail);
-          throw new Error("Customer not found");
+            if (!customer) {
+              throw new Error("Customer not found");
+            }
+
+            // Check if user is superuser
+            const isSuperuser = customer.email === process.env.SUPERUSER_ACCT;
+
+            // Format venues for session
+            const venues = customer.venues.map((venue) => ({
+              id: venue.trxVenueId.toString(),
+              trxVenueId: venue.trxVenueId,
+              venueName: venue.venueName,
+            }));
+
+            // Clear the used OTP only after successful authentication
+            try {
+              await deleteOTP(normalizedEmail);
+            } catch (deleteError) {
+              console.error("Error deleting OTP:", deleteError);
+              // Continue even if OTP deletion fails
+            }
+
+            // Create the user object to return
+            const user = {
+              id: customer.trxCustomerId.toString(),
+              email: customer.email,
+              venues: venues,
+              isSuperuser,
+              trxCustomerId: customer.trxCustomerId.toString(),
+            } as User;
+
+            return user;
+          } catch (customerError) {
+            console.error("Error retrieving customer data:", customerError);
+            throw new Error("Error retrieving your account information");
+          }
+        } catch (error) {
+          console.error("Authentication error:", error);
+          throw error;
         }
-
-        // Check if user is superuser
-        const isSuperuser = customer.email === process.env.SUPERUSER_ACCT;
-
-        // Format venues for session
-        const venues = customer.venues.map((venue) => ({
-          id: venue.trxVenueId.toString(),
-          trxVenueId: venue.trxVenueId,
-          venueName: venue.venueName,
-        }));
-
-        // Clear the used OTP only after successful authentication
-        await deleteOTP(normalizedEmail);
-
-        return {
-          id: customer.trxCustomerId.toString(),
-          email: customer.email,
-          venues: venues,
-          isSuperuser,
-          trxCustomerId: customer.trxCustomerId.toString(),
-        } as User;
       },
     }),
   ],
@@ -113,7 +114,7 @@ export const authOptions: AuthOptions = {
         httpOnly: true,
         sameSite: "lax",
         path: "/",
-        secure: false, // Set to false for http connections
+        secure: process.env.NODE_ENV === "production", // Only secure in production
       },
     },
     callbackUrl: {
@@ -122,7 +123,7 @@ export const authOptions: AuthOptions = {
         httpOnly: true,
         sameSite: "lax",
         path: "/",
-        secure: false,
+        secure: process.env.NODE_ENV === "production",
       },
     },
     csrfToken: {
@@ -131,7 +132,7 @@ export const authOptions: AuthOptions = {
         httpOnly: true,
         sameSite: "lax",
         path: "/",
-        secure: false,
+        secure: process.env.NODE_ENV === "production",
       },
     },
   },
@@ -142,15 +143,20 @@ export const authOptions: AuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        token.sub = user.id;
+        token.email = user.email;
         token.venues = user.venues;
         token.isSuperuser = user.isSuperuser;
         token.trxCustomerId = user.trxCustomerId;
+        token.name = user.email; // Add name to ensure compatibility
       }
+
       return token;
     },
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.sub as string;
+        session.user.email = token.email as string;
         session.user.venues = token.venues as {
           id: string;
           trxVenueId: number;
@@ -158,7 +164,9 @@ export const authOptions: AuthOptions = {
         }[];
         session.user.isSuperuser = token.isSuperuser as boolean;
         session.user.trxCustomerId = token.trxCustomerId as string;
+        session.user.name = token.email as string; // Add name to ensure compatibility
       }
+
       return session;
     },
     async redirect({ url, baseUrl }) {

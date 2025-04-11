@@ -21,6 +21,7 @@ function RequestAccountContent() {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
+    email: email !== "" ? email : "",
     companyName: "",
     phoneNumber: "",
     message: "",
@@ -50,7 +51,6 @@ function RequestAccountContent() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email,
           ...formData,
         }),
       });
@@ -168,10 +168,12 @@ function RequestAccountContent() {
             </label>
             <input
               id="email"
+              name="email"
               type="email"
-              value={email}
-              disabled
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-600 sm:text-sm"
+              value={formData.email}
+              disabled={email !== ""}
+              onChange={handleChange}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900"
             />
           </div>
 

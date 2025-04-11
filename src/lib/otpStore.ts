@@ -11,12 +11,6 @@ export async function storeOTP(email: string, otp: string) {
   const normalizedEmail = email.toLowerCase();
   const expiresAt = new Date(Date.now() + OTP_EXPIRY);
 
-  console.log("Storing OTP:", {
-    email: normalizedEmail,
-    otp,
-    expiresAt,
-  });
-
   // Use upsert to handle both creation and update cases
   const result = await prisma.otp.upsert({
     where: { email: normalizedEmail },
@@ -30,31 +24,21 @@ export async function storeOTP(email: string, otp: string) {
       expiresAt,
     },
   });
-
-  console.log("OTP stored result:", result);
 }
 
 export async function getOTP(email: string): Promise<OTPData | null> {
   const normalizedEmail = email.toLowerCase();
-  console.log("Getting OTP for email:", normalizedEmail);
 
   const otpRecord = await prisma.otp.findUnique({
     where: { email: normalizedEmail },
   });
 
-  console.log("Raw OTP record from database:", otpRecord);
-
   if (!otpRecord) {
-    console.log("No OTP record found");
     return null;
   }
 
   // Check if OTP is expired
   if (otpRecord.expiresAt < new Date()) {
-    console.log("OTP is expired:", {
-      expiresAt: otpRecord.expiresAt,
-      now: new Date(),
-    });
     // Delete expired OTP
     await deleteOTP(normalizedEmail);
     return null;
@@ -65,13 +49,11 @@ export async function getOTP(email: string): Promise<OTPData | null> {
     timestamp: otpRecord.createdAt.getTime(),
   };
 
-  console.log("Returning OTP data:", result);
   return result;
 }
 
 export async function deleteOTP(email: string) {
   const normalizedEmail = email.toLowerCase();
-  console.log("Deleting OTP for email:", normalizedEmail);
 
   await prisma.otp
     .delete({
