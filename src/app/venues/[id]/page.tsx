@@ -271,12 +271,18 @@ export default function VenuePage({
 
     try {
       const productIds = productsToFetch.map((product) => product.id).join(",");
+      console.log(`Requesting prices for products: ${productIds}`);
+
       const response = await fetch(
         `/api/pricing?customerId=${session.user.trxCustomerId}&productIds=${productIds}`
       );
 
       if (!response.ok) {
-        throw new Error("Failed to fetch pricing data");
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error ||
+            `Failed to fetch pricing data: ${response.statusText}`
+        );
       }
 
       const data = await response.json();
@@ -287,12 +293,34 @@ export default function VenuePage({
 
       // Create a map of product id to price
       const newPrices = { ...pricingData };
-      data.prices.forEach((item: { productId: string; price: number }) => {
-        newPrices[item.productId] = item.price;
-      });
+
+      // Process successful price fetches
+      if (data.prices && Array.isArray(data.prices)) {
+        data.prices.forEach((item: { productId: string; price: number }) => {
+          if (item && item.productId && item.price !== undefined) {
+            newPrices[item.productId] = item.price;
+          }
+        });
+      }
+
+      // Handle any errors that occurred during batch processing
+      if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+        console.warn("Some prices failed to fetch:", data.errors);
+        // Show warning if some prices failed but we got at least one price
+        if (data.prices && data.prices.length > 0) {
+          setPricingError(
+            `${data.errors.length} out of ${productsToFetch.length} prices failed to load. Showing available prices.`
+          );
+        } else {
+          throw new Error(
+            "Failed to fetch any prices. Please try again later."
+          );
+        }
+      }
 
       setPricingData(newPrices);
     } catch (err) {
+      console.error("Error fetching prices:", err);
       setPricingError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoadingPrices(false);

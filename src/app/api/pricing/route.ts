@@ -21,6 +21,7 @@ export async function GET(request: Request) {
   const apiKey = process.env.PRICING_API_KEY;
 
   if (!apiKey) {
+    console.error("API key is not set in environment variables");
     return NextResponse.json(
       { success: false, error: "API key is not set" },
       { status: 500 }
@@ -50,30 +51,73 @@ export async function GET(request: Request) {
       );
     }
 
+    // Log the API request for debugging
+    console.log(
+      `Pricing API request - customerId: ${customerId}, productId: ${
+        productId || "batch"
+      }`
+    );
+
     // Handle single product request
     if (productId) {
-      const response = await fetch(
-        `https://customer-pricing-api.sunsofterp.com/price?customerId=${customerId}&productId=${productId}`,
-        {
+      const pricingApiUrl = `https://customer-pricing-api.sunsofterp.com/price?customerId=${customerId}&productId=${productId}`;
+      console.log(`Calling external pricing API: ${pricingApiUrl}`);
+
+      try {
+        const response = await fetch(pricingApiUrl, {
           headers: {
             "X-API-Key": apiKey,
           },
-        }
-      );
+        });
 
-      if (!response.ok) {
+        const responseText = await response.text();
+        console.log(`API response for product ${productId}: ${responseText}`);
+
+        if (!response.ok) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: `Failed to fetch pricing data: ${response.statusText}`,
+              details: responseText,
+            },
+            { status: response.status }
+          );
+        }
+
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (e) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: "Invalid JSON response from pricing API",
+              details: responseText,
+            },
+            { status: 500 }
+          );
+        }
+
+        return NextResponse.json({ success: true, ...data });
+      } catch (error) {
+        console.error(`Error fetching price for product ${productId}:`, error);
         return NextResponse.json(
-          { success: false, error: "Failed to fetch pricing data" },
-          { status: response.status }
+          {
+            success: false,
+            error: `Error fetching price: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`,
+          },
+          { status: 500 }
         );
       }
-
-      const data = await response.json();
-      return NextResponse.json({ success: true, ...data });
     }
     // Handle batch product request
     else if (productIds) {
-      const ids = productIds.split(",").map((id) => parseInt(id.trim()));
+      const ids = productIds
+        .split(",")
+        .map((id) => parseInt(id.trim()))
+        .filter((id) => !isNaN(id));
 
       if (ids.length === 0) {
         return NextResponse.json(
@@ -82,31 +126,64 @@ export async function GET(request: Request) {
         );
       }
 
-      // Process requests in batches of maximum 10 at a time
-      const batchSize = 10;
+      console.log(
+        `Processing batch pricing request for ${ids.length} products`
+      );
+
+      // Process requests in batches of maximum 5 at a time to avoid timeouts
+      const batchSize = 5;
       const results = [];
       const errors: PricingError[] = [];
 
       for (let i = 0; i < ids.length; i += batchSize) {
         const batch = ids.slice(i, i + batchSize);
+        console.log(
+          `Processing batch ${Math.floor(i / batchSize) + 1} with ${
+            batch.length
+          } products`
+        );
+
         const promises = batch.map(async (productId) => {
           try {
-            const response = await fetch(
-              `https://customer-pricing-api.sunsofterp.com/price?customerId=${customerId}&productId=${productId}`,
-              {
-                headers: {
-                  "X-API-Key": apiKey,
-                },
-              }
-            );
+            const pricingApiUrl = `https://customer-pricing-api.sunsofterp.com/price?customerId=${customerId}&productId=${productId}`;
+            const response = await fetch(pricingApiUrl, {
+              headers: {
+                "X-API-Key": apiKey,
+              },
+            });
+
+            const responseText = await response.text();
 
             if (!response.ok) {
-              throw new Error(`Failed to fetch price for product ${productId}`);
+              console.error(
+                `Error response for product ${productId}: ${responseText}`
+              );
+              errors.push({
+                productId,
+                error: `Failed to fetch price for product ${productId}`,
+              });
+              return null;
             }
 
-            const data = await response.json();
-            return { productId, ...data };
+            let data;
+            try {
+              data = JSON.parse(responseText);
+              return { productId, ...data };
+            } catch (e) {
+              console.error(
+                `Invalid JSON response for product ${productId}: ${responseText}`
+              );
+              errors.push({
+                productId,
+                error: `Invalid response format for product ${productId}`,
+              });
+              return null;
+            }
           } catch (error) {
+            console.error(
+              `Error fetching price for product ${productId}:`,
+              error
+            );
             errors.push({
               productId,
               error: error instanceof Error ? error.message : "Unknown error",
@@ -120,7 +197,8 @@ export async function GET(request: Request) {
 
         // Add a small delay between batches to avoid rate limiting
         if (i + batchSize < ids.length) {
-          await new Promise((resolve) => setTimeout(resolve, 100));
+          console.log("Adding delay between batches");
+          await new Promise((resolve) => setTimeout(resolve, 300));
         }
       }
 
@@ -141,7 +219,11 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("Error processing pricing request:", error);
     return NextResponse.json(
-      { success: false, error: "Internal server error" },
+      {
+        success: false,
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }
