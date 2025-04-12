@@ -49,6 +49,12 @@ interface Venue {
   products: VenueProduct[];
 }
 
+interface PricingData {
+  success: boolean;
+  error?: string;
+  price: number | null;
+}
+
 export default function VenuePage({
   params,
 }: {
@@ -70,6 +76,13 @@ export default function VenuePage({
   const [selectedQuickShip, setSelectedQuickShip] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [pricingData, setPricingData] = useState<{
+    [key: string]: number | null;
+  }>({});
+  const [loadingPrices, setLoadingPrices] = useState(false);
+  const [pricingError, setPricingError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsPerPage = 25;
 
   useEffect(() => {
     const fetchVenueProducts = async () => {
@@ -237,6 +250,72 @@ export default function VenuePage({
     setIsFilterOpen(!isFilterOpen);
   };
 
+  const handleFetchPrices = async () => {
+    if (!session?.user?.trxCustomerId) {
+      setPricingError("Customer ID not found");
+      return;
+    }
+
+    // Get the current page of products
+    const startIndex = (currentPage - 1) * productsPerPage;
+    const endIndex = startIndex + productsPerPage;
+    const productsToFetch = filteredProducts.slice(startIndex, endIndex);
+
+    if (productsToFetch.length === 0) {
+      setPricingError("No products to fetch prices for");
+      return;
+    }
+
+    setLoadingPrices(true);
+    setPricingError(null);
+
+    try {
+      const productIds = productsToFetch.map((product) => product.id).join(",");
+      const response = await fetch(
+        `/api/pricing?customerId=${session.user.trxCustomerId}&productIds=${productIds}`
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch pricing data");
+      }
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || "Failed to fetch pricing data");
+      }
+
+      // Create a map of product id to price
+      const newPrices = { ...pricingData };
+      data.prices.forEach((item: { productId: string; price: number }) => {
+        newPrices[item.productId] = item.price;
+      });
+
+      setPricingData(newPrices);
+    } catch (err) {
+      setPricingError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setLoadingPrices(false);
+    }
+  };
+
+  // Handle pagination
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    setPricingData({}); // Clear price data when changing pages
+  };
+
+  const totalPages = Math.ceil(
+    (filteredProducts?.length || 0) / productsPerPage
+  );
+
+  // Get current page of products
+  const currentProducts =
+    filteredProducts?.slice(
+      (currentPage - 1) * productsPerPage,
+      currentPage * productsPerPage
+    ) || [];
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -267,11 +346,61 @@ export default function VenuePage({
     <div className="min-h-screen bg-white">
       <div className="container mx-auto px-4 py-8">
         {/* Header with venue name */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-start mb-6">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
             {venue.venueName} Products
           </h1>
+
+          {/* Get Prices button */}
+          {session?.user && session.user.seePrices && (
+            <div className="flex items-center gap-2 mt-2 md:mt-0 md:ml-10">
+              <button
+                onClick={handleFetchPrices}
+                disabled={loadingPrices}
+                className={`${
+                  loadingPrices
+                    ? "bg-gray-400"
+                    : "bg-copper hover:bg-copper-hover"
+                } text-white px-4 py-2 rounded-lg transition-colors`}
+              >
+                {loadingPrices ? (
+                  <div className="flex items-center">
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Loading Prices...
+                  </div>
+                ) : (
+                  "Get Prices"
+                )}
+              </button>
+            </div>
+          )}
         </div>
+
+        {/* Show pricing error if any */}
+        {pricingError && (
+          <div className="bg-red-50 text-red-600 p-4 rounded mb-4">
+            Error fetching prices: {pricingError}
+          </div>
+        )}
 
         {/* Filter Button (Mobile & Desktop) */}
         <button
@@ -364,7 +493,7 @@ export default function VenuePage({
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredProducts.map((product) => (
+                  {currentProducts.map((product) => (
                     <tr key={product.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="relative h-20 w-20">
@@ -399,7 +528,11 @@ export default function VenuePage({
                         {product.qtyAvailable || 0}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {product.price ? `$${product.price.toFixed(2)}` : "-"}
+                        {pricingData[product.id]
+                          ? `$${pricingData[product.id]?.toFixed(2)}`
+                          : product.price
+                          ? `$${product.price.toFixed(2)}`
+                          : "-"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         {session?.user && (
@@ -428,7 +561,7 @@ export default function VenuePage({
 
             {/* Mobile Card View */}
             <div className="md:hidden space-y-4">
-              {filteredProducts.map((product) => (
+              {currentProducts.map((product) => (
                 <div
                   key={product.id}
                   className="bg-white border rounded-lg p-4 space-y-3"
@@ -482,7 +615,11 @@ export default function VenuePage({
                     <div>
                       <span className="text-gray-500">Price:</span>{" "}
                       <span className="text-gray-900">
-                        {product.price ? `$${product.price.toFixed(2)}` : "-"}
+                        {pricingData[product.id]
+                          ? `$${pricingData[product.id]?.toFixed(2)}`
+                          : product.price
+                          ? `$${product.price.toFixed(2)}`
+                          : "-"}
                       </span>
                     </div>
                   </div>
@@ -512,6 +649,37 @@ export default function VenuePage({
             </div>
           </div>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center mt-6 space-x-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className={`px-3 py-1 rounded ${
+                currentPage === 1
+                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                  : "bg-copper text-white hover:bg-copper-hover"
+              }`}
+            >
+              Previous
+            </button>
+            <span className="px-3 py-1">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className={`px-3 py-1 rounded ${
+                currentPage === totalPages
+                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                  : "bg-copper text-white hover:bg-copper-hover"
+              }`}
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

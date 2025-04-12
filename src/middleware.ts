@@ -51,7 +51,7 @@ export async function middleware(request: NextRequest) {
     const token = await getToken({
       req: request,
       secret: process.env.NEXTAUTH_SECRET,
-      secureCookie: true,
+      secureCookie: process.env.NODE_ENV === "production",
     });
 
     console.log("Token found:", token ? "Yes" : "No");
@@ -96,6 +96,21 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   } catch (error) {
     console.error("Error in auth middleware:", error);
+    // For debugging - log detailed error
+    console.error(
+      "Error details:",
+      error instanceof Error ? error.message : error
+    );
+
+    // Since we're having issues with authentication, let's check if we have a session cookie
+    // and temporarily bypass auth for non-admin routes to help with debugging
+    if (sessionCookie && !request.nextUrl.pathname.startsWith("/admin")) {
+      console.log(
+        "Bypassing auth check due to error, but session cookie exists"
+      );
+      return NextResponse.next();
+    }
+
     // Allow request to continue if there's an error with auth
     return NextResponse.next();
   }

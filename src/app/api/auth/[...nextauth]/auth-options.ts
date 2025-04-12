@@ -14,6 +14,7 @@ interface User {
   }[];
   isSuperuser: boolean;
   trxCustomerId: string;
+  seePrices: boolean;
 }
 
 export const authOptions: AuthOptions = {
@@ -89,6 +90,7 @@ export const authOptions: AuthOptions = {
               venues: venues,
               isSuperuser,
               trxCustomerId: customer.trxCustomerId.toString(),
+              seePrices: customer.seePrices,
             } as User;
 
             return user;
@@ -164,6 +166,7 @@ export const authOptions: AuthOptions = {
         token.isSuperuser = user.isSuperuser;
         token.trxCustomerId = user.trxCustomerId;
         token.name = user.email; // Add name to ensure compatibility
+        token.seePrices = user.seePrices;
 
         // Add explicit expiration time
         token.iat = Math.floor(Date.now() / 1000);
@@ -188,6 +191,7 @@ export const authOptions: AuthOptions = {
         session.user.isSuperuser = token.isSuperuser as boolean;
         session.user.trxCustomerId = token.trxCustomerId as string;
         session.user.name = token.email as string; // Add name to ensure compatibility
+        session.user.seePrices = token.seePrices as boolean;
 
         // Add session expiry
         session.expires = new Date(
