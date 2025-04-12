@@ -271,7 +271,6 @@ export default function VenuePage({
 
     try {
       const productIds = productsToFetch.map((product) => product.id).join(",");
-      console.log(`Requesting prices for products: ${productIds}`);
 
       const response = await fetch(
         `/api/pricing?customerId=${session.user.trxCustomerId}&productIds=${productIds}`

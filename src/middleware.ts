@@ -4,10 +4,6 @@ import { getToken } from "next-auth/jwt";
 // import { verifyApiKey } from "@/lib/api-auth";
 
 export async function middleware(request: NextRequest) {
-  console.log("Middleware running for path:", request.nextUrl.pathname);
-  console.log("Cookies received:", request.cookies.toString());
-  console.log("Request URL:", request.url);
-
   // Log specific cookies to check for session token
   const sessionCookieName =
     process.env.NODE_ENV === "production"
@@ -15,11 +11,6 @@ export async function middleware(request: NextRequest) {
       : "next-auth.session-token";
 
   const sessionCookie = request.cookies.get(sessionCookieName);
-
-  console.log("Session cookie found:", sessionCookie ? "Yes" : "No");
-  if (sessionCookie) {
-    console.log("Session cookie name:", sessionCookie.name);
-  }
 
   // Check if this is a POST request to one of our API endpoints that requires an API key
   const requiresApiKey =
@@ -38,26 +29,16 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.includes("/callback");
 
   if (isAuthRoute) {
-    console.log(
-      "Auth route detected, bypassing auth check:",
-      request.nextUrl.pathname
-    );
     return NextResponse.next();
   }
 
   // Handle authentication for protected routes
-  console.log("Getting token for path:", request.nextUrl.pathname);
   try {
     const token = await getToken({
       req: request,
       secret: process.env.NEXTAUTH_SECRET,
       secureCookie: process.env.NODE_ENV === "production",
     });
-
-    console.log("Token found:", token ? "Yes" : "No");
-    if (token) {
-      console.log("User email:", token.email);
-    }
 
     // Check if trying to access protected routes
     const isProtectedRoute =
@@ -67,10 +48,6 @@ export async function middleware(request: NextRequest) {
         request.method === "GET");
 
     if (isProtectedRoute && !token) {
-      console.log(
-        "Redirecting to login, no token found for protected route:",
-        request.nextUrl.pathname
-      );
       const url = new URL("/login", request.url);
       url.searchParams.set("callbackUrl", request.nextUrl.pathname);
       return NextResponse.redirect(url);
@@ -80,15 +57,10 @@ export async function middleware(request: NextRequest) {
     const isAdminPath = request.nextUrl.pathname.startsWith("/admin");
     if (isAdminPath) {
       if (!token) {
-        console.log(
-          "Redirecting to login, no token found for admin route:",
-          request.nextUrl.pathname
-        );
         return NextResponse.redirect(new URL("/login", request.url));
       }
 
       if (token.email !== process.env.SUPERUSER_ACCT) {
-        console.log("Redirecting to home, not a superuser:", token.email);
         return NextResponse.redirect(new URL("/", request.url));
       }
     }
@@ -105,9 +77,6 @@ export async function middleware(request: NextRequest) {
     // Since we're having issues with authentication, let's check if we have a session cookie
     // and temporarily bypass auth for non-admin routes to help with debugging
     if (sessionCookie && !request.nextUrl.pathname.startsWith("/admin")) {
-      console.log(
-        "Bypassing auth check due to error, but session cookie exists"
-      );
       return NextResponse.next();
     }
 

@@ -18,12 +18,9 @@ export default function SessionHelper() {
   // Force update session state when page loads
   useEffect(() => {
     const checkSession = async () => {
-      console.log("SessionHelper: Initial session status:", status);
-
       // Force update of session
       if (status === "loading") {
         await new Promise((resolve) => setTimeout(resolve, 500)); // Small delay
-        console.log("SessionHelper: Updating session state...");
         await update();
       }
     };
@@ -31,24 +28,12 @@ export default function SessionHelper() {
     checkSession();
   }, [status, update]);
 
-  // Monitor session status changes
-  useEffect(() => {
-    console.log("SessionHelper: Current session status:", status);
-    console.log("SessionHelper: Session data:", session);
-  }, [session, status]);
-
   useEffect(() => {
     // Error handling for fetch requests
     const originalFetch = window.fetch;
     window.fetch = async function (...args) {
       try {
         const response = await originalFetch(...args);
-
-        // Log auth-related responses
-        if (typeof args[0] === "string" && args[0].includes("/api/auth")) {
-          console.log(`Auth fetch: ${args[0]}, status: ${response.status}`);
-        }
-
         return response;
       } catch (error) {
         console.error("Fetch error:", error);

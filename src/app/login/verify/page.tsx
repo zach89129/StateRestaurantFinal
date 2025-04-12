@@ -45,7 +45,6 @@ export default function VerifyOTP() {
 
     try {
       // Proceed directly with sign in, NextAuth will handle validation
-      console.log("Attempting signIn with credentials:", { email, otp });
 
       // Get the origin for the complete callback URL
       const origin =
@@ -60,8 +59,6 @@ export default function VerifyOTP() {
         fullCallbackUrl = `${origin}/${callbackUrl}`;
       }
 
-      console.log("Using callback URL:", fullCallbackUrl);
-
       const result = await signIn("credentials", {
         email,
         otp,
@@ -69,15 +66,12 @@ export default function VerifyOTP() {
         callbackUrl: fullCallbackUrl,
       });
 
-      console.log("SignIn result:", result);
-
       if (result?.error) {
         throw new Error(result.error);
       }
 
       // Force a page refresh to ensure session is picked up
       if (result?.url) {
-        console.log("Redirecting to:", result.url);
         window.location.href = result.url;
         return;
       }

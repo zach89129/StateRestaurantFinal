@@ -37,12 +37,6 @@ export default function Header() {
     updateSession();
   }, [status, update]);
 
-  // Debug session
-  useEffect(() => {
-    console.log("Header session status:", status);
-    console.log("Header session data:", session);
-  }, [session, status]);
-
   const handleLogout = async () => {
     await signOut({ callbackUrl: "/" });
   };

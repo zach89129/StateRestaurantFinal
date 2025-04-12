@@ -156,9 +156,6 @@ export const authOptions: AuthOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
-      console.log("JWT callback - token:", token);
-      console.log("JWT callback - user:", user);
-
       if (user) {
         token.sub = user.id;
         token.email = user.email;
@@ -173,13 +170,9 @@ export const authOptions: AuthOptions = {
         token.exp = Math.floor(Date.now() / 1000) + 24 * 60 * 60; // 24 hours
       }
 
-      console.log("JWT callback - updated token:", token);
       return token;
     },
     async session({ session, token }) {
-      console.log("Session callback - session:", session);
-      console.log("Session callback - token:", token);
-
       if (token && session.user) {
         session.user.id = token.sub as string;
         session.user.email = token.email as string;
@@ -199,7 +192,6 @@ export const authOptions: AuthOptions = {
         ).toISOString();
       }
 
-      console.log("Session callback - updated session:", session);
       return session;
     },
     async redirect({ url, baseUrl }) {

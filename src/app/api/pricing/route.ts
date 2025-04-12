@@ -32,8 +32,6 @@ export async function GET(request: Request) {
   // Clean up API key in case there are whitespace issues from environment variables
   apiKey = apiKey.trim();
 
-  console.log("Using API key (length):", apiKey.length);
-
   try {
     // Get session to verify user is allowed to see prices
     const session = await getServerSession(authOptions);
@@ -57,17 +55,9 @@ export async function GET(request: Request) {
       );
     }
 
-    // Log the API request for debugging
-    console.log(
-      `Pricing API request - customerId: ${customerId}, productId: ${
-        productId || "batch"
-      }`
-    );
-
     // Handle single product request
     if (productId) {
       const pricingApiUrl = `https://customer-pricing-api.sunsofterp.com/price?customerId=${customerId}&productId=${productId}`;
-      console.log(`Calling external pricing API: ${pricingApiUrl}`);
 
       try {
         const response = await fetch(pricingApiUrl, {
@@ -82,7 +72,6 @@ export async function GET(request: Request) {
         });
 
         const responseText = await response.text();
-        console.log(`API response for product ${productId}: ${responseText}`);
 
         if (!response.ok) {
           return NextResponse.json(
@@ -137,10 +126,6 @@ export async function GET(request: Request) {
         );
       }
 
-      console.log(
-        `Processing batch pricing request for ${ids.length} products`
-      );
-
       // Process requests in batches of maximum 5 at a time to avoid timeouts
       const batchSize = 5;
       const results = [];
@@ -148,11 +133,6 @@ export async function GET(request: Request) {
 
       for (let i = 0; i < ids.length; i += batchSize) {
         const batch = ids.slice(i, i + batchSize);
-        console.log(
-          `Processing batch ${Math.floor(i / batchSize) + 1} with ${
-            batch.length
-          } products`
-        );
 
         const promises = batch.map(async (productId) => {
           try {
@@ -213,7 +193,6 @@ export async function GET(request: Request) {
 
         // Add a small delay between batches to avoid rate limiting
         if (i + batchSize < ids.length) {
-          console.log("Adding delay between batches");
           await new Promise((resolve) => setTimeout(resolve, 300));
         }
       }
