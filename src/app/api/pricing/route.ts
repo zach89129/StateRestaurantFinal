@@ -18,7 +18,8 @@ interface PricingError {
 }
 
 export async function GET(request: Request) {
-  const apiKey = process.env.PRICING_API_KEY;
+  // Get API key from environment variables
+  let apiKey = process.env.PRICING_API_KEY;
 
   if (!apiKey) {
     console.error("API key is not set in environment variables");
@@ -27,6 +28,11 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
+
+  // Clean up API key in case there are whitespace issues from environment variables
+  apiKey = apiKey.trim();
+
+  console.log("Using API key (length):", apiKey.length);
 
   try {
     // Get session to verify user is allowed to see prices
@@ -65,9 +71,14 @@ export async function GET(request: Request) {
 
       try {
         const response = await fetch(pricingApiUrl, {
+          method: "GET",
           headers: {
             "X-API-Key": apiKey,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${apiKey}`, // Try alternative auth method
           },
+          cache: "no-store",
         });
 
         const responseText = await response.text();
@@ -147,9 +158,14 @@ export async function GET(request: Request) {
           try {
             const pricingApiUrl = `https://customer-pricing-api.sunsofterp.com/price?customerId=${customerId}&productId=${productId}`;
             const response = await fetch(pricingApiUrl, {
+              method: "GET",
               headers: {
                 "X-API-Key": apiKey,
+                "Content-Type": "application/json",
+                Accept: "application/json",
+                Authorization: `Bearer ${apiKey}`, // Try alternative auth method
               },
+              cache: "no-store",
             });
 
             const responseText = await response.text();
