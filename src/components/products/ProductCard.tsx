@@ -27,6 +27,121 @@ interface ProductCardProps {
   product: Product;
 }
 
+// Image carousel component for product cards
+function ProductImageCarousel({
+  images,
+  title,
+}: {
+  images: { url: string }[];
+  title: string;
+}) {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const handlePrevImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  };
+
+  const handleNextImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+  };
+
+  // If there are no images, show the placeholder
+  if (!images || images.length === 0) {
+    return (
+      <img
+        src="/noImageState.jpg"
+        alt="No image available"
+        className="max-h-36 max-w-[200px] w-auto h-auto object-contain group-hover:scale-105 transition-transform duration-200"
+        style={{
+          maxWidth: "100%",
+          maxHeight: "144px",
+          width: "auto",
+          height: "auto",
+          objectFit: "contain",
+          objectPosition: "center",
+          display: "block",
+          margin: "0 auto",
+        }}
+        loading="lazy"
+      />
+    );
+  }
+
+  return (
+    <div className="relative w-full h-full flex items-center justify-center">
+      <img
+        src={images[currentImageIndex]?.url || "/noImageState.jpg"}
+        alt={title}
+        className="max-h-36 max-w-[200px] w-auto h-auto object-contain group-hover:scale-105 transition-transform duration-200"
+        style={{
+          maxWidth: "100%",
+          maxHeight: "144px",
+          width: "auto",
+          height: "auto",
+          objectFit: "contain",
+          objectPosition: "center",
+          display: "block",
+          margin: "0 auto",
+        }}
+        loading="lazy"
+      />
+
+      {/* Only show navigation controls if there are multiple images */}
+      {images.length > 1 && (
+        <>
+          <button
+            onClick={handlePrevImage}
+            className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-white/70 rounded-r p-1 hover:bg-white"
+          >
+            <svg
+              className="w-4 h-4 text-gray-800"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </button>
+          <button
+            onClick={handleNextImage}
+            className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white/70 rounded-l p-1 hover:bg-white"
+          >
+            <svg
+              className="w-4 h-4 text-gray-800"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+
+          {/* Image counter */}
+          <div className="absolute bottom-0 left-0 right-0 flex justify-center">
+            <div className="bg-white/70 rounded-full px-2 py-0.5 text-xs">
+              {currentImageIndex + 1}/{images.length}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function ProductCard({ product }: ProductCardProps) {
   const { data: session } = useSession();
   const { addItem } = useCart();
@@ -93,21 +208,9 @@ export default function ProductCard({ product }: ProductCardProps) {
               className="flex items-center justify-center w-full h-full p-3"
               style={{ maxWidth: "100%" }}
             >
-              <img
-                src={product.images[0]?.url || "/noImageState.jpg"}
-                alt={product.title}
-                className="max-h-36 max-w-[200px] w-auto h-auto object-contain group-hover:scale-105 transition-transform duration-200"
-                style={{
-                  maxWidth: "100%",
-                  maxHeight: "144px",
-                  width: "auto",
-                  height: "auto",
-                  objectFit: "contain",
-                  objectPosition: "center",
-                  display: "block",
-                  margin: "0 auto",
-                }}
-                loading="lazy"
+              <ProductImageCarousel
+                images={product.images}
+                title={product.title}
               />
             </div>
           </div>
@@ -117,14 +220,8 @@ export default function ProductCard({ product }: ProductCardProps) {
             {/* Product details with fixed heights */}
             <div className="min-h-[40px] sm:min-h-[48px]">
               <h3 className="font-medium text-gray-900 text-xs sm:text-sm line-clamp-2">
-                {product.title}
-              </h3>
-            </div>
-
-            <div className="min-h-[20px] sm:min-h-[24px]">
-              <p className="text-xs sm:text-sm text-gray-900">
                 SKU: {product.sku}
-              </p>
+              </h3>
             </div>
 
             <div className="min-h-[20px] sm:min-h-[24px]">

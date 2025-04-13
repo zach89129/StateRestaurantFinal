@@ -17,7 +17,10 @@ export async function middleware(request: NextRequest) {
     request.method === "POST" &&
     (request.nextUrl.pathname === "/api/venue-products" ||
       request.nextUrl.pathname === "/api/products" ||
-      request.nextUrl.pathname === "/api/customers");
+      request.nextUrl.pathname === "/api/customers" ||
+      request.nextUrl.pathname === "/api/trx-test/customers" ||
+      request.nextUrl.pathname === "/api/trx-test/venue-products" ||
+      request.nextUrl.pathname === "/api/trx-test/products");
 
   if (requiresApiKey) {
     return NextResponse.next();

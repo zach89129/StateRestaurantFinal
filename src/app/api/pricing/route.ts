@@ -193,7 +193,7 @@ export async function GET(request: Request) {
 
         // Add a small delay between batches to avoid rate limiting
         if (i + batchSize < ids.length) {
-          await new Promise((resolve) => setTimeout(resolve, 300));
+          await new Promise((resolve) => setTimeout(resolve, 100));
         }
       }
 

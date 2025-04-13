@@ -10,9 +10,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <SessionProvider
-      // Less aggressive refresh for production
-      refetchInterval={isProduction ? 60 : 30}
-      refetchOnWindowFocus={true}
+      // Less aggressive refresh for production and generally
+      refetchInterval={isProduction ? 5 * 60 : 2 * 60} // 5 minutes in production, 2 minutes in dev
+      refetchOnWindowFocus={false} // Only refresh when specifically needed, not on window focus
       refetchWhenOffline={false}
     >
       <SessionHelper />

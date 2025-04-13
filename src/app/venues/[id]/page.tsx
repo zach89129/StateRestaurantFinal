@@ -12,6 +12,7 @@ interface VenueProduct {
   id: string;
   sku: string;
   title: string;
+  description: string | null;
   manufacturer: string | null;
   category: string | null;
   uom: string | null;
@@ -31,6 +32,7 @@ interface VenueProductsResponse {
     id: bigint | number;
     sku: string;
     title: string;
+    description: string | null;
     manufacturer: string | null;
     category: string | null;
     uom: string | null;
@@ -84,6 +86,82 @@ export default function VenuePage({
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 25;
 
+  const handleFetchPrices = async () => {
+    if (!session?.user?.trxCustomerId) {
+      setPricingError("Customer ID not found");
+      return;
+    }
+
+    // Get the current page of products
+    const startIndex = (currentPage - 1) * productsPerPage;
+    const endIndex = startIndex + productsPerPage;
+    const productsToFetch = filteredProducts.slice(startIndex, endIndex);
+
+    if (productsToFetch.length === 0) {
+      setPricingError("No products to fetch prices for");
+      return;
+    }
+
+    setLoadingPrices(true);
+    setPricingError(null);
+
+    try {
+      const productIds = productsToFetch.map((product) => product.id).join(",");
+
+      const response = await fetch(
+        `/api/pricing?customerId=${session.user.trxCustomerId}&productIds=${productIds}`
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error ||
+            `Failed to fetch pricing data: ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || "Failed to fetch pricing data");
+      }
+
+      // Create a map of product id to price
+      const newPrices = { ...pricingData };
+
+      // Process successful price fetches
+      if (data.prices && Array.isArray(data.prices)) {
+        data.prices.forEach((item: { productId: string; price: number }) => {
+          if (item && item.productId && item.price !== undefined) {
+            newPrices[item.productId] = item.price;
+          }
+        });
+      }
+
+      // Handle any errors that occurred during batch processing
+      if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+        console.warn("Some prices failed to fetch:", data.errors);
+        // Show warning if some prices failed but we got at least one price
+        if (data.prices && data.prices.length > 0) {
+          setPricingError(
+            `${data.errors.length} out of ${productsToFetch.length} prices failed to load. Showing available prices.`
+          );
+        } else {
+          throw new Error(
+            "Failed to fetch any prices. Please try again later."
+          );
+        }
+      }
+
+      setPricingData(newPrices);
+    } catch (err) {
+      console.error("Error fetching prices:", err);
+      setPricingError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setLoadingPrices(false);
+    }
+  };
+
   useEffect(() => {
     const fetchVenueProducts = async () => {
       try {
@@ -120,6 +198,13 @@ export default function VenuePage({
       fetchVenueProducts();
     }
   }, [resolvedParams.id, session]);
+
+  // Auto-fetch prices on page load or page change
+  useEffect(() => {
+    if (session?.user?.seePrices && venue && currentProducts.length > 0) {
+      handleFetchPrices();
+    }
+  }, [currentPage, venue, session?.user?.seePrices]);
 
   const handleQuantityChange = (productId: string, quantity: number) => {
     setQuantities((prev) => ({
@@ -250,82 +335,6 @@ export default function VenuePage({
     setIsFilterOpen(!isFilterOpen);
   };
 
-  const handleFetchPrices = async () => {
-    if (!session?.user?.trxCustomerId) {
-      setPricingError("Customer ID not found");
-      return;
-    }
-
-    // Get the current page of products
-    const startIndex = (currentPage - 1) * productsPerPage;
-    const endIndex = startIndex + productsPerPage;
-    const productsToFetch = filteredProducts.slice(startIndex, endIndex);
-
-    if (productsToFetch.length === 0) {
-      setPricingError("No products to fetch prices for");
-      return;
-    }
-
-    setLoadingPrices(true);
-    setPricingError(null);
-
-    try {
-      const productIds = productsToFetch.map((product) => product.id).join(",");
-
-      const response = await fetch(
-        `/api/pricing?customerId=${session.user.trxCustomerId}&productIds=${productIds}`
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.error ||
-            `Failed to fetch pricing data: ${response.statusText}`
-        );
-      }
-
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || "Failed to fetch pricing data");
-      }
-
-      // Create a map of product id to price
-      const newPrices = { ...pricingData };
-
-      // Process successful price fetches
-      if (data.prices && Array.isArray(data.prices)) {
-        data.prices.forEach((item: { productId: string; price: number }) => {
-          if (item && item.productId && item.price !== undefined) {
-            newPrices[item.productId] = item.price;
-          }
-        });
-      }
-
-      // Handle any errors that occurred during batch processing
-      if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
-        console.warn("Some prices failed to fetch:", data.errors);
-        // Show warning if some prices failed but we got at least one price
-        if (data.prices && data.prices.length > 0) {
-          setPricingError(
-            `${data.errors.length} out of ${productsToFetch.length} prices failed to load. Showing available prices.`
-          );
-        } else {
-          throw new Error(
-            "Failed to fetch any prices. Please try again later."
-          );
-        }
-      }
-
-      setPricingData(newPrices);
-    } catch (err) {
-      console.error("Error fetching prices:", err);
-      setPricingError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
-      setLoadingPrices(false);
-    }
-  };
-
   // Handle pagination
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -342,6 +351,108 @@ export default function VenuePage({
       (currentPage - 1) * productsPerPage,
       currentPage * productsPerPage
     ) || [];
+
+  // Add this function to handle image carousel
+  function ImageCarousel({
+    images,
+    title,
+  }: {
+    images: { src: string }[];
+    title: string;
+  }) {
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+    const handlePrevImage = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setCurrentImageIndex((prev) =>
+        prev === 0 ? images.length - 1 : prev - 1
+      );
+    };
+
+    const handleNextImage = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setCurrentImageIndex((prev) =>
+        prev === images.length - 1 ? 0 : prev + 1
+      );
+    };
+
+    return (
+      <div className="relative h-full w-full">
+        {images && images.length > 0 ? (
+          <>
+            <img
+              src={images[currentImageIndex].src}
+              alt={title}
+              className="h-full w-full object-contain"
+            />
+            {images.length > 1 && (
+              <>
+                <button
+                  onClick={handlePrevImage}
+                  className="absolute left-[-10px] top-1/2 transform -translate-y-1/2 bg-white/70 rounded-r hover:bg-white"
+                >
+                  <svg
+                    className="w-4 h-4 text-gray-800"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
+                  </svg>
+                </button>
+                <button
+                  onClick={handleNextImage}
+                  className="absolute right-[-10px] top-1/2 transform -translate-y-1/2 bg-white/70 rounded-l hover:bg-white"
+                >
+                  <svg
+                    className="w-4 h-4 text-gray-800"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </button>
+                <div className="absolute bottom-[-10px] left-0 right-0 flex justify-center">
+                  <div className="bg-white/70 rounded-full px-2 py-1 text-xs text-black">
+                    {currentImageIndex + 1}/{images.length}
+                  </div>
+                </div>
+              </>
+            )}
+          </>
+        ) : (
+          <img
+            src="/noImageState.jpg"
+            alt="No image available"
+            className="h-full w-full object-contain"
+          />
+        )}
+      </div>
+    );
+  }
+
+  // Simplified description component
+  function ProductDescription({ description }: { description: string | null }) {
+    if (!description)
+      return <span className="text-gray-400 italic">No description</span>;
+
+    return (
+      <div className="text-sm text-gray-700 whitespace-normal">
+        {description}
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -381,43 +492,12 @@ export default function VenuePage({
           {/* Get Prices button */}
           {session?.user && session.user.seePrices && (
             <div className="flex items-center gap-2 mt-2 md:mt-0 md:ml-10">
-              <button
-                onClick={handleFetchPrices}
-                disabled={loadingPrices}
-                className={`${
-                  loadingPrices
-                    ? "bg-gray-400"
-                    : "bg-copper hover:bg-copper-hover"
-                } text-white px-4 py-2 rounded-lg transition-colors`}
-              >
-                {loadingPrices ? (
-                  <div className="flex items-center">
-                    <svg
-                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Loading Prices...
-                  </div>
-                ) : (
-                  "Get Prices"
-                )}
-              </button>
+              {loadingPrices && (
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-copper mr-2"></div>
+                  <span className="text-copper text-sm">Loading prices...</span>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -500,7 +580,7 @@ export default function VenuePage({
                       SKU
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Title
+                      Description
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Manufacturer
@@ -524,26 +604,17 @@ export default function VenuePage({
                     <tr key={product.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="relative h-20 w-20">
-                          {product.images && product.images.length > 0 ? (
-                            <img
-                              src={product.images[0].src}
-                              alt={product.title}
-                              className="h-full w-full object-contain"
-                            />
-                          ) : (
-                            <img
-                              src="/noImageState.jpg"
-                              alt="No image available"
-                              className="h-full w-full object-contain"
-                            />
-                          )}
+                          <ImageCarousel
+                            images={product.images}
+                            title={product.title}
+                          />
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {product.sku}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {product.title}
+                      <td className="px-6 py-4 text-sm text-gray-900 max-w-md">
+                        <ProductDescription description={product.description} />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {product.manufacturer || "-"}
@@ -596,33 +667,26 @@ export default function VenuePage({
                   {/* Product Header */}
                   <div className="flex gap-4">
                     <div className="relative h-20 w-20 flex-shrink-0">
-                      {product.images && product.images.length > 0 ? (
-                        <img
-                          src={product.images[0].src}
-                          alt={product.title}
-                          className="h-full w-full object-contain"
-                        />
-                      ) : (
-                        <img
-                          src="/noImageState.jpg"
-                          alt="No image available"
-                          className="h-full w-full object-contain"
-                        />
-                      )}
+                      <ImageCarousel
+                        images={product.images}
+                        title={product.title}
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium text-gray-900 truncate">
+                      <h3 className="text-sm font-medium text-gray-900 mt-1">
                         {product.title}
                       </h3>
-                      <p className="text-sm text-gray-500">
-                        SKU: {product.sku}
-                      </p>
                       {product.manufacturer && (
                         <p className="text-sm text-gray-500">
                           {product.manufacturer}
                         </p>
                       )}
                     </div>
+                  </div>
+
+                  {/* Product Description */}
+                  <div className="text-sm">
+                    <ProductDescription description={product.description} />
                   </div>
 
                   {/* Product Details */}
@@ -691,7 +755,7 @@ export default function VenuePage({
             >
               Previous
             </button>
-            <span className="px-3 py-1">
+            <span className="px-3 py-1 text-black">
               Page {currentPage} of {totalPages}
             </span>
             <button

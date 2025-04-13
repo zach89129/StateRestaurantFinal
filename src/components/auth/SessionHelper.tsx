@@ -15,18 +15,26 @@ import { useSession } from "next-auth/react";
 export default function SessionHelper() {
   const { data: session, status, update } = useSession();
 
-  // Force update session state when page loads
+  // Force update session state only once on initial page load
   useEffect(() => {
+    let mounted = true;
+
     const checkSession = async () => {
-      // Force update of session
-      if (status === "loading") {
-        await new Promise((resolve) => setTimeout(resolve, 500)); // Small delay
-        await update();
+      // Only force update if still in loading state after delay
+      if (status === "loading" && mounted) {
+        await new Promise((resolve) => setTimeout(resolve, 1000)); // Longer delay
+        if (status === "loading" && mounted) {
+          await update();
+        }
       }
     };
 
     checkSession();
-  }, [status, update]);
+
+    return () => {
+      mounted = false; // Prevent update if component unmounts
+    };
+  }, []); // Only run once on mount, not on every status change
 
   useEffect(() => {
     // Error handling for fetch requests
