@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
         { title: { contains: searchTerm } },
         { sku: { contains: searchTerm } },
         { description: { contains: searchTerm } },
+        { longDescription: { contains: searchTerm } },
         { manufacturer: { contains: searchTerm } },
         { category: { contains: searchTerm } },
         { uom: { contains: searchTerm } },

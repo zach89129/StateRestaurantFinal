@@ -7,6 +7,7 @@ import { convertBigIntToString } from "@/utils/convertBigIntToString";
 const MAX_PAGE_SIZE = 100;
 
 type ProductUpdateData = Prisma.ProductUpdateInput;
+type ProductCreateData = Prisma.ProductCreateInput;
 
 export async function POST(request: NextRequest) {
   if (!request.body) {
@@ -54,6 +55,9 @@ export async function POST(request: NextRequest) {
           if (product.title !== undefined) updateData.title = product.title;
           if (product.description !== undefined)
             updateData.description = product.description;
+          if (product.longDescription !== undefined) {
+            updateData.longDescription = product.longDescription;
+          }
           if (product.manufacturer !== undefined)
             updateData.manufacturer = product.manufacturer;
           if (product.category !== undefined)
@@ -94,7 +98,7 @@ export async function POST(request: NextRequest) {
             trx_product_id: Number(updatedProduct.id),
             ...updatedProduct,
             id: undefined,
-            images: updatedProduct.images.map((img) => ({ src: img.url })),
+            images: updatedProduct.images.map((img) => ({ url: img.url })),
           });
         } else {
           // Validate all required fields for creation
@@ -128,6 +132,7 @@ export async function POST(request: NextRequest) {
               sku: product.sku,
               title: product.title,
               description: product.description,
+              longDescription: product.longDescription,
               manufacturer: product.manufacturer,
               category: product.category,
               uom: product.uom,
@@ -149,6 +154,7 @@ export async function POST(request: NextRequest) {
           results.push({
             trx_product_id: Number(newProduct.id),
             ...newProduct,
+            id: undefined,
             images: newProduct.images.map((img) => ({ src: img.url })),
           });
         }
@@ -453,6 +459,7 @@ export async function GET(request: NextRequest) {
         category: product.category || "",
         manufacturer: product.manufacturer || "",
         description: product.description || "",
+        longDescription: product.longDescription,
         images: product.images.map((img) => ({ url: img.url })),
       };
     });

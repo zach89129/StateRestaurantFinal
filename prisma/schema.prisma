@@ -12,6 +12,7 @@ model Product {
   sku           String         @unique
   title         String
   description   String?
+  longDescription String?      @map("long_description")
   manufacturer  String?
   category      String?
   aqcat         String?        @map("aqcat") // Collection category

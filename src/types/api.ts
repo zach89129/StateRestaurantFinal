@@ -42,6 +42,7 @@ export interface ProductInput {
     sku: string;
     title: string;
     description?: string;
+    longDescription?: string;
     manufacturer?: string;
     category?: string;
     uom?: string;
