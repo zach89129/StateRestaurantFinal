@@ -11,10 +11,6 @@ export function generateApiKey(): string {
 export async function hashApiKey(apiKey: string): Promise<string> {
   try {
     const salt = process.env.API_KEY_SALT || "default-salt";
-    console.log(
-      "[API-AUTH] Attempting to hash API key with salt",
-      salt.substring(0, 3) + "..."
-    );
 
     // Use Web Crypto API which is supported in Edge Runtime
     const encoder = new TextEncoder();
@@ -27,10 +23,6 @@ export async function hashApiKey(apiKey: string): Promise<string> {
       .map((byte) => byte.toString(16).padStart(2, "0"))
       .join("");
 
-    console.log(
-      "[API-AUTH] Hash completed, first 10 chars:",
-      result.substring(0, 10) + "..."
-    );
     return result;
   } catch (error) {
     console.error("[API-AUTH] Error in hashApiKey:", error);
