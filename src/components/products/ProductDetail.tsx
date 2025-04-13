@@ -148,7 +148,6 @@ export default function ProductDetail({ product }: ProductDetailProps) {
 
               <div className="space-y-2">
                 <p className="text-sm text-gray-600">SKU: {product.sku}</p>
-                <p className="text-sm text-gray-600">UOM: {product.uom}</p>
                 {product.qtyAvailable > 0 && (
                   <p className="text-sm text-green-600">In Stock</p>
                 )}
@@ -163,17 +162,8 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                 </div>
               )}
 
-              {/* Additional Product Info */}
-              <div className="pt-6 border-t">
-                <h3 className="text-sm font-medium text-gray-900 mb-4">
-                  Items Sold As
-                </h3>
-                <p className="text-sm text-gray-600">CS(2DZ) of 2 DZ</p>
-              </div>
-
               <div className="mt-6">
                 <div className="text-base text-gray-700">
-                  <p>Manufacturer: {product.manufacturer}</p>
                   <p>Category: {product.category}</p>
                   <p>Unit of Measure: {product.uom}</p>
                   <p>Available Quantity: {product.qtyAvailable}</p>

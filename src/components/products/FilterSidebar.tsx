@@ -3,11 +3,43 @@
 import { useState, useEffect } from "react";
 import CollapsibleSection from "../ui/CollapsibleSection";
 
-// Define keyframes for the fade-in animation
+// Add custom scrollbar styles at the top of the component
+// ... existing code ...
+
+// Define keyframes for the fade-in animation and scrollbar styles
 const fadeInKeyframes = `
   @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
+  }
+
+  /* Custom scrollbar styles - always visible */
+  .custom-scrollbar {
+    overflow-y: scroll !important; /* Force scrollbar to always show */
+    scrollbar-width: thin;
+    scrollbar-color: #bbb #f1f1f1;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+    display: block;
+    background-color: #f1f1f1;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #bbb;
+    border-radius: 4px;
+    min-height: 40px; /* Ensure the thumb has a minimum size */
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #999;
   }
 `;
 
@@ -172,6 +204,22 @@ export default function FilterSidebar({
           )}
         </div>
 
+        <CollapsibleSection title="QUICK SHIP" defaultOpen={!isMobile}>
+          <div className="space-y-2">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-gray-300"
+                checked={selectedQuickShip}
+                onChange={() => onQuickShipChange(!selectedQuickShip)}
+              />
+              <span className="ml-2 text-sm text-gray-700">
+                Quick Ship Available
+              </span>
+            </label>
+          </div>
+        </CollapsibleSection>
+
         {!isCategoryPage && sortOptions?.categories?.length > 0 && (
           <CollapsibleSection title="PRODUCT CATEGORY" defaultOpen={true}>
             <div className="space-y-4">
@@ -182,7 +230,7 @@ export default function FilterSidebar({
                 value={categorySearch}
                 onChange={(e) => setCategorySearch(e.target.value)}
               />
-              <div className="space-y-2 max-h-60 overflow-y-scroll scrollbar">
+              <div className="space-y-2 min-h-[120px] max-h-48 custom-scrollbar">
                 {filterItems(sortOptions?.categories, categorySearch).map(
                   (category) => (
                     <label key={category} className="flex items-center">
@@ -213,7 +261,7 @@ export default function FilterSidebar({
                 value={patternSearch}
                 onChange={(e) => setPatternSearch(e.target.value)}
               />
-              <div className="space-y-2 max-h-60 overflow-y-scroll scrollbar">
+              <div className="space-y-2 min-h-[120px] max-h-48 custom-scrollbar">
                 {filterItems(sortOptions?.patterns, patternSearch).map(
                   (pattern) => (
                     <label key={pattern} className="flex items-center">
@@ -242,7 +290,7 @@ export default function FilterSidebar({
                 value={collectionSearch}
                 onChange={(e) => setCollectionSearch(e.target.value)}
               />
-              <div className="space-y-2 max-h-60 overflow-y-scroll scrollbar">
+              <div className="space-y-2 min-h-[120px] max-h-48 custom-scrollbar">
                 {filterItems(sortOptions?.collections, collectionSearch).map(
                   (collection) => (
                     <label key={collection} className="flex items-center">
@@ -273,7 +321,7 @@ export default function FilterSidebar({
                 value={manufacturerSearch}
                 onChange={(e) => setManufacturerSearch(e.target.value)}
               />
-              <div className="space-y-2 max-h-60 overflow-y-scroll scrollbar">
+              <div className="space-y-2 min-h-[120px] max-h-48 custom-scrollbar">
                 {filterItems(
                   sortOptions?.manufacturers,
                   manufacturerSearch
@@ -294,22 +342,6 @@ export default function FilterSidebar({
             </div>
           </CollapsibleSection>
         )}
-
-        <CollapsibleSection title="QUICK SHIP" defaultOpen={!isMobile}>
-          <div className="space-y-2">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="h-4 w-4 rounded border-gray-300"
-                checked={selectedQuickShip}
-                onChange={() => onQuickShipChange(!selectedQuickShip)}
-              />
-              <span className="ml-2 text-sm text-gray-700">
-                Quick Ship Available
-              </span>
-            </label>
-          </div>
-        </CollapsibleSection>
       </div>
     );
   };
@@ -332,12 +364,13 @@ export default function FilterSidebar({
         />
       )}
 
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block w-64 flex-shrink-0" key="desktop-sidebar">
-        <div className="sticky top-[120px]">
-          <div className="bg-white rounded-lg shadow-lg p-4 overflow-y-scroll max-h-[calc(100vh-140px)] scrollbar">
-            <FilterContent />
-          </div>
+      {/* Desktop Sidebar - Position static so it scrolls with page */}
+      <div
+        className="hidden lg:block w-64 flex-shrink-0 static"
+        key="desktop-sidebar"
+      >
+        <div className="bg-white rounded-lg shadow-lg p-4">
+          <FilterContent />
         </div>
       </div>
 
@@ -345,7 +378,7 @@ export default function FilterSidebar({
       <div
         className={`lg:hidden fixed top-0 right-0 h-full w-3/4 max-w-sm bg-white/70 backdrop-blur-sm z-50 transform transition-all duration-300 ease-out ${
           isOpen ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
-        } shadow-xl overflow-y-scroll scrollbar`}
+        } shadow-xl custom-scrollbar`}
         key="mobile-drawer"
         style={{
           willChange: "transform, opacity",
