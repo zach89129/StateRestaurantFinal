@@ -1,9 +1,83 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
-// import { verifyApiKey } from "@/lib/api-auth";
+import { hashApiKey } from "@/lib/api-auth";
+
+// This will execute when the file is loaded
+console.log("==========================================");
+console.log("MIDDLEWARE FILE LOADED");
+console.log("==========================================");
+
+// Secure API key verification function comparing against stored hash
+async function verifyRequestApiKey(request: NextRequest): Promise<boolean> {
+  try {
+    const storedHash = process.env.API_KEY_HASH;
+
+    if (!storedHash) {
+      console.error("API_KEY_HASH is not set in environment variables");
+      return false;
+    }
+
+    // Get API key from headers
+    const requestApiKey = request.headers.get("x-api-key");
+
+    if (!requestApiKey) {
+      console.error("No API key provided in request headers");
+      return false;
+    }
+
+    console.log("[Middleware] API Key verification attempt", {
+      path: request.nextUrl.pathname,
+      method: request.method,
+      hasApiKeyHeader: !!requestApiKey,
+    });
+
+    // Clean up request API key in case there are whitespace or quotation mark issues
+    const cleanRequestApiKey = requestApiKey
+      .trim()
+      .replace(/^["'](.*)["']$/, "$1");
+
+    try {
+      // Hash the request API key and compare with stored hash
+      const hashedRequestKey = await hashApiKey(cleanRequestApiKey);
+
+      console.log(
+        "[Middleware] Hashed request key:",
+        hashedRequestKey.substring(0, 10) + "..."
+      );
+      console.log(
+        "[Middleware] Stored hash key:",
+        storedHash.substring(0, 10) + "..."
+      );
+
+      // Compare with the stored hash directly
+      return hashedRequestKey === storedHash;
+    } catch (error) {
+      console.error("[Middleware] Error hashing API key:", error);
+      return false;
+    }
+  } catch (error) {
+    console.error(
+      "[Middleware] Unexpected error in API key verification:",
+      error
+    );
+    return false;
+  }
+}
 
 export async function middleware(request: NextRequest) {
+  console.log("==========================================");
+  console.log(
+    `[MIDDLEWARE] EXECUTED FOR: ${request.method} ${request.nextUrl.pathname}`
+  );
+  console.log("==========================================");
+
+  console.log(
+    "[Middleware] Processing request:",
+    request.nextUrl.pathname,
+    request.method
+  );
+
   // Log specific cookies to check for session token
   const sessionCookieName =
     process.env.NODE_ENV === "production"
@@ -16,13 +90,57 @@ export async function middleware(request: NextRequest) {
   const requiresApiKey =
     request.method === "POST" &&
     (request.nextUrl.pathname === "/api/venue-products" ||
+      request.nextUrl.pathname === "/api/venue-products/" ||
       request.nextUrl.pathname === "/api/products" ||
+      request.nextUrl.pathname === "/api/products/" ||
       request.nextUrl.pathname === "/api/customers" ||
+      request.nextUrl.pathname === "/api/customers/" ||
       request.nextUrl.pathname === "/api/trx-test/customers" ||
+      request.nextUrl.pathname === "/api/trx-test/customers/" ||
       request.nextUrl.pathname === "/api/trx-test/venue-products" ||
-      request.nextUrl.pathname === "/api/trx-test/products");
+      request.nextUrl.pathname === "/api/trx-test/venue-products/" ||
+      request.nextUrl.pathname === "/api/trx-test/products" ||
+      request.nextUrl.pathname === "/api/trx-test/products/");
 
-  if (requiresApiKey) {
+  // Alternative approach using normalized paths
+  const normalizedPath = request.nextUrl.pathname.replace(/\/$/, "");
+  const isApiProductsEndpoint =
+    normalizedPath === "/api/products" ||
+    normalizedPath === "/api/venue-products" ||
+    normalizedPath === "/api/customers" ||
+    normalizedPath === "/api/trx-test/customers" ||
+    normalizedPath === "/api/trx-test/venue-products" ||
+    normalizedPath === "/api/trx-test/products";
+
+  const requiresApiKeyNormalized =
+    request.method === "POST" && isApiProductsEndpoint;
+
+  console.log("[Middleware] Request method:", request.method);
+  console.log("[Middleware] Request path:", request.nextUrl.pathname);
+  console.log("[Middleware] Normalized path:", normalizedPath);
+  console.log(
+    "[Middleware] Requires API Key (original check):",
+    requiresApiKey
+  );
+  console.log(
+    "[Middleware] Requires API Key (normalized check):",
+    requiresApiKeyNormalized
+  );
+
+  if (requiresApiKeyNormalized) {
+    // Verify API key for routes that require it using our secure method
+    const isValidApiKey = await verifyRequestApiKey(request);
+    console.log("[Middleware] API Key valid:", isValidApiKey);
+
+    if (!isValidApiKey) {
+      console.log("[Middleware] Rejecting request due to invalid API key");
+      return NextResponse.json(
+        { success: false, error: "Invalid or missing API key" },
+        { status: 401 }
+      );
+    }
+
+    console.log("[Middleware] API Key validation successful, continuing");
     return NextResponse.next();
   }
 
@@ -90,9 +208,19 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    // Match all API routes
+    "/api/:path*",
+
+    // Also include specific routes for backwards compatibility
+    "/api/venue-products",
     "/api/venue-products/:path*",
+    "/api/products",
     "/api/products/:path*",
+    "/api/customers",
     "/api/customers/:path*",
+    "/api/trx-test/customers",
+    "/api/trx-test/venue-products",
+    "/api/trx-test/products",
     "/reorder/:path*",
     "/admin/:path*",
     "/venues/:path*",

@@ -17,6 +17,7 @@
     "@tailwindcss/aspect-ratio": "^0.4.2",
     "@types/nodemailer": "^6.4.17",
     "bcryptjs": "^2.4.3",
+    "dotenv": "^16.5.0",
     "ioredis": "^5.4.1",
     "next": "^15.0.3",
     "next-auth": "^4.24.10",

@@ -9,13 +9,33 @@ export function generateApiKey(): string {
 
 // Hash an API key for storage
 export async function hashApiKey(apiKey: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(
-    apiKey + (process.env.API_KEY_SALT || "default-salt")
-  );
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  try {
+    const salt = process.env.API_KEY_SALT || "default-salt";
+    console.log(
+      "[API-AUTH] Attempting to hash API key with salt",
+      salt.substring(0, 3) + "..."
+    );
+
+    // Use Web Crypto API which is supported in Edge Runtime
+    const encoder = new TextEncoder();
+    const data = encoder.encode(apiKey + salt);
+
+    // Use the subtle crypto API which is available in both browser and Edge Runtime
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const result = hashArray
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("");
+
+    console.log(
+      "[API-AUTH] Hash completed, first 10 chars:",
+      result.substring(0, 10) + "..."
+    );
+    return result;
+  } catch (error) {
+    console.error("[API-AUTH] Error in hashApiKey:", error);
+    throw error;
+  }
 }
 
 // Verify an API key against a stored hash
