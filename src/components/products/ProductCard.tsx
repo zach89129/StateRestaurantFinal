@@ -241,7 +241,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             <div className="min-h-[20px] sm:min-h-[24px]">
               {product.qtyAvailable > 0 && (
                 <p className="text-xs sm:text-sm text-green-600">
-                  Quantity Available: {product.qtyAvailable}
+                  Quantity in Stock: {product.qtyAvailable}
                 </p>
               )}
             </div>

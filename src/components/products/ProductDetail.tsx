@@ -166,7 +166,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                 <div className="text-base text-gray-700">
                   <p>Category: {product.category}</p>
                   <p>Unit of Measure: {product.uom}</p>
-                  <p>Available Quantity: {product.qtyAvailable}</p>
+                  <p>Quantity in Stock: {product.qtyAvailable}</p>
                 </div>
               </div>
 
