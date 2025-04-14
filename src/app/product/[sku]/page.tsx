@@ -32,6 +32,7 @@ export default async function ProductPage({ params }: PageProps) {
     sku: product.sku,
     title: product.title,
     description: product.description || "",
+    longDescription: product.longDescription || "",
     manufacturer: product.manufacturer || "",
     category: product.category || "",
     uom: product.uom || "",

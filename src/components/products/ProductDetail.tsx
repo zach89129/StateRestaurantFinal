@@ -18,6 +18,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showFullDescription, setShowFullDescription] = useState(false);
   const router = useRouter();
 
   const nextImage = () => {
@@ -59,6 +60,25 @@ export default function ProductDetail({ product }: ProductDetailProps) {
       const encodedCollection = btoa(product.aqcat);
       router.push(`/products?collection_b64=${encodedCollection}&page=1`);
     }
+  };
+
+  const formatLongDescription = () => {
+    if (!product.longDescription) return null;
+
+    if (product.longDescription.length <= 150 || showFullDescription) {
+      return product.longDescription;
+    }
+
+    return `${product.longDescription.substring(0, 150)}...`;
+  };
+
+  const getDescription = () => {
+    if (product.longDescription) {
+      return formatLongDescription();
+    } else if (product.description) {
+      return product.description;
+    }
+    return null;
   };
 
   return (
@@ -153,12 +173,25 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                 )}
               </div>
 
-              {product.description && (
+              {(product.longDescription || product.description) && (
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900 mb-2">
                     Description
                   </h2>
-                  <p className="text-gray-600">{product.description}</p>
+                  <div className="text-gray-600 whitespace-pre-line">
+                    {getDescription()}
+                    {product.longDescription &&
+                      product.longDescription.length > 150 && (
+                        <button
+                          onClick={() =>
+                            setShowFullDescription(!showFullDescription)
+                          }
+                          className="ml-2 text-blue-600 hover:text-blue-800 font-medium"
+                        >
+                          {showFullDescription ? "Show less" : "Read more"}
+                        </button>
+                      )}
+                  </div>
                 </div>
               )}
 
