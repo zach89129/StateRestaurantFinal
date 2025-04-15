@@ -85,24 +85,32 @@ export async function POST(request: NextRequest) {
         `
           )
           .join("\n")}
-        Venue Total: $${venueGroup.items
-          .reduce(
-            (total: number, item: CartItem) =>
-              total + (item.price || 0) * item.quantity,
-            0
-          )
-          .toFixed(2)}
+        ${
+          venueGroup.items.some((item: CartItem) => item.price)
+            ? `Venue Total: $${venueGroup.items
+                .reduce(
+                  (total: number, item: CartItem) =>
+                    total + (item.price || 0) * item.quantity,
+                  0
+                )
+                .toFixed(2)}`
+            : "Venue Total: Quote Required"
+        }
       `
         )
         .join("\n")}
 
-      Order Total: $${items
-        .reduce(
-          (total: number, item: CartItem) =>
-            total + (item.price || 0) * item.quantity,
-          0
-        )
-        .toFixed(2)}
+      ${
+        items.some((item: CartItem) => item.price)
+          ? `Order Total: $${items
+              .reduce(
+                (total: number, item: CartItem) =>
+                  total + (item.price || 0) * item.quantity,
+                0
+              )
+              .toFixed(2)}`
+          : "Order Total: Quote Required"
+      }
     `;
 
     // Send email

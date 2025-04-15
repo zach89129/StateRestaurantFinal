@@ -135,22 +135,24 @@ export default function ProductDetail({ product }: ProductDetailProps) {
 
               {/* Thumbnails */}
               {product.images.length > 1 && (
-                <div className="mt-4 flex space-x-2 overflow-x-auto">
+                <div className="mt-4 flex gap-4 overflow-x-auto py-1 px-1">
                   {product.images.map((image, index) => (
                     <button
                       key={index}
                       onClick={() => setCurrentImageIndex(index)}
-                      className={`h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg ${
+                      className={`h-20 w-20 flex-shrink-0 rounded-lg bg-gray-50 p-2 ${
                         currentImageIndex === index
-                          ? "ring-2 ring-blue-500"
-                          : ""
+                          ? "ring-2 ring-blue-500 ring-offset-1 border-blue-500"
+                          : "border border-gray-200 hover:border-gray-300"
                       }`}
                     >
-                      <img
-                        src={image.url}
-                        alt={`${product.title} - ${index + 1}`}
-                        className="h-full w-full object-cover"
-                      />
+                      <div className="h-full w-full flex items-center justify-center">
+                        <img
+                          src={image.url}
+                          alt={`${product.title} - ${index + 1}`}
+                          className="h-full w-full object-contain"
+                        />
+                      </div>
                     </button>
                   ))}
                 </div>
