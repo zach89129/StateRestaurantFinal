@@ -20,6 +20,14 @@ interface CartItem {
   quantity: number;
   manufacturer: string | null;
   uom: string | null;
+  price: number | null;
+  venueId: string;
+  venueName: string;
+}
+
+interface VenueGroup {
+  venueName: string;
+  items: CartItem[];
 }
 
 export async function POST(request: NextRequest) {
@@ -33,28 +41,68 @@ export async function POST(request: NextRequest) {
     const { items, comment, purchaseOrder, venue, trxCustomerId } =
       await request.json();
 
+    // Group items by venue
+    const itemsByVenue = items.reduce(
+      (acc: Record<string, VenueGroup>, item: CartItem) => {
+        const venueKey = `${item.venueId}-${item.venueName}`;
+        if (!acc[venueKey]) {
+          acc[venueKey] = {
+            venueName: item.venueName,
+            items: [],
+          };
+        }
+        acc[venueKey].items.push(item);
+        return acc;
+      },
+      {}
+    );
+
     // Prepare email content
     const emailContent = `
       New Order from ${session.user.email}
       TRX Customer ID: ${trxCustomerId}
-      Venue: ${venue?.venueName || "N/A"} (ID: ${venue?.trxVenueId || "N/A"})
       Purchase Order: ${purchaseOrder || "N/A"}
 
       Comments:
       ${comment || "No comments provided"}
 
-      Items:
-      ${items
+      Items by Venue:
+      ${(Object.entries(itemsByVenue) as [string, VenueGroup][])
         .map(
-          (item: any) => `
-        - ${item.title}
-        SKU: ${item.sku}
-        UOM: ${item.uom || "N/A"}
-        Price: ${item.price || "N/A"}
-        Quantity: ${item.quantity}
+          ([_, venueGroup]) => `
+        Venue: ${venueGroup.venueName}
+        ${venueGroup.items
+          .map(
+            (item: CartItem) => `
+          - ${item.title}
+            SKU: ${item.sku}
+            UOM: ${item.uom || "N/A"}
+            Price: ${item.price ? `$${item.price.toFixed(2)}` : "N/A"}
+            Quantity: ${item.quantity}
+            Subtotal: ${
+              item.price ? `$${(item.price * item.quantity).toFixed(2)}` : "N/A"
+            }
+        `
+          )
+          .join("\n")}
+        Venue Total: $${venueGroup.items
+          .reduce(
+            (total: number, item: CartItem) =>
+              total + (item.price || 0) * item.quantity,
+            0
+          )
+          .toFixed(2)}
       `
         )
         .join("\n")}
+
+      Order Total: $${items
+        .reduce(
+          (total: number, item: CartItem) =>
+            total + (item.price || 0) * item.quantity,
+          0
+        )
+        .toFixed(2)}
     `;
 
     // Send email

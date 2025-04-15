@@ -18,6 +18,24 @@ export default function CartPage() {
   const [purchaseOrder, setPurchaseOrder] = useState("");
   const router = useRouter();
 
+  // Group items by venue
+  const itemsByVenue = items.reduce((acc, item) => {
+    const venueKey = `${item.venueId}-${item.venueName}`;
+    if (!acc[venueKey]) {
+      acc[venueKey] = {
+        venueId: item.venueId || "",
+        venueName: item.venueName || "",
+        items: [],
+        total: 0,
+      };
+    }
+    acc[venueKey].items.push(item);
+    if (item.price) {
+      acc[venueKey].total += item.price * item.quantity;
+    }
+    return acc;
+  }, {} as Record<string, { venueId: string; venueName: string; items: typeof items; total: number }>);
+
   const getContinueShoppingUrl = () => {
     if (session?.user?.venues && session.user.venues.length > 0) {
       return `/venues/${session.user.venues[0].trxVenueId}`;
@@ -118,99 +136,120 @@ export default function CartPage() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-6">
-            <div className="bg-white shadow-md rounded-lg overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
-                        Image
-                      </th>
-                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Product
-                      </th>
-                      <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Manufacturer
-                      </th>
-                      <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        UOM
-                      </th>
-                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Quantity
-                      </th>
-                      {session?.user?.seePrices && (
-                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Price
-                        </th>
-                      )}
-                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Action
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {items.map((item) => (
-                      <tr key={item.id} className="hover:bg-gray-50">
-                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                          <div className="h-12 sm:h-16 w-12 sm:w-16">
-                            {item.imageSrc ? (
-                              <img
-                                src={item.imageSrc}
-                                alt={item.title}
-                                className="h-full w-full object-contain"
-                              />
-                            ) : (
-                              <div className="h-full w-full bg-gray-100 flex items-center justify-center">
-                                <span className="text-gray-400 text-xs">
-                                  No image
-                                </span>
+          <div className="space-y-8">
+            {Object.values(itemsByVenue).map((venueGroup) => (
+              <div key={venueGroup.venueId} className="space-y-4">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  {venueGroup.venueName}
+                </h2>
+                <div className="bg-white shadow-md rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+                            Image
+                          </th>
+                          <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Product
+                          </th>
+                          <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Manufacturer
+                          </th>
+                          <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            UOM
+                          </th>
+                          <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Quantity
+                          </th>
+                          {session?.user?.seePrices && (
+                            <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Price
+                            </th>
+                          )}
+                          <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Action
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {venueGroup.items.map((item) => (
+                          <tr key={item.id} className="hover:bg-gray-50">
+                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                              <div className="h-12 sm:h-16 w-12 sm:w-16">
+                                {item.imageSrc ? (
+                                  <img
+                                    src={item.imageSrc}
+                                    alt={item.title}
+                                    className="h-full w-full object-contain"
+                                  />
+                                ) : (
+                                  <div className="h-full w-full bg-gray-100 flex items-center justify-center">
+                                    <span className="text-gray-400 text-xs">
+                                      No image
+                                    </span>
+                                  </div>
+                                )}
                               </div>
+                            </td>
+                            <td className="px-4 sm:px-6 py-4">
+                              <div className="text-xs sm:text-sm font-medium text-gray-900">
+                                {item.title}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                SKU: {item.sku}
+                              </div>
+                            </td>
+                            <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {item.manufacturer || "-"}
+                            </td>
+                            <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {item.uom || "-"}
+                            </td>
+                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                              <QuantityInput
+                                onQuantityChange={(quantity) =>
+                                  updateQuantity(item.id, quantity)
+                                }
+                                initialQuantity={item.quantity}
+                                min={1}
+                              />
+                            </td>
+                            {session?.user?.seePrices && (
+                              <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {item.price ? `$${item.price.toFixed(2)}` : "-"}
+                              </td>
                             )}
-                          </div>
-                        </td>
-                        <td className="px-4 sm:px-6 py-4">
-                          <div className="text-xs sm:text-sm font-medium text-gray-900">
-                            {item.title}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            SKU: {item.sku}
-                          </div>
-                        </td>
-                        <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {item.manufacturer || "-"}
-                        </td>
-                        <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {item.uom || "-"}
-                        </td>
-                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                          <QuantityInput
-                            onQuantityChange={(quantity) =>
-                              updateQuantity(item.id, quantity)
-                            }
-                            initialQuantity={item.quantity}
-                            min={1}
-                          />
-                        </td>
-                        {session?.user?.seePrices && (
-                          <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {item.price ? `$${item.price.toFixed(2)}` : "-"}
-                          </td>
-                        )}
-                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                          <button
-                            onClick={() => removeItem(item.id)}
-                            className="text-red-600 hover:text-red-900 text-xs sm:text-sm"
-                          >
-                            Remove
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                              <button
+                                onClick={() => removeItem(item.id)}
+                                className="text-red-600 hover:text-red-900 text-xs sm:text-sm"
+                              >
+                                Remove
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                {session?.user?.seePrices &&
+                  venueGroup.items.some((item) => item.price) && (
+                    <div className="text-right text-lg font-semibold text-gray-900">
+                      Venue Total: ${venueGroup.total.toFixed(2)}
+                    </div>
+                  )}
               </div>
-            </div>
+            ))}
+            {session?.user?.seePrices && items.some((item) => item.price) && (
+              <div className="text-right text-xl font-semibold text-gray-900 border-t pt-4">
+                Order Total: $
+                {Object.values(itemsByVenue)
+                  .reduce((total, venue) => total + venue.total, 0)
+                  .toFixed(2)}
+              </div>
+            )}
 
             {error && (
               <div className="bg-red-50 text-red-600 p-4 rounded">{error}</div>
@@ -225,19 +264,6 @@ export default function CartPage() {
               </button>
 
               <div className="w-full sm:w-auto space-y-4">
-                {session?.user?.seePrices &&
-                  items.some((item) => item.price) && (
-                    <div className="text-right text-lg font-semibold text-gray-900">
-                      Total: $
-                      {items
-                        .reduce(
-                          (total, item) =>
-                            total + (item.price || 0) * item.quantity,
-                          0
-                        )
-                        .toFixed(2)}
-                    </div>
-                  )}
                 <div className="w-full sm:w-[400px] mb-4">
                   <label
                     htmlFor="purchaseOrder"

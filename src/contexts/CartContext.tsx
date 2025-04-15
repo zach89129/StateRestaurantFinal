@@ -13,6 +13,8 @@ interface CartItem {
   uom: string | null;
   imageSrc: string | null;
   price?: number | null;
+  venueId?: string;
+  venueName?: string;
 }
 
 interface CartContextType {

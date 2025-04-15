@@ -227,6 +227,8 @@ export default function VenuePage({
         uom: product.uom,
         imageSrc: product.images[0]?.src,
         price: price,
+        venueId: resolvedParams.id,
+        venueName: venue?.venueName || "No Venue",
       },
       quantity
     );
