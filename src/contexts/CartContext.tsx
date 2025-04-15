@@ -12,7 +12,7 @@ interface CartItem {
   category: string | null;
   uom: string | null;
   imageSrc: string | null;
-  price: number | null;
+  price?: number | null;
 }
 
 interface CartContextType {
