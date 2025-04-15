@@ -103,7 +103,7 @@ function RequestAccountContent() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-white p-4">
       <div className="mb-8">
         <Image
-          src="/stateLogoHeader.webp"
+          src="/StateLogoHeader.webp"
           alt="State Restaurant Supply"
           width={200}
           height={50}
