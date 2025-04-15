@@ -75,3 +75,12 @@ model otp {
 
   @@map("otps")
 }
+
+model UserActivityLog {
+  id        Int      @id @default(autoincrement())
+  email     String
+  timestamp DateTime @default(now())
+
+  @@index([email])
+  @@map("user_activity_logs")
+}

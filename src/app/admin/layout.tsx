@@ -53,6 +53,14 @@ export default function AdminLayout({
                   Venues
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/admin/activity"
+                  className="block px-4 py-2 rounded-md text-black hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                >
+                  Login Activity
+                </Link>
+              </li>
             </ul>
           </nav>
 

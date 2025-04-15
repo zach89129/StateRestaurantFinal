@@ -80,6 +80,14 @@ export default function Header() {
           <div className="flex gap-4">
             {session ? (
               <>
+                {session.user?.isSuperuser && (
+                  <Link
+                    href="/admin"
+                    className="text-gray-100 hover:text-white"
+                  >
+                    Admin
+                  </Link>
+                )}
                 <Link
                   href="/account"
                   className="text-gray-100 hover:text-white"

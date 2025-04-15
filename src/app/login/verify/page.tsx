@@ -120,6 +120,7 @@ export default function VerifyOTP() {
         throw new Error("Failed to resend verification code");
       }
 
+      setOtp("");
       setCountdown(30);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to resend code");

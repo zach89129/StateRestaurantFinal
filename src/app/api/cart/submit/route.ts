@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       ${(Object.entries(itemsByVenue) as [string, VenueGroup][])
         .map(
           ([_, venueGroup]) => `
-        Venue: ${venueGroup.venueName}
+        Venue: ${venueGroup.venueName ? venueGroup.venueName : "Main Catalog"}
         ${venueGroup.items
           .map(
             (item: CartItem) => `

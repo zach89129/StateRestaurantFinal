@@ -93,6 +93,18 @@ export const authOptions: AuthOptions = {
               seePrices: customer.seePrices,
             } as User;
 
+            // Log the user activity
+            try {
+              await prisma.userActivityLog.create({
+                data: {
+                  email: normalizedEmail,
+                },
+              });
+            } catch (logError) {
+              console.error("Error logging user activity:", logError);
+              // Continue even if logging fails
+            }
+
             return user;
           } catch (customerError) {
             console.error("Error retrieving customer data:", customerError);
