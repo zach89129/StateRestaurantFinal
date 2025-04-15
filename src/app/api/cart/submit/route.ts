@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
         - ${item.title}
         SKU: ${item.sku}
         UOM: ${item.uom || "N/A"}
+        Price: ${item.price || "N/A"}
         Quantity: ${item.quantity}
       `
         )

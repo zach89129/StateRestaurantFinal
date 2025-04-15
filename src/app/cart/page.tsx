@@ -139,6 +139,11 @@ export default function CartPage() {
                       <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Quantity
                       </th>
+                      {session?.user?.seePrices && (
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Price
+                        </th>
+                      )}
                       <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Action
                       </th>
@@ -187,6 +192,11 @@ export default function CartPage() {
                             min={1}
                           />
                         </td>
+                        {session?.user?.seePrices && (
+                          <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {item.price ? `$${item.price.toFixed(2)}` : "-"}
+                          </td>
+                        )}
                         <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                           <button
                             onClick={() => removeItem(item.id)}
@@ -215,6 +225,19 @@ export default function CartPage() {
               </button>
 
               <div className="w-full sm:w-auto space-y-4">
+                {session?.user?.seePrices &&
+                  items.some((item) => item.price) && (
+                    <div className="text-right text-lg font-semibold text-gray-900">
+                      Total: $
+                      {items
+                        .reduce(
+                          (total, item) =>
+                            total + (item.price || 0) * item.quantity,
+                          0
+                        )
+                        .toFixed(2)}
+                    </div>
+                  )}
                 <div className="w-full sm:w-[400px] mb-4">
                   <label
                     htmlFor="purchaseOrder"

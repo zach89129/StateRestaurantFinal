@@ -215,6 +215,8 @@ export default function VenuePage({
 
   const handleAddToCart = (product: VenueProduct) => {
     const quantity = quantities[product.id] || 1;
+    const price = session?.user?.seePrices ? pricingData[product.id] : null;
+
     addItem(
       {
         id: product.id,
@@ -224,6 +226,7 @@ export default function VenuePage({
         category: product.category,
         uom: product.uom,
         imageSrc: product.images[0]?.src,
+        price: price,
       },
       quantity
     );

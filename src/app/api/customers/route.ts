@@ -115,7 +115,10 @@ export async function POST(req: NextRequest) {
 
         if (existingCustomer) {
           // If customer exists, delete and recreate it to completely replace it
-          // First, disconnect all venues
+          // First, delete the _CustomerToVenue relations
+          await prisma.$executeRaw`DELETE FROM _CustomerToVenue WHERE A = ${trx_customer_id}`;
+
+          // Then, disconnect all venues
           if (existingCustomer.venues.length > 0) {
             await prisma.customer.update({
               where: { trxCustomerId: trx_customer_id },
@@ -297,6 +300,12 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    // First, delete all _CustomerToVenue relations for these customers
+    for (const customerId of body.trx_customer_ids) {
+      await prisma.$executeRaw`DELETE FROM _CustomerToVenue WHERE A = ${customerId}`;
+    }
+
+    // Then delete the customers
     const result = await prisma.customer.deleteMany({
       where: {
         trxCustomerId: {
