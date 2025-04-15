@@ -77,10 +77,14 @@ export async function POST(request: NextRequest) {
           - ${item.title}
             SKU: ${item.sku}
             UOM: ${item.uom || "N/A"}
-            Price: ${item.price ? `$${item.price.toFixed(2)}` : "N/A"}
+            Price: ${
+              item.price ? `$${item.price.toFixed(2)}` : "Quote Required"
+            }
             Quantity: ${item.quantity}
             Subtotal: ${
-              item.price ? `$${(item.price * item.quantity).toFixed(2)}` : "N/A"
+              item.price
+                ? `$${(item.price * item.quantity).toFixed(2)}`
+                : "Quote Required"
             }
         `
           )
