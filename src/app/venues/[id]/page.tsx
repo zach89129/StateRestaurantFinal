@@ -649,9 +649,16 @@ export default function VenuePage({
                             />
                             <button
                               onClick={() => handleAddToCart(product)}
-                              className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+                              disabled={session.user.seePrices && loadingPrices}
+                              className={`bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors ${
+                                session.user.seePrices && loadingPrices
+                                  ? "opacity-50 cursor-not-allowed"
+                                  : ""
+                              }`}
                             >
-                              Add
+                              {session.user.seePrices && loadingPrices
+                                ? "Loading..."
+                                : "Add"}
                             </button>
                           </div>
                         )}
@@ -734,9 +741,16 @@ export default function VenuePage({
                       </div>
                       <button
                         onClick={() => handleAddToCart(product)}
-                        className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap text-sm font-medium"
+                        disabled={session.user.seePrices && loadingPrices}
+                        className={`bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap text-sm font-medium ${
+                          session.user.seePrices && loadingPrices
+                            ? "opacity-50 cursor-not-allowed"
+                            : ""
+                        }`}
                       >
-                        Add to Cart
+                        {session.user.seePrices && loadingPrices
+                          ? "Loading..."
+                          : "Add to Cart"}
                       </button>
                     </div>
                   )}
