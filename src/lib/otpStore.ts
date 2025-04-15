@@ -60,7 +60,7 @@ export async function deleteOTP(email: string) {
       where: { email: normalizedEmail },
     })
     .catch((error) => {
-      console.log("Error deleting OTP:", error);
+      console.log("Error deleting OTP::", error);
       // Ignore deletion errors
     });
 }
