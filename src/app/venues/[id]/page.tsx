@@ -168,7 +168,7 @@ export default function VenuePage({
 
         try {
           const response = await fetch(
-            `/api/pricing?customerId=${session.user.trxCustomerId}&productIds=${productIds}`
+            `/api/pricing?customerId=${resolvedParams.id}&productIds=${productIds}`
           );
 
           if (!response.ok) {
