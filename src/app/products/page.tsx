@@ -122,10 +122,18 @@ function ProductsContent() {
   }, [searchParams]);
 
   const handlePageChange = (newPage: number) => {
+    setLoading(true);
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", newPage.toString());
-    router.push(`/products?${params}`, { scroll: false });
+    router.push(`/products?${params.toString()}`);
   };
+
+  // Add effect to handle scrolling after content is loaded
+  useEffect(() => {
+    if (!loading) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [loading]);
 
   const handleCategoryChange = (category: string) => {
     const params = new URLSearchParams(searchParams.toString());

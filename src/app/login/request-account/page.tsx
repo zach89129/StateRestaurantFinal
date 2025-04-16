@@ -75,7 +75,7 @@ function RequestAccountContent() {
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="max-w-md w-full space-y-8 p-8 text-center">
           <Image
-            src="/stateLogoHeader.webp"
+            src="/StateLogoHeader.webp"
             alt="State Restaurant Supply"
             width={200}
             height={50}

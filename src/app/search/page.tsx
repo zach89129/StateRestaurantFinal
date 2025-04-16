@@ -255,10 +255,18 @@ function SearchContent() {
 
   // Add page change handler
   const handlePageChange = (newPage: number) => {
+    setLoading(true); // Set loading state
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", newPage.toString());
-    router.push(`/search?${params.toString()}`, { scroll: false });
+    router.push(`/search?${params.toString()}`);
   };
+
+  // Add effect to handle scrolling after content is loaded
+  useEffect(() => {
+    if (!loading) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [loading]);
 
   // Add toggle function for mobile filter
   const toggleFilter = () => {

@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useCart } from "@/contexts/CartContext";
 import QuantityInput from "@/components/products/QuantityInput";
@@ -86,6 +86,53 @@ export default function VenuePage({
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 25;
 
+  const filteredProducts = useMemo(() => {
+    return (
+      venue?.products.filter((product) => {
+        const searchMatch =
+          !searchTerm ||
+          Object.values(product).some((value) =>
+            value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+          );
+
+        const matchesCategory =
+          selectedCategories.length === 0 ||
+          selectedCategories.includes(product.category || "");
+
+        const matchesManufacturer =
+          selectedManufacturers.length === 0 ||
+          selectedManufacturers.includes(product.manufacturer || "");
+
+        const matchesPattern =
+          selectedPatterns.length === 0 ||
+          (product.pattern && selectedPatterns.includes(product.pattern));
+
+        const matchesCollection =
+          selectedCollections.length === 0 ||
+          (product.aqcat && selectedCollections.includes(product.aqcat));
+
+        const matchesQuickShip = !selectedQuickShip || product.quickship;
+
+        return (
+          searchMatch &&
+          matchesCategory &&
+          matchesManufacturer &&
+          matchesPattern &&
+          matchesCollection &&
+          matchesQuickShip
+        );
+      }) || []
+    );
+  }, [
+    venue?.products,
+    searchTerm,
+    selectedCategories,
+    selectedManufacturers,
+    selectedPatterns,
+    selectedCollections,
+    selectedQuickShip,
+  ]);
+
   const handleFetchPrices = async () => {
     if (!session?.user?.trxCustomerId) {
       setPricingError("Customer ID not found");
@@ -106,56 +153,60 @@ export default function VenuePage({
     setPricingError(null);
 
     try {
-      const productIds = productsToFetch.map((product) => product.id).join(",");
-
-      const response = await fetch(
-        `/api/pricing?customerId=${session.user.trxCustomerId}&productIds=${productIds}`
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.error ||
-            `Failed to fetch pricing data: ${response.statusText}`
-        );
+      // Split products into smaller batches
+      const batchSize = 5;
+      const batches = [];
+      for (let i = 0; i < productsToFetch.length; i += batchSize) {
+        batches.push(productsToFetch.slice(i, i + batchSize));
       }
 
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || "Failed to fetch pricing data");
-      }
-
-      // Create a map of product id to price
       const newPrices = { ...pricingData };
 
-      // Process successful price fetches
-      if (data.prices && Array.isArray(data.prices)) {
-        data.prices.forEach((item: { productId: string; price: number }) => {
-          if (item && item.productId && item.price !== undefined) {
-            newPrices[item.productId] = item.price;
-          }
-        });
-      }
+      // Process each batch with a delay
+      for (const batch of batches) {
+        const productIds = batch.map((product) => product.id).join(",");
 
-      // Handle any errors that occurred during batch processing
-      if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
-        console.warn("Some prices failed to fetch:", data.errors);
-        // Show warning if some prices failed but we got at least one price
-        if (data.prices && data.prices.length > 0) {
-          setPricingError(
-            `${data.errors.length} out of ${productsToFetch.length} prices failed to load. Showing available prices.`
+        try {
+          const response = await fetch(
+            `/api/pricing?customerId=${session.user.trxCustomerId}&productIds=${productIds}`
           );
-        } else {
-          throw new Error(
-            "Failed to fetch any prices. Please try again later."
-          );
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(
+              errorData.error ||
+                `Failed to fetch pricing data: ${response.statusText}`
+            );
+          }
+
+          const data = await response.json();
+
+          if (!data.success) {
+            throw new Error(data.error || "Failed to fetch pricing data");
+          }
+
+          // Process successful price fetches
+          if (data.prices && Array.isArray(data.prices)) {
+            data.prices.forEach(
+              (item: { productId: string; price: number }) => {
+                if (item && item.productId && item.price !== undefined) {
+                  newPrices[item.productId] = item.price;
+                }
+              }
+            );
+          }
+
+          // Add a small delay between batches to prevent overwhelming the database
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        } catch (err) {
+          console.warn(`Error fetching prices for batch:`, err);
+          // Continue with next batch even if this one fails
         }
       }
 
       setPricingData(newPrices);
     } catch (err) {
-      console.error("Error fetching prices:", err);
+      console.error("Error in price fetching process:", err);
       setPricingError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoadingPrices(false);
@@ -199,12 +250,33 @@ export default function VenuePage({
     }
   }, [resolvedParams.id, session]);
 
+  const toggleFilter = () => {
+    setIsFilterOpen(!isFilterOpen);
+  };
+
+  // Handle pagination
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    setPricingData({}); // Clear price data when changing pages
+  };
+
+  const totalPages = Math.ceil(
+    (filteredProducts?.length || 0) / productsPerPage
+  );
+
+  // Get current page of products
+  const currentProducts =
+    filteredProducts?.slice(
+      (currentPage - 1) * productsPerPage,
+      currentPage * productsPerPage
+    ) || [];
+
   // Auto-fetch prices on page load or page change
   useEffect(() => {
     if (session?.user?.seePrices && venue && currentProducts.length > 0) {
       handleFetchPrices();
     }
-  }, [currentPage, venue, session?.user?.seePrices]);
+  }, [currentPage, venue, session?.user?.seePrices, filteredProducts]);
 
   const handleQuantityChange = (productId: string, quantity: number) => {
     setQuantities((prev) => ({
@@ -299,63 +371,6 @@ export default function VenuePage({
       hasQuickShip: products.some((p) => p.quickship),
     };
   };
-
-  const filteredProducts =
-    venue?.products.filter((product) => {
-      const searchMatch =
-        !searchTerm ||
-        Object.values(product).some((value) =>
-          value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
-        );
-
-      const matchesCategory =
-        selectedCategories.length === 0 ||
-        selectedCategories.includes(product.category || "");
-
-      const matchesManufacturer =
-        selectedManufacturers.length === 0 ||
-        selectedManufacturers.includes(product.manufacturer || "");
-
-      const matchesPattern =
-        selectedPatterns.length === 0 ||
-        (product.pattern && selectedPatterns.includes(product.pattern));
-
-      const matchesCollection =
-        selectedCollections.length === 0 ||
-        (product.aqcat && selectedCollections.includes(product.aqcat));
-
-      const matchesQuickShip = !selectedQuickShip || product.quickship;
-
-      return (
-        searchMatch &&
-        matchesCategory &&
-        matchesManufacturer &&
-        matchesPattern &&
-        matchesCollection &&
-        matchesQuickShip
-      );
-    }) || [];
-
-  const toggleFilter = () => {
-    setIsFilterOpen(!isFilterOpen);
-  };
-
-  // Handle pagination
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    setPricingData({}); // Clear price data when changing pages
-  };
-
-  const totalPages = Math.ceil(
-    (filteredProducts?.length || 0) / productsPerPage
-  );
-
-  // Get current page of products
-  const currentProducts =
-    filteredProducts?.slice(
-      (currentPage - 1) * productsPerPage,
-      currentPage * productsPerPage
-    ) || [];
 
   // Add this function to handle image carousel
   function ImageCarousel({

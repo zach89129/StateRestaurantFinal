@@ -203,12 +203,18 @@ export default function CategoryContent({ category }: Props) {
   };
 
   const handlePageChange = (newPage: number) => {
+    setLoading(true); // Set loading state
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", newPage.toString());
-    router.push(`/products/${category}?${params.toString()}`, {
-      scroll: false,
-    });
+    router.push(`/products/${category}?${params.toString()}`);
   };
+
+  // Add effect to handle scrolling after content is loaded
+  useEffect(() => {
+    if (!loading) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [loading]);
 
   const categoryTitle = category
     .split("-")

@@ -70,10 +70,9 @@ export default function ContactPage() {
         {/* Team Members Grid - Always 2 columns, 4 on large screens */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 mb-12 sm:mb-20">
           {teamMembers.map((member) => (
-            <div key={member.name} className="text-center group">
+            <div key={member.name} className="text-center">
               {/* Image container - Smaller on mobile */}
-              <div className="relative w-32 h-32 sm:w-36 sm:h-36 lg:w-48 lg:h-48 mx-auto mb-2 sm:mb-3 lg:mb-4 rounded-lg overflow-hidden shadow-md transition-transform duration-300 group-hover:scale-105">
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative w-32 h-32 sm:w-36 sm:h-36 lg:w-48 lg:h-48 mx-auto mb-2 sm:mb-3 lg:mb-4 rounded-lg overflow-hidden shadow-md">
                 <Image
                   src={member.image}
                   alt={member.name}
@@ -82,27 +81,12 @@ export default function ContactPage() {
                 />
               </div>
               {/* Text content - Smaller on mobile */}
-              <h3 className="font-semibold text-sm sm:text-base lg:text-lg text-gray-900 mb-1 group-hover:text-blue-600 transition-colors duration-300">
+              <h3 className="font-semibold text-sm sm:text-base lg:text-lg text-gray-900 mb-1">
                 {member.name}
               </h3>
               <p className="text-xs sm:text-sm lg:text-base text-gray-600 italic mb-1 sm:mb-2">
                 {member.title}
               </p>
-              {/* Phone link - Touch-friendly
-              <a
-                href={`tel:${member.phone.replace(/[^0-9]/g, "")}`}
-                className="text-gray-800 hover:text-blue-600 transition-colors duration-300 inline-flex items-center gap-1 text-xs sm:text-sm lg:text-base py-1"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-3 w-3 sm:h-4 sm:w-4"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                </svg>
-                <span className="whitespace-nowrap">{member.phone}</span>
-              </a> */}
             </div>
           ))}
         </div>

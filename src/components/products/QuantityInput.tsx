@@ -40,7 +40,18 @@ export default function QuantityInput({
     if (preventPropagation) {
       e.stopPropagation();
     }
-    handleQuantityChange(parseInt(e.target.value) || min);
+    const value = e.target.value;
+    // Allow empty input
+    if (value === "") {
+      setQuantity(0);
+      onQuantityChange(0);
+      return;
+    }
+    const numValue = parseInt(value);
+    // Only update if it's a valid number
+    if (!isNaN(numValue)) {
+      handleQuantityChange(numValue);
+    }
   };
 
   return (
@@ -53,11 +64,20 @@ export default function QuantityInput({
       </button>
       <input
         type="number"
-        value={quantity}
+        value={quantity || ""}
         min={min}
         max={max}
         onChange={handleInputChange}
-        onClick={(e) => preventPropagation && e.stopPropagation()}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          e.nativeEvent.stopImmediatePropagation();
+        }}
+        onFocus={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          e.nativeEvent.stopImmediatePropagation();
+        }}
         className="w-full border-t border-b border-gray-300 px-2 text-center text-sm text-gray-900 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
       />
       <button

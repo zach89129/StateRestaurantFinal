@@ -192,6 +192,12 @@ export default function ProductCard({ product }: ProductCardProps) {
     <Link
       href={`/product/${product.sku}`}
       key={`product-link-${product.trx_product_id}`}
+      onClick={(e) => {
+        // If the click originated from the quantity input or its children, prevent navigation
+        if ((e.target as HTMLElement).closest(".quantity-input-container")) {
+          e.preventDefault();
+        }
+      }}
     >
       <div
         className="group relative border rounded-lg p-2 sm:p-4 hover:shadow-lg transition-shadow bg-white h-full flex flex-col justify-between"
@@ -272,7 +278,13 @@ export default function ProductCard({ product }: ProductCardProps) {
         <div className="mt-4">
           {session?.user ? (
             <div className="flex items-center gap-2">
-              <div className="flex-1">
+              <div
+                className="flex-1"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+              >
                 <QuantityInput
                   onQuantityChange={setQuantity}
                   initialQuantity={1}
@@ -281,7 +293,11 @@ export default function ProductCard({ product }: ProductCardProps) {
                 />
               </div>
               <button
-                onClick={handleAddToCart}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleAddToCart(e);
+                }}
                 className="flex-shrink-0 bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition-colors whitespace-nowrap"
               >
                 Add to Cart
