@@ -86,7 +86,9 @@ function RequestAccountContent() {
           </h2>
           <p className="text-gray-600">
             Thank you for your interest in State Restaurant Supply. Our team
-            will review your request and contact you shortly.
+            will review your request and contact you if any further information
+            is needed. You will receive a text message when your account has
+            been created.
           </p>
           <button
             onClick={() => router.push("/login")}
