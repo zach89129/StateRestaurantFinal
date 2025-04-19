@@ -2,6 +2,20 @@ import { prisma } from "@/lib/prisma";
 import { CustomerInput, VenueData } from "@/types/api";
 import { NextRequest, NextResponse } from "next/server";
 import { convertBigIntToString } from "@/utils/convertBigIntToString";
+import { sendSMS } from "@/lib/twilio";
+
+const sendCustomerSMS = async (phone: string, email: string) => {
+  if (!phone) return;
+
+  try {
+    const message = `Congratulations! Your State website login has been activated. You can now log in using your email address ${email} at https://www.staterestaurant.com`;
+
+    await sendSMS(phone, message);
+  } catch (error) {
+    console.error("Error sending customer SMS notification:", error);
+    // We don't want to fail the whole operation if SMS fails, so just log the error
+  }
+};
 
 export async function POST(req: NextRequest) {
   if (!req.body) {
@@ -158,6 +172,11 @@ export async function POST(req: NextRequest) {
               venues: true,
             },
           });
+
+          // Send SMS notification for new customer
+          if (phone && email) {
+            await sendCustomerSMS(phone, email);
+          }
         }
 
         // Format the customer response to use trx_venue_id instead of trxVenueId

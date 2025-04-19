@@ -53,3 +53,29 @@ export const sendOTP = async (phoneNumber: string, otp: string) => {
     throw twilioError;
   }
 };
+
+// General purpose SMS sender for any type of message
+export const sendSMS = async (phoneNumber: string, message: string) => {
+  try {
+    const formattedPhone = formatPhoneNumber(phoneNumber);
+
+    const smsMessage = await twilioClient.messages.create({
+      body: message,
+      to: formattedPhone,
+      from: process.env.TWILIO_PHONE_NUMBER,
+    });
+
+    return smsMessage.sid;
+  } catch (error: unknown) {
+    const twilioError = error as TwilioError;
+    console.error("Error sending SMS:", twilioError);
+
+    if (twilioError.code === 21211) {
+      throw new Error("Invalid phone number format");
+    }
+    if (twilioError.code === 21608) {
+      throw new Error("Unverified phone number");
+    }
+    throw twilioError;
+  }
+};
