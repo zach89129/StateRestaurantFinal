@@ -223,13 +223,13 @@ export default function FilterSidebar({
         {!isCategoryPage && sortOptions?.categories?.length > 0 && (
           <CollapsibleSection title="PRODUCT CATEGORY" defaultOpen={true}>
             <div className="space-y-4">
-              <input
+              {/* <input
                 type="text"
                 placeholder="Search options"
                 className="w-full px-3 py-2 border rounded text-sm text-black placeholder-gray-500"
                 value={categorySearch}
                 onChange={(e) => setCategorySearch(e.target.value)}
-              />
+              /> */}
               <div className="space-y-2 min-h-[120px] max-h-48 custom-scrollbar">
                 {filterItems(sortOptions?.categories, categorySearch).map(
                   (category) => (
@@ -254,13 +254,13 @@ export default function FilterSidebar({
         {sortOptions?.patterns?.length > 0 && (
           <CollapsibleSection title="PATTERNS" defaultOpen={!isMobile}>
             <div className="space-y-4">
-              <input
+              {/* <input
                 type="text"
                 placeholder="Search options"
                 className="w-full px-3 py-2 border rounded text-sm text-black placeholder-gray-500"
                 value={patternSearch}
                 onChange={(e) => setPatternSearch(e.target.value)}
-              />
+              /> */}
               <div className="space-y-2 min-h-[120px] max-h-48 custom-scrollbar">
                 {filterItems(sortOptions?.patterns, patternSearch).map(
                   (pattern) => (
@@ -283,13 +283,13 @@ export default function FilterSidebar({
         {sortOptions?.collections?.length > 0 && (
           <CollapsibleSection title="COLLECTIONS" defaultOpen={!isMobile}>
             <div className="space-y-4">
-              <input
+              {/* <input
                 type="text"
                 placeholder="Search options"
                 className="w-full px-3 py-2 border rounded text-sm text-black placeholder-gray-500"
                 value={collectionSearch}
                 onChange={(e) => setCollectionSearch(e.target.value)}
-              />
+              /> */}
               <div className="space-y-2 min-h-[120px] max-h-48 custom-scrollbar">
                 {filterItems(sortOptions?.collections, collectionSearch).map(
                   (collection) => (
@@ -314,13 +314,13 @@ export default function FilterSidebar({
         {sortOptions?.manufacturers?.length > 0 && (
           <CollapsibleSection title="MANUFACTURER" defaultOpen={!isMobile}>
             <div className="space-y-4">
-              <input
+              {/* <input
                 type="text"
                 placeholder="Search options"
                 className="w-full px-3 py-2 border rounded text-sm text-black placeholder-gray-500"
                 value={manufacturerSearch}
                 onChange={(e) => setManufacturerSearch(e.target.value)}
-              />
+              /> */}
               <div className="space-y-2 min-h-[120px] max-h-48 custom-scrollbar">
                 {filterItems(
                   sortOptions?.manufacturers,

@@ -305,13 +305,16 @@ export default function ProductCard({ product }: ProductCardProps) {
             </div>
           ) : (
             <div className="text-center">
-              <Link
-                href="/login"
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  router.push("/login");
+                }}
                 className="text-blue-600 hover:text-blue-800 text-sm"
-                onClick={(e) => e.stopPropagation()}
               >
                 Login to purchase
-              </Link>
+              </button>
             </div>
           )}
         </div>
