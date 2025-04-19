@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import CollapsibleSection from "../ui/CollapsibleSection";
 
 // Add custom scrollbar styles at the top of the component
@@ -67,6 +67,297 @@ interface FilterSidebarProps {
   onClose: () => void;
 }
 
+// Define a separate interface for the FilterContent component
+interface FilterContentProps {
+  sortOptions: {
+    categories: string[];
+    manufacturers: string[];
+    patterns: string[];
+    collections: string[];
+    hasQuickShip: boolean;
+  };
+  selectedCategories: string[];
+  selectedManufacturers: string[];
+  selectedPatterns: string[];
+  selectedCollections: string[];
+  selectedQuickShip: boolean;
+  onCategoryChange: (category: string) => void;
+  onManufacturerChange: (manufacturer: string) => void;
+  onPatternChange: (pattern: string) => void;
+  onCollectionChange: (collection: string) => void;
+  onQuickShipChange: (value: boolean) => void;
+  onClearAll: () => void;
+  isCategoryPage?: boolean;
+  isMobile: boolean;
+}
+
+// Lift the FilterContent component outside the main component and memoize it
+const FilterContent = memo(function FilterContent({
+  sortOptions,
+  selectedCategories,
+  selectedManufacturers,
+  selectedPatterns,
+  selectedCollections,
+  selectedQuickShip,
+  onCategoryChange,
+  onManufacturerChange,
+  onPatternChange,
+  onCollectionChange,
+  onQuickShipChange,
+  onClearAll,
+  isCategoryPage = false,
+  isMobile,
+}: FilterContentProps) {
+  const [categorySearch, setCategorySearch] = useState("");
+  const [manufacturerSearch, setManufacturerSearch] = useState("");
+  const [collectionSearch, setCollectionSearch] = useState("");
+  const [patternSearch, setPatternSearch] = useState("");
+
+  // Helper function to normalize strings for comparison
+  const normalizeString = (str: string) => str.toLowerCase().trim();
+
+  const filterItems = useCallback(
+    (items: string[] = [], searchTerm: string) => {
+      return items.filter((item) =>
+        item.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    },
+    []
+  );
+
+  // Helper function to check if a manufacturer is selected
+  const isManufacturerSelected = useCallback(
+    (manufacturer: string) => {
+      const normalizedManufacturer = normalizeString(manufacturer);
+      return selectedManufacturers.some((m) => {
+        try {
+          const decodedValue = atob(m);
+          return normalizeString(decodedValue) === normalizedManufacturer;
+        } catch {
+          // If not base64 encoded, try regular comparison
+          return normalizeString(m) === normalizedManufacturer;
+        }
+      });
+    },
+    [selectedManufacturers]
+  );
+
+  // Helper function to check if a category is selected
+  const isCategorySelected = useCallback(
+    (category: string) => {
+      const normalizedCategory = normalizeString(category);
+      return selectedCategories.some((c) => {
+        try {
+          const decodedValue = atob(c);
+          return normalizeString(decodedValue) === normalizedCategory;
+        } catch {
+          // If not base64 encoded, try regular comparison
+          return normalizeString(c) === normalizedCategory;
+        }
+      });
+    },
+    [selectedCategories]
+  );
+
+  // Helper function to check if a pattern is selected
+  const isPatternSelected = useCallback(
+    (pattern: string) => {
+      const normalizedPattern = normalizeString(pattern);
+      return selectedPatterns.some((p) => {
+        try {
+          const decodedValue = atob(p);
+          return normalizeString(decodedValue) === normalizedPattern;
+        } catch {
+          // If not base64 encoded, try regular comparison
+          return normalizeString(p) === normalizedPattern;
+        }
+      });
+    },
+    [selectedPatterns]
+  );
+
+  // Helper function to check if a collection is selected
+  const isCollectionSelected = useCallback(
+    (collection: string) => {
+      const normalizedCollection = normalizeString(collection);
+      return selectedCollections.some((c) => {
+        try {
+          const decodedValue = atob(c);
+          return normalizeString(decodedValue) === normalizedCollection;
+        } catch {
+          // If not base64 encoded, try regular comparison
+          return normalizeString(c) === normalizedCollection;
+        }
+      });
+    },
+    [selectedCollections]
+  );
+
+  const handleClearAll = () => {
+    onClearAll();
+    // Reset all search states
+    setCategorySearch("");
+    setManufacturerSearch("");
+    setCollectionSearch("");
+    setPatternSearch("");
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        {(selectedCategories?.length > 0 ||
+          selectedManufacturers?.length > 0 ||
+          selectedPatterns?.length > 0 ||
+          selectedCollections?.length > 0 ||
+          selectedQuickShip) && (
+          <button
+            onClick={handleClearAll}
+            className="text-sm text-gray-600 hover:text-gray-900"
+          >
+            Clear all
+          </button>
+        )}
+      </div>
+
+      <CollapsibleSection title="QUICK SHIP" defaultOpen={!isMobile}>
+        <div className="space-y-2">
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border-gray-300"
+              checked={selectedQuickShip}
+              onChange={() => onQuickShipChange(!selectedQuickShip)}
+            />
+            <span className="ml-2 text-sm text-gray-700">
+              Quick Ship Available
+            </span>
+          </label>
+        </div>
+      </CollapsibleSection>
+
+      {!isCategoryPage && sortOptions?.categories?.length > 0 && (
+        <CollapsibleSection title="PRODUCT CATEGORY" defaultOpen={true}>
+          <div className="space-y-4">
+            <input
+              type="text"
+              placeholder="Search options"
+              className="w-full px-3 py-2 border rounded text-sm text-black placeholder-gray-500"
+              value={categorySearch}
+              onChange={(e) => setCategorySearch(e.target.value)}
+            />
+            <div className="space-y-2 min-h-[120px] max-h-48 custom-scrollbar">
+              {filterItems(sortOptions?.categories, categorySearch).map(
+                (category) => (
+                  <label key={category} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-gray-300"
+                      checked={isCategorySelected(category)}
+                      onChange={() => onCategoryChange(category)}
+                    />
+                    <span className="ml-2 text-sm text-black">{category}</span>
+                  </label>
+                )
+              )}
+            </div>
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {sortOptions?.patterns?.length > 0 && (
+        <CollapsibleSection title="PATTERNS" defaultOpen={!isMobile}>
+          <div className="space-y-4">
+            <input
+              type="text"
+              placeholder="Search options"
+              className="w-full px-3 py-2 border rounded text-sm text-black placeholder-gray-500"
+              value={patternSearch}
+              onChange={(e) => setPatternSearch(e.target.value)}
+            />
+            <div className="space-y-2 min-h-[120px] max-h-48 custom-scrollbar">
+              {filterItems(sortOptions?.patterns, patternSearch).map(
+                (pattern) => (
+                  <label key={pattern} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-gray-300"
+                      checked={isPatternSelected(pattern)}
+                      onChange={() => onPatternChange(pattern)}
+                    />
+                    <span className="ml-2 text-sm text-black">{pattern}</span>
+                  </label>
+                )
+              )}
+            </div>
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {sortOptions?.collections?.length > 0 && (
+        <CollapsibleSection title="COLLECTIONS" defaultOpen={!isMobile}>
+          <div className="space-y-4">
+            <input
+              type="text"
+              placeholder="Search options"
+              className="w-full px-3 py-2 border rounded text-sm text-black placeholder-gray-500"
+              value={collectionSearch}
+              onChange={(e) => setCollectionSearch(e.target.value)}
+            />
+            <div className="space-y-2 min-h-[120px] max-h-48 custom-scrollbar">
+              {filterItems(sortOptions?.collections, collectionSearch).map(
+                (collection) => (
+                  <label key={collection} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-gray-300"
+                      checked={isCollectionSelected(collection)}
+                      onChange={() => onCollectionChange(collection)}
+                    />
+                    <span className="ml-2 text-sm text-black">
+                      {collection}
+                    </span>
+                  </label>
+                )
+              )}
+            </div>
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {sortOptions?.manufacturers?.length > 0 && (
+        <CollapsibleSection title="MANUFACTURER" defaultOpen={!isMobile}>
+          <div className="space-y-4">
+            <input
+              type="text"
+              placeholder="Search options"
+              className="w-full px-3 py-2 border rounded text-sm text-black placeholder-gray-500"
+              value={manufacturerSearch}
+              onChange={(e) => setManufacturerSearch(e.target.value)}
+            />
+            <div className="space-y-2 min-h-[120px] max-h-48 custom-scrollbar">
+              {filterItems(sortOptions?.manufacturers, manufacturerSearch).map(
+                (manufacturer) => (
+                  <label key={manufacturer} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-gray-300"
+                      checked={isManufacturerSelected(manufacturer)}
+                      onChange={() => onManufacturerChange(manufacturer)}
+                    />
+                    <span className="ml-2 text-sm text-black">
+                      {manufacturer}
+                    </span>
+                  </label>
+                )
+              )}
+            </div>
+          </div>
+        </CollapsibleSection>
+      )}
+    </div>
+  );
+});
+
 export default function FilterSidebar({
   sortOptions = {
     categories: [],
@@ -90,10 +381,6 @@ export default function FilterSidebar({
   isOpen,
   onClose,
 }: FilterSidebarProps) {
-  const [categorySearch, setCategorySearch] = useState("");
-  const [manufacturerSearch, setManufacturerSearch] = useState("");
-  const [collectionSearch, setCollectionSearch] = useState("");
-  const [patternSearch, setPatternSearch] = useState("");
   const [isMobile, setIsMobile] = useState(false);
 
   // Set up mobile detection
@@ -111,240 +398,6 @@ export default function FilterSidebar({
     // Clean up
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
-
-  const filterItems = (items: string[] = [], searchTerm: string) => {
-    return items.filter((item) =>
-      item.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  };
-
-  // Helper function to normalize strings for comparison
-  const normalizeString = (str: string) => str.toLowerCase().trim();
-
-  // Helper function to check if a manufacturer is selected
-  const isManufacturerSelected = (manufacturer: string) => {
-    const normalizedManufacturer = normalizeString(manufacturer);
-    return selectedManufacturers.some((m) => {
-      try {
-        const decodedValue = atob(m);
-        return normalizeString(decodedValue) === normalizedManufacturer;
-      } catch {
-        // If not base64 encoded, try regular comparison
-        return normalizeString(m) === normalizedManufacturer;
-      }
-    });
-  };
-
-  // Helper function to check if a category is selected
-  const isCategorySelected = (category: string) => {
-    const normalizedCategory = normalizeString(category);
-    return selectedCategories.some((c) => {
-      try {
-        const decodedValue = atob(c);
-        return normalizeString(decodedValue) === normalizedCategory;
-      } catch {
-        // If not base64 encoded, try regular comparison
-        return normalizeString(c) === normalizedCategory;
-      }
-    });
-  };
-
-  // Helper function to check if a pattern is selected
-  const isPatternSelected = (pattern: string) => {
-    const normalizedPattern = normalizeString(pattern);
-    return selectedPatterns.some((p) => {
-      try {
-        const decodedValue = atob(p);
-        return normalizeString(decodedValue) === normalizedPattern;
-      } catch {
-        // If not base64 encoded, try regular comparison
-        return normalizeString(p) === normalizedPattern;
-      }
-    });
-  };
-
-  // Helper function to check if a collection is selected
-  const isCollectionSelected = (collection: string) => {
-    const normalizedCollection = normalizeString(collection);
-    return selectedCollections.some((c) => {
-      try {
-        const decodedValue = atob(c);
-        return normalizeString(decodedValue) === normalizedCollection;
-      } catch {
-        // If not base64 encoded, try regular comparison
-        return normalizeString(c) === normalizedCollection;
-      }
-    });
-  };
-
-  const handleClearAll = () => {
-    onClearAll();
-    // Reset all search states
-    setCategorySearch("");
-    setManufacturerSearch("");
-    setCollectionSearch("");
-    setPatternSearch("");
-  };
-
-  const FilterContent = () => {
-    return (
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          {(selectedCategories?.length > 0 ||
-            selectedManufacturers?.length > 0 ||
-            selectedPatterns?.length > 0 ||
-            selectedCollections?.length > 0 ||
-            selectedQuickShip) && (
-            <button
-              onClick={handleClearAll}
-              className="text-sm text-gray-600 hover:text-gray-900"
-            >
-              Clear all
-            </button>
-          )}
-        </div>
-
-        <CollapsibleSection title="QUICK SHIP" defaultOpen={!isMobile}>
-          <div className="space-y-2">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="h-4 w-4 rounded border-gray-300"
-                checked={selectedQuickShip}
-                onChange={() => onQuickShipChange(!selectedQuickShip)}
-              />
-              <span className="ml-2 text-sm text-gray-700">
-                Quick Ship Available
-              </span>
-            </label>
-          </div>
-        </CollapsibleSection>
-
-        {!isCategoryPage && sortOptions?.categories?.length > 0 && (
-          <CollapsibleSection title="PRODUCT CATEGORY" defaultOpen={true}>
-            <div className="space-y-4">
-              {/* <input
-                type="text"
-                placeholder="Search options"
-                className="w-full px-3 py-2 border rounded text-sm text-black placeholder-gray-500"
-                value={categorySearch}
-                onChange={(e) => setCategorySearch(e.target.value)}
-              /> */}
-              <div className="space-y-2 min-h-[120px] max-h-48 custom-scrollbar">
-                {filterItems(sortOptions?.categories, categorySearch).map(
-                  (category) => (
-                    <label key={category} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 rounded border-gray-300"
-                        checked={isCategorySelected(category)}
-                        onChange={() => onCategoryChange(category)}
-                      />
-                      <span className="ml-2 text-sm text-black">
-                        {category}
-                      </span>
-                    </label>
-                  )
-                )}
-              </div>
-            </div>
-          </CollapsibleSection>
-        )}
-
-        {sortOptions?.patterns?.length > 0 && (
-          <CollapsibleSection title="PATTERNS" defaultOpen={!isMobile}>
-            <div className="space-y-4">
-              {/* <input
-                type="text"
-                placeholder="Search options"
-                className="w-full px-3 py-2 border rounded text-sm text-black placeholder-gray-500"
-                value={patternSearch}
-                onChange={(e) => setPatternSearch(e.target.value)}
-              /> */}
-              <div className="space-y-2 min-h-[120px] max-h-48 custom-scrollbar">
-                {filterItems(sortOptions?.patterns, patternSearch).map(
-                  (pattern) => (
-                    <label key={pattern} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 rounded border-gray-300"
-                        checked={isPatternSelected(pattern)}
-                        onChange={() => onPatternChange(pattern)}
-                      />
-                      <span className="ml-2 text-sm text-black">{pattern}</span>
-                    </label>
-                  )
-                )}
-              </div>
-            </div>
-          </CollapsibleSection>
-        )}
-
-        {sortOptions?.collections?.length > 0 && (
-          <CollapsibleSection title="COLLECTIONS" defaultOpen={!isMobile}>
-            <div className="space-y-4">
-              {/* <input
-                type="text"
-                placeholder="Search options"
-                className="w-full px-3 py-2 border rounded text-sm text-black placeholder-gray-500"
-                value={collectionSearch}
-                onChange={(e) => setCollectionSearch(e.target.value)}
-              /> */}
-              <div className="space-y-2 min-h-[120px] max-h-48 custom-scrollbar">
-                {filterItems(sortOptions?.collections, collectionSearch).map(
-                  (collection) => (
-                    <label key={collection} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 rounded border-gray-300"
-                        checked={isCollectionSelected(collection)}
-                        onChange={() => onCollectionChange(collection)}
-                      />
-                      <span className="ml-2 text-sm text-black">
-                        {collection}
-                      </span>
-                    </label>
-                  )
-                )}
-              </div>
-            </div>
-          </CollapsibleSection>
-        )}
-
-        {sortOptions?.manufacturers?.length > 0 && (
-          <CollapsibleSection title="MANUFACTURER" defaultOpen={!isMobile}>
-            <div className="space-y-4">
-              {/* <input
-                type="text"
-                placeholder="Search options"
-                className="w-full px-3 py-2 border rounded text-sm text-black placeholder-gray-500"
-                value={manufacturerSearch}
-                onChange={(e) => setManufacturerSearch(e.target.value)}
-              /> */}
-              <div className="space-y-2 min-h-[120px] max-h-48 custom-scrollbar">
-                {filterItems(
-                  sortOptions?.manufacturers,
-                  manufacturerSearch
-                ).map((manufacturer) => (
-                  <label key={manufacturer} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-gray-300"
-                      checked={isManufacturerSelected(manufacturer)}
-                      onChange={() => onManufacturerChange(manufacturer)}
-                    />
-                    <span className="ml-2 text-sm text-black">
-                      {manufacturer}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </CollapsibleSection>
-        )}
-      </div>
-    );
-  };
 
   return (
     <div key="filter-sidebar-container">
@@ -370,7 +423,22 @@ export default function FilterSidebar({
         key="desktop-sidebar"
       >
         <div className="bg-white rounded-lg shadow-lg p-4">
-          <FilterContent />
+          <FilterContent
+            sortOptions={sortOptions}
+            selectedCategories={selectedCategories}
+            selectedManufacturers={selectedManufacturers}
+            selectedPatterns={selectedPatterns}
+            selectedCollections={selectedCollections}
+            selectedQuickShip={selectedQuickShip}
+            onCategoryChange={onCategoryChange}
+            onManufacturerChange={onManufacturerChange}
+            onPatternChange={onPatternChange}
+            onCollectionChange={onCollectionChange}
+            onQuickShipChange={onQuickShipChange}
+            onClearAll={onClearAll}
+            isCategoryPage={isCategoryPage}
+            isMobile={isMobile}
+          />
         </div>
       </div>
 
@@ -410,7 +478,22 @@ export default function FilterSidebar({
           </div>
 
           {/* Filter Content */}
-          <FilterContent />
+          <FilterContent
+            sortOptions={sortOptions}
+            selectedCategories={selectedCategories}
+            selectedManufacturers={selectedManufacturers}
+            selectedPatterns={selectedPatterns}
+            selectedCollections={selectedCollections}
+            selectedQuickShip={selectedQuickShip}
+            onCategoryChange={onCategoryChange}
+            onManufacturerChange={onManufacturerChange}
+            onPatternChange={onPatternChange}
+            onCollectionChange={onCollectionChange}
+            onQuickShipChange={onQuickShipChange}
+            onClearAll={onClearAll}
+            isCategoryPage={isCategoryPage}
+            isMobile={isMobile}
+          />
         </div>
       </div>
     </div>
