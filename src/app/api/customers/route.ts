@@ -6,11 +6,15 @@ import { sendSMS } from "@/lib/twilio";
 
 const sendCustomerSMS = async (phone: string, email: string) => {
   if (!phone) return;
+  const media = [
+    "https://stateimages-3131.twil.io/stateiphone.jpg",
+    "https://stateimages-3131.twil.io/stateandroid.jpg",
+  ];
 
   try {
-    const message = `Congratulations! Your State website login has been activated. You can now log in using your email address ${email} at https://www.staterestaurant.com`;
+    const message = `Congratulations! Your State website login has been activated. You can now log in using your email address ${email} at https://www.staterestaurant.com. Add the State icon to your home screen so its aways available with a click! Follow the easy instructions for Apple or Andriod on the following images.`;
 
-    await sendSMS(phone, message);
+    await sendSMS(phone, message, media);
   } catch (error) {
     console.error("Error sending customer SMS notification:", error);
     // We don't want to fail the whole operation if SMS fails, so just log the error

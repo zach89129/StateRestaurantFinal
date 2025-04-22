@@ -55,7 +55,11 @@ export const sendOTP = async (phoneNumber: string, otp: string) => {
 };
 
 // General purpose SMS sender for any type of message
-export const sendSMS = async (phoneNumber: string, message: string) => {
+export const sendSMS = async (
+  phoneNumber: string,
+  message: string,
+  media?: string[]
+) => {
   try {
     const formattedPhone = formatPhoneNumber(phoneNumber);
 
@@ -63,6 +67,7 @@ export const sendSMS = async (phoneNumber: string, message: string) => {
       body: message,
       to: formattedPhone,
       from: process.env.TWILIO_PHONE_NUMBER,
+      mediaUrl: media,
     });
 
     return smsMessage.sid;
