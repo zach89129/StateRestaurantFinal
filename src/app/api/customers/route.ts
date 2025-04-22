@@ -12,7 +12,7 @@ const sendCustomerSMS = async (phone: string, email: string) => {
   ];
 
   try {
-    const message = `Congratulations! Your State website login has been activated. You can now log in using your email address ${email} at https://www.staterestaurant.com. Add the State icon to your home screen so its aways available with a click! Follow the easy instructions for Apple or Andriod on the following images.`;
+    const message = `Congratulations! Your State website login has been activated. You can now log in using your email address ${email} at https://www.staterestaurant.com. Add the State icon to your home screen so its aways available with a click! Follow the easy instructions for Apple or Android on the attached images.`;
 
     await sendSMS(phone, message, media);
   } catch (error) {
