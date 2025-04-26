@@ -10,7 +10,13 @@ import { useRouter } from "next/navigation";
 
 export default function CartPage() {
   const { data: session } = useSession();
-  const { items, removeItem, updateQuantity, clearCart } = useCart();
+  const {
+    items,
+    removeItem,
+    updateQuantity,
+    clearCart,
+    clearCartFromDatabase,
+  } = useCart();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -66,7 +72,13 @@ export default function CartPage() {
       }
 
       setSuccess(true);
+
+      // First clear cart from database to ensure it's persisted
+      await clearCartFromDatabase();
+
+      // Then clear local cart state (this is a backup as clearCartFromDatabase also clears local state)
       clearCart();
+
       router.push("/cart/success");
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");

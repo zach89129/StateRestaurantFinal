@@ -44,20 +44,21 @@ export async function GET(request: Request) {
 
     // Parse URL parameters
     const url = new URL(request.url);
-    const customerId = url.searchParams.get("customerId");
+    const venueId = url.searchParams.get("venueId");
     const productId = url.searchParams.get("productId");
     const productIds = url.searchParams.get("productIds");
 
-    if (!customerId) {
+    if (!venueId) {
       return NextResponse.json(
-        { success: false, error: "Customer ID is required" },
+        { success: false, error: "Venue ID is required" },
         { status: 400 }
       );
     }
 
     // Handle single product request
     if (productId) {
-      const pricingApiUrl = `https://customer-pricing-api.sunsofterp.com/price?customerId=${customerId}&productId=${productId}`;
+      //the route says customerId but Joe changed it to take venueId instead.
+      const pricingApiUrl = `https://customer-pricing-api.sunsofterp.com/price?customerId=${venueId}&productId=${productId}`;
 
       try {
         const response = await fetch(pricingApiUrl, {
@@ -136,7 +137,8 @@ export async function GET(request: Request) {
 
         const promises = batch.map(async (productId) => {
           try {
-            const pricingApiUrl = `https://customer-pricing-api.sunsofterp.com/price?customerId=${customerId}&productId=${productId}`;
+            //the route says customerId but Joe changed it to take venueId instead.
+            const pricingApiUrl = `https://customer-pricing-api.sunsofterp.com/price?customerId=${venueId}&productId=${productId}`;
             const response = await fetch(pricingApiUrl, {
               method: "GET",
               headers: {
