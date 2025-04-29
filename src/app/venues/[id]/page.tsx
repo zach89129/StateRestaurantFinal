@@ -216,6 +216,21 @@ export default function VenuePage({
   useEffect(() => {
     const fetchVenueProducts = async () => {
       try {
+        // First check if user has access to this venue
+        const accessResponse = await fetch(
+          `/api/check-venue-access?venueId=${resolvedParams.id}`
+        );
+        if (!accessResponse.ok) {
+          throw new Error("Failed to check venue access");
+        }
+        const accessData = await accessResponse.json();
+
+        if (!accessData.hasAccess) {
+          setError("You no longer have access to this venue");
+          setLoading(false);
+          return;
+        }
+
         const response = await fetch(
           `/api/venue-products?trx_venue_id=${resolvedParams.id}`
         );
