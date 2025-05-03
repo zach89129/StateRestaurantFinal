@@ -27,105 +27,119 @@ export async function POST(request: Request) {
     const results = [];
     const errors = [];
 
-    for (const vp of venueProducts) {
+    // Process venues in batches of 5 to avoid overwhelming the database
+    const batchSize = 5;
+    for (let i = 0; i < venueProducts.length; i += batchSize) {
+      const batch = venueProducts.slice(i, i + batchSize);
+
       try {
-        const existingVenue = await prisma.venue.findUnique({
-          where: { trxVenueId: vp.trx_venue_id },
-          include: {
-            venueProduct: {
-              include: {
-                products: true,
-              },
-            },
-          },
+        // Use a transaction for each batch to ensure consistency
+        const batchResults = await prisma.$transaction(async (tx) => {
+          const batchResults = [];
+
+          for (const vp of batch) {
+            try {
+              // First check if venue exists
+              const existingVenue = await tx.venue.findUnique({
+                where: { trxVenueId: vp.trx_venue_id },
+                include: {
+                  venueProduct: {
+                    include: {
+                      products: true,
+                    },
+                  },
+                },
+              });
+
+              let venue;
+              if (existingVenue) {
+                // Update existing venue
+                venue = await tx.venue.update({
+                  where: { trxVenueId: vp.trx_venue_id },
+                  data: {
+                    ...(vp.venueName && { venueName: vp.venueName }),
+                    venueProduct: {
+                      upsert: {
+                        create: {
+                          products: {
+                            connect: vp.products.map((id: number) => ({
+                              id: BigInt(id),
+                            })),
+                          },
+                        },
+                        update: {
+                          products: {
+                            set: vp.products.map((id: number) => ({
+                              id: BigInt(id),
+                            })),
+                          },
+                        },
+                      },
+                    },
+                  },
+                  include: {
+                    venueProduct: {
+                      include: {
+                        products: true,
+                      },
+                    },
+                  },
+                });
+              } else {
+                // Create new venue
+                venue = await tx.venue.create({
+                  data: {
+                    trxVenueId: vp.trx_venue_id,
+                    venueName: vp.venueName || `Venue ${vp.trx_venue_id}`,
+                    venueProduct: {
+                      create: {
+                        products: {
+                          connect: vp.products.map((id: number) => ({
+                            id: BigInt(id),
+                          })),
+                        },
+                      },
+                    },
+                  },
+                  include: {
+                    venueProduct: {
+                      include: {
+                        products: true,
+                      },
+                    },
+                  },
+                });
+              }
+
+              batchResults.push({
+                trx_venue_id: venue.trxVenueId,
+                venueName: venue.venueName,
+                products: venue.venueProduct
+                  ? venue.venueProduct.products.map((product) =>
+                      String(product.id)
+                    )
+                  : [],
+              });
+            } catch (err) {
+              errors.push({
+                venue_id: vp.trx_venue_id,
+                error: err instanceof Error ? err.message : "Unknown error",
+              });
+            }
+          }
+
+          return batchResults;
         });
 
-        if (existingVenue) {
-          // Update existing venue by adding new products
-          const venue = await prisma.venue.update({
-            where: { trxVenueId: vp.trx_venue_id },
-            data: {
-              // Update venueName if provided
-              ...(vp.venueName && { venueName: vp.venueName }),
-              venueProduct: {
-                upsert: {
-                  create: {
-                    products: {
-                      connect: vp.products.map((id: number) => ({
-                        id: BigInt(id),
-                      })),
-                    },
-                  },
-                  update: {
-                    products: {
-                      connect: vp.products.map((id: number) => ({
-                        id: BigInt(id),
-                      })),
-                    },
-                  },
-                },
-              },
-            },
-            include: {
-              venueProduct: {
-                include: {
-                  products: true,
-                },
-              },
-            },
-          });
-
-          // Format venue to match trx-test/venue-products response
-          const formattedVenue = {
-            trx_venue_id: venue.trxVenueId,
-            venueName: venue.venueName,
-            products: venue.venueProduct
-              ? venue.venueProduct.products.map((product) => String(product.id))
-              : [],
-          };
-
-          results.push(formattedVenue);
-        } else {
-          // Create new venue with products
-          const venue = await prisma.venue.create({
-            data: {
-              trxVenueId: vp.trx_venue_id,
-              // Use provided venueName or default
-              venueName: vp.venueName || `Venue ${vp.trx_venue_id}`,
-              venueProduct: {
-                create: {
-                  products: {
-                    connect: vp.products.map((id: number) => ({
-                      id: BigInt(id),
-                    })),
-                  },
-                },
-              },
-            },
-            include: {
-              venueProduct: {
-                include: {
-                  products: true,
-                },
-              },
-            },
-          });
-
-          // Format venue to match trx-test/venue-products response
-          const formattedVenue = {
-            trx_venue_id: venue.trxVenueId,
-            venueName: venue.venueName,
-            products: venue.venueProduct
-              ? venue.venueProduct.products.map((product) => String(product.id))
-              : [],
-          };
-
-          results.push(formattedVenue);
-        }
-      } catch (err) {
+        results.push(...batchResults);
+      } catch (batchError) {
+        console.error("Error processing batch:", batchError);
         errors.push({
-          venue_id: vp.trx_venue_id,
-          error: err instanceof Error ? err.message : "Unknown error",
+          batch: i,
+          error:
+            batchError instanceof Error
+              ? batchError.message
+              : "Unknown batch error",
         });
       }
     }
@@ -136,13 +150,14 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       venueProducts: safeResults,
+      errors: errors.length > 0 ? errors : undefined,
     });
   } catch (error) {
     console.error("Error processing request:", error);
     return NextResponse.json(
       {
         success: false,
-        error: "Internal Server Error",
+        error: error instanceof Error ? error.message : "Internal Server Error",
       },
       { status: 500 }
     );

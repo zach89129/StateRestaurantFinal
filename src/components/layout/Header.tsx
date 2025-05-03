@@ -26,7 +26,7 @@ export default function Header() {
   const dropdownRef = useRef<HTMLLIElement>(null);
   const venueDropdownRef = useRef<HTMLLIElement>(null);
 
-  // Force refresh session when component mounts
+  // Force refresh session when component mounts and periodically
   useEffect(() => {
     const updateSession = async () => {
       if (status === "loading") {
@@ -34,7 +34,13 @@ export default function Header() {
       }
     };
 
+    // Initial update
     updateSession();
+
+    // Set up periodic refresh (every 5 minutes)
+    const intervalId = setInterval(updateSession, 5 * 60 * 1000);
+
+    return () => clearInterval(intervalId);
   }, [status, update]);
 
   const handleLogout = async () => {
