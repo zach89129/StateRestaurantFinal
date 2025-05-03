@@ -349,6 +349,18 @@ export default function Header() {
                     )}
                   </div>
                 )}
+                {session?.user && (
+                  <Link
+                    href="/orders"
+                    className="block text-gray-300 hover:text-white"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      setIsMobileDropdownOpen(false);
+                    }}
+                  >
+                    Order History
+                  </Link>
+                )}
               </div>
             </div>
 
@@ -511,6 +523,13 @@ export default function Header() {
                     </ul>
                   </div>
                 )}
+              </li>
+            )}
+            {session?.user && (
+              <li>
+                <Link href="/orders" className="hover:text-blue-200">
+                  Order History
+                </Link>
               </li>
             )}
           </ul>
