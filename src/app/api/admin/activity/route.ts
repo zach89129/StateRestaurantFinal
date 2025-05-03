@@ -17,7 +17,7 @@ export async function GET() {
     // Fetch activity logs, ordered by most recent first
     const logs = await prisma.userActivityLog.findMany({
       orderBy: {
-        timestamp: "desc",
+        TIMESTAMP: "desc",
       },
     });
 

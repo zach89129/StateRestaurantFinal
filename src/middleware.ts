@@ -67,7 +67,9 @@ export async function middleware(request: NextRequest) {
       request.nextUrl.pathname === "/api/trx-test/venue-products" ||
       request.nextUrl.pathname === "/api/trx-test/venue-products/" ||
       request.nextUrl.pathname === "/api/trx-test/products" ||
-      request.nextUrl.pathname === "/api/trx-test/products/");
+      request.nextUrl.pathname === "/api/trx-test/products/" ||
+      request.nextUrl.pathname === "/api/orders/update" ||
+      request.nextUrl.pathname === "/api/orders/update/");
 
   // Alternative approach using normalized paths
   const normalizedPath = request.nextUrl.pathname.replace(/\/$/, "");
@@ -77,10 +79,16 @@ export async function middleware(request: NextRequest) {
     normalizedPath === "/api/customers" ||
     normalizedPath === "/api/trx-test/customers" ||
     normalizedPath === "/api/trx-test/venue-products" ||
-    normalizedPath === "/api/trx-test/products";
+    normalizedPath === "/api/trx-test/products" ||
+    normalizedPath === "/api/orders/update";
+
+  // Also allow GET requests to orders/new with API key
+  const isGetOrdersNewEndpoint =
+    request.method === "GET" && normalizedPath === "/api/orders/new";
 
   const requiresApiKeyNormalized =
-    request.method === "POST" && isApiProductsEndpoint;
+    (request.method === "POST" && isApiProductsEndpoint) ||
+    isGetOrdersNewEndpoint;
 
   if (requiresApiKeyNormalized) {
     // Verify API key for routes that require it using our secure method

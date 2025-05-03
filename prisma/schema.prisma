@@ -8,21 +8,21 @@ datasource db {
 }
 
 model Product {
-  id            BigInt         @id @map("trx_product_id")
-  sku           String         @unique
-  title         String
-  description   String?
-  longDescription String?      @map("long_description")
-  manufacturer  String?
-  category      String?
-  aqcat         String?        @map("aqcat") // Collection category
-  pattern       String?        @map("pattern") // Pattern name without prefix
-  quickship     Boolean        @default(false) @map("quickship") // Quick ship status
-  uom           String?
-  qtyAvailable  Int?           @map("qty_available")
-  tags          String?        // Keep for any other tags
-  images        ProductImage[]
-  venueProducts VenueProduct[] @relation("ProductToVenueProduct")
+  id              BigInt         @id @map("trx_product_id")
+  sku             String         @unique
+  title           String
+  description     String?
+  longDescription String?        @map("long_description") @db.Text
+  manufacturer    String?
+  category        String?
+  uom             String?
+  qtyAvailable    Int?           @map("qty_available")
+  tags            String?
+  aqcat           String?        @map("aqcat") @db.VarChar(255)
+  pattern         String?        @map("pattern") @db.VarChar(255)
+  quickship       Boolean?       @default(false) @map("quickship")
+  images          ProductImage[]
+  venueProducts   VenueProduct[] @relation("ProductToVenueProduct")
 
   @@map("products")
 }
@@ -31,9 +31,10 @@ model ProductImage {
   id        Int      @id @default(autoincrement())
   url       String
   productId BigInt   @map("product_id")
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
+  @@index([productId], map: "product_images_product_id_fkey")
   @@map("product_images")
 }
 
@@ -52,8 +53,8 @@ model Customer {
   trxCustomerId Int      @id @map("trx_customer_id")
   seePrices     Boolean  @default(false)
   updatedAt     DateTime @updatedAt
-  venues        Venue[]  @relation("CustomerToVenue")
   cart          Cart?
+  venues        Venue[]  @relation("CustomerToVenue")
 
   @@map("customers")
 }
@@ -78,34 +79,60 @@ model otp {
 }
 
 model UserActivityLog {
-  id        Int      @id @default(autoincrement())
-  email     String
-  timestamp DateTime @default(now())
+  id        Int       @id @default(autoincrement())
+  email     String    @db.VarChar(255)
+  TIMESTAMP DateTime? @default(now()) @db.DateTime(0)
 
-  @@index([email])
+  @@index([email], map: "email_idx")
   @@map("user_activity_logs")
 }
 
 model Cart {
-  id           Int        @id @default(autoincrement())
-  customerId   Int        @unique @map("customer_id")
-  customer     Customer   @relation(fields: [customerId], references: [trxCustomerId])
-  items        CartItem[]
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id         Int        @id @default(autoincrement())
+  customerId Int        @unique @map("customer_id")
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  items      CartItem[]
+  customer   Customer   @relation(fields: [customerId], references: [trxCustomerId])
 
   @@map("carts")
 }
 
 model CartItem {
-  id          Int      @id @default(autoincrement())
-  cartId      Int      @map("cart_id")
-  cart        Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  productId   BigInt   @map("product_id")
-  quantity    Int
-  venueId     Int      @map("venue_id")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  cartId    Int      @map("cart_id")
+  productId BigInt   @map("product_id")
+  quantity  Int
+  venueId   Int      @map("venue_id")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
 
+  @@index([cartId], map: "cart_items_cart_id_fkey")
   @@map("cart_items")
+}
+
+model Order {
+  id             Int         @id @default(autoincrement())
+  trxVenueId     Int         @map("trx_venue_id")
+  status         String?     @default("new") @db.VarChar(50)
+  dateCreated    DateTime?   @default(now()) @map("date_created") @db.DateTime(0)
+  customerPo     String?     @map("customer_po") @db.VarChar(255)
+  customerNote   String?     @map("customer_note") @db.Text
+  trxOrderId     Int?        @map("trx_order_id")
+  trxOrderNumber String?     @map("trx_order_number") @db.VarChar(50)
+  lineItems      OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id           Int    @id @default(autoincrement())
+  orderId      Int    @map("order_id")
+  trxProductId BigInt @map("trx_product_id")
+  qty          Int
+  order        Order  @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "order_items_ibfk_1")
+
+  @@index([orderId], map: "order_id")
+  @@map("order_items")
 }
