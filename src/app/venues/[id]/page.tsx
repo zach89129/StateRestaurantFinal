@@ -7,6 +7,7 @@ import { useCart } from "@/contexts/CartContext";
 import QuantityInput from "@/components/products/QuantityInput";
 import VenueFilterSidebar from "@/components/venues/VenueFilterSidebar";
 import Link from "next/link";
+import { useSearch } from "@/contexts/SearchContext";
 
 interface VenueProduct {
   id: string;
@@ -85,7 +86,7 @@ export default function VenuePage({
   const [pricingError, setPricingError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 25;
-
+  const { isSearchVisible } = useSearch();
   const filteredProducts = useMemo(() => {
     return (
       venue?.products.filter((product) => {
@@ -547,7 +548,9 @@ export default function VenuePage({
         {/* Filter Button (Mobile & Desktop) */}
         <button
           onClick={toggleFilter}
-          className="fixed top-[110px] md:top-[180px] right-4 flex items-center gap-2 px-4 py-3 bg-copper text-white border border-copper shadow-lg hover:bg-copper-hover transition-colors md:py-2 md:rounded-lg rounded-full"
+          className={`fixed top-[110px] md:top-[180px] right-4 flex items-center gap-2 px-4 py-3 bg-copper text-white border border-copper shadow-lg hover:bg-copper-hover transition-colors md:py-2 md:rounded-lg rounded-full ${
+            isSearchVisible ? "top-[150px]" : "top-[100px]"
+          } transition-all duration-300 ease-in-out`}
         >
           <svg
             className="w-5 h-5"
