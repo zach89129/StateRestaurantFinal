@@ -125,37 +125,38 @@ export async function POST(request: NextRequest) {
       text: emailContent,
     });
 
+    //TODO: Uncomment this when joe finishes his orders api and add quote logic
     // Also save orders to the database (only for venue-specific items)
-    try {
-      // Get authorization cookie for the internal API call
-      const sessionCookie = request.headers.get("cookie");
+    // try {
+    //   // Get authorization cookie for the internal API call
+    //   const sessionCookie = request.headers.get("cookie");
 
-      // Call the orders API to create orders in the database
-      const orderResponse = await fetch(
-        `${request.nextUrl.origin}/api/orders`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Cookie: sessionCookie || "", // Forward the session cookie
-          },
-          body: JSON.stringify({
-            items,
-            comment,
-            purchaseOrder,
-          }),
-        }
-      );
+    //   // Call the orders API to create orders in the database
+    //   const orderResponse = await fetch(
+    //     `${request.nextUrl.origin}/api/orders`,
+    //     {
+    //       method: "POST",
+    //       headers: {
+    //         "Content-Type": "application/json",
+    //         Cookie: sessionCookie || "", // Forward the session cookie
+    //       },
+    //       body: JSON.stringify({
+    //         items,
+    //         comment,
+    //         purchaseOrder,
+    //       }),
+    //     }
+    //   );
 
-      const orderResult = await orderResponse.json();
+    //   const orderResult = await orderResponse.json();
 
-      if (!orderResponse.ok) {
-        console.error("Error creating orders:", orderResult);
-      }
-    } catch (error) {
-      // Log the error but don't fail the entire checkout
-      console.error("Error saving orders to database:", error);
-    }
+    //   if (!orderResponse.ok) {
+    //     console.error("Error creating orders:", orderResult);
+    //   }
+    // } catch (error) {
+    //   // Log the error but don't fail the entire checkout
+    //   console.error("Error saving orders to database:", error);
+    // }
 
     return NextResponse.json({ success: true });
   } catch (error) {

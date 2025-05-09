@@ -520,7 +520,7 @@ export default function VenuePage({
     <div className="min-h-screen bg-white">
       <div className="container mx-auto px-4 py-8">
         {/* Header with venue name */}
-        <div className="flex flex-col md:flex-row md:items-center justify-start mb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-start mb-6 w-[72vw]">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
             {venue.venueName} Products
           </h1>
@@ -551,6 +551,10 @@ export default function VenuePage({
           className={`fixed top-[110px] md:top-[180px] right-4 flex items-center gap-2 px-4 py-3 bg-copper text-white border border-copper shadow-lg hover:bg-copper-hover transition-colors md:py-2 md:rounded-lg rounded-full ${
             isSearchVisible ? "top-[150px]" : "top-[100px]"
           } transition-all duration-300 ease-in-out`}
+          style={{
+            willChange: "transform, top",
+            transition: "top 0.3s ease-in-out",
+          }}
         >
           <svg
             className="w-5 h-5"
