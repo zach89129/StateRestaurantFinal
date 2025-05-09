@@ -388,6 +388,84 @@ export default function VenuePage({
     };
   };
 
+  // Calculate filtered options based on current selections
+  const getFilteredOptions = useMemo(() => {
+    if (!venue?.products) {
+      return {
+        categories: [],
+        manufacturers: [],
+        patterns: [],
+        collections: [],
+      };
+    }
+
+    let filteredProducts = venue.products;
+
+    // Filter products based on current selections
+    if (selectedCategories.length > 0) {
+      filteredProducts = filteredProducts.filter(
+        (product) =>
+          product.category && selectedCategories.includes(product.category)
+      );
+    }
+
+    if (selectedManufacturers.length > 0) {
+      filteredProducts = filteredProducts.filter(
+        (product) =>
+          product.manufacturer &&
+          selectedManufacturers.includes(product.manufacturer)
+      );
+    }
+
+    if (selectedPatterns.length > 0) {
+      filteredProducts = filteredProducts.filter(
+        (product) =>
+          product.pattern && selectedPatterns.includes(product.pattern)
+      );
+    }
+
+    if (selectedCollections.length > 0) {
+      filteredProducts = filteredProducts.filter(
+        (product) =>
+          product.aqcat && selectedCollections.includes(product.aqcat)
+      );
+    }
+
+    if (selectedQuickShip) {
+      filteredProducts = filteredProducts.filter(
+        (product) => product.quickship
+      );
+    }
+
+    // Extract unique values from filtered products
+    const categories = new Set<string>();
+    const manufacturers = new Set<string>();
+    const patterns = new Set<string>();
+    const collections = new Set<string>();
+
+    filteredProducts.forEach((product) => {
+      if (product.category) categories.add(product.category);
+      if (product.manufacturer) manufacturers.add(product.manufacturer);
+      if (product.pattern && product.pattern !== "")
+        patterns.add(product.pattern);
+      if (product.aqcat && product.aqcat !== "") collections.add(product.aqcat);
+    });
+
+    return {
+      categories: Array.from(categories).sort(),
+      manufacturers: Array.from(manufacturers).sort(),
+      patterns: Array.from(patterns).sort(),
+      collections: Array.from(collections).sort(),
+    };
+  }, [
+    venue?.products,
+    selectedCategories,
+    selectedManufacturers,
+    selectedPatterns,
+    selectedCollections,
+    selectedQuickShip,
+  ]);
+
   // Add this function to handle image carousel
   function ImageCarousel({
     images,
@@ -589,6 +667,7 @@ export default function VenuePage({
         {/* Filter Sidebar */}
         <VenueFilterSidebar
           sortOptions={getSortOptions(venue.products)}
+          filteredOptions={getFilteredOptions}
           selectedCategories={selectedCategories}
           selectedManufacturers={selectedManufacturers}
           selectedPatterns={selectedPatterns}
