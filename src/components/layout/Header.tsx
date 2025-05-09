@@ -349,7 +349,9 @@ export default function Header() {
                     )}
                   </div>
                 )}
-                {session?.user && (
+
+                {/* TODO: Add order history back in once joe finishes api */}
+                {/* {session?.user && (
                   <Link
                     href="/orders"
                     className="block text-gray-300 hover:text-white"
@@ -360,7 +362,7 @@ export default function Header() {
                   >
                     Order History
                   </Link>
-                )}
+                )} */}
               </div>
             </div>
 
