@@ -1,19 +1,6 @@
 import React from "react";
 import QuantityInput from "@/components/products/QuantityInput";
-
-interface CartItem {
-  id: string;
-  sku: string;
-  title: string;
-  quantity: number;
-  manufacturer: string | null;
-  category: string | null;
-  uom: string | null;
-  imageSrc: string | null;
-  price?: number | null;
-  venueId?: string;
-  venueName?: string;
-}
+import { CartItem } from "@/types/cart";
 
 interface CartTableProps {
   items: CartItem[];

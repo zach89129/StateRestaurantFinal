@@ -38,8 +38,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { items, comment, purchaseOrder, venue, trxCustomerId } =
-      await request.json();
+    const {
+      items,
+      comment,
+      purchaseOrder,
+      trxCustomerId,
+      quoteVenueAssignments,
+    } = await request.json();
 
     // Group items by venue
     const itemsByVenue = items.reduce(
@@ -78,13 +83,13 @@ export async function POST(request: NextRequest) {
             SKU: ${item.sku}
             UOM: ${item.uom || "N/A"}
             Price: ${
-              item.price ? `$${item.price.toFixed(2)}` : "Quote Required"
+              item.price ? `$${item.price.toFixed(2)}` : "Quote Submitted"
             }
             Quantity: ${item.quantity}
             Subtotal: ${
               item.price
                 ? `$${(item.price * item.quantity).toFixed(2)}`
-                : "Quote Required"
+                : "Quote Submitted"
             }
         `
           )
@@ -98,7 +103,7 @@ export async function POST(request: NextRequest) {
                   0
                 )
                 .toFixed(2)}`
-            : "Venue Total: Quote Required"
+            : "Venue Total: Quote Submitted"
         }
       `
         )
@@ -113,7 +118,7 @@ export async function POST(request: NextRequest) {
                 0
               )
               .toFixed(2)}`
-          : "Order Total: Quote Required"
+          : "Order Total: Quote Submitted"
       }
     `;
 
@@ -125,7 +130,7 @@ export async function POST(request: NextRequest) {
       text: emailContent,
     });
 
-    // Also save orders to the database (only for venue-specific items)
+    // Also save orders to the database (for both venue-specific items and quotes)
     try {
       // Get authorization cookie for the internal API call
       const sessionCookie = request.headers.get("cookie");
@@ -143,6 +148,7 @@ export async function POST(request: NextRequest) {
             items,
             comment,
             purchaseOrder,
+            quoteVenueAssignments,
           }),
         }
       );

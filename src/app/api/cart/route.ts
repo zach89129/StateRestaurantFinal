@@ -31,33 +31,33 @@ interface PriceInfo {
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify user is authenticated
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { error: "You must be signed in to view your cart" },
+        { status: 401 }
+      );
     }
 
-    const trxCustomerId = parseInt(session.user.trxCustomerId as string);
+    // Get the user's cart from the database
+    const cart = await prisma.cart.findUnique({
+      where: {
+        customerId: parseInt(session.user.trxCustomerId),
+      },
+      include: {
+        items: true,
+      },
+    });
+
+    if (!cart) {
+      return NextResponse.json({ items: [] });
+    }
+
     const canSeePrices = session.user.seePrices === true;
 
     try {
-      // Get cart for the user
-      const userCart = await prisma.cart.findFirst({
-        where: {
-          customerId: trxCustomerId,
-        },
-        include: {
-          items: true,
-        },
-      });
-
-      if (!userCart || userCart.items.length === 0) {
-        // Return empty cart if not exists or is empty
-        return NextResponse.json({ items: [] });
-      }
-
       // Get product IDs from cart items
-      const productIds = userCart.items.map((item) => item.productId);
+      const productIds = cart.items.map((item) => item.productId);
 
       // Fetch detailed product information for all products in the cart
       const products = await prisma.product.findMany({
@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
 
       // Prepare items with product details
       const cartItemsWithDetailsOrNull: (CartItemWithDetails | null)[] =
-        userCart.items.map((cartItem) => {
+        cart.items.map((cartItem) => {
           const product = products.find((p) => p.id === cartItem.productId);
 
           if (!product) {

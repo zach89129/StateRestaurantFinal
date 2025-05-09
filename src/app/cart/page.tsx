@@ -11,6 +11,7 @@ import { CartTable } from "@/components/ui/CartTable";
 import { OrderForm } from "@/components/ui/OrderForm";
 import { MessageBox } from "@/components/ui/MessageBox";
 import { SuccessPage } from "@/components/ui/SuccessPage";
+import { QuoteVenueAssignmentModal } from "@/components/ui/QuoteVenueAssignmentModal";
 
 export default function CartPage() {
   const { data: session } = useSession();
@@ -26,6 +27,7 @@ export default function CartPage() {
   const [success, setSuccess] = useState(false);
   const [comment, setComment] = useState("");
   const [purchaseOrder, setPurchaseOrder] = useState("");
+  const [showQuoteVenueModal, setShowQuoteVenueModal] = useState(false);
   const router = useRouter();
 
   // Group items by venue
@@ -53,7 +55,14 @@ export default function CartPage() {
     return "/products";
   };
 
-  const handleSubmitOrder = async () => {
+  const handleQuoteVenueAssignment = (assignments: Record<string, string>) => {
+    // Directly proceed with order submission using the assignments
+    proceedWithOrderSubmission(assignments);
+  };
+
+  const proceedWithOrderSubmission = async (
+    venueAssignments: Record<string, string> = {}
+  ) => {
     setSubmitting(true);
     setError(null);
     try {
@@ -68,6 +77,7 @@ export default function CartPage() {
           purchaseOrder,
           venue: session?.user?.venues?.[0] || null,
           trxCustomerId: session?.user?.trxCustomerId,
+          quoteVenueAssignments: venueAssignments,
         }),
       });
 
@@ -88,6 +98,47 @@ export default function CartPage() {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleSubmitOrder = async () => {
+    // Get catalog items (items with venueId = 0 or "0")
+    // Convert to string for comparison to handle both string and number types
+    const quoteItems = items.filter(
+      (item) => !item.venueId || String(item.venueId) === "0"
+    );
+
+    // If there are quote items and multiple venues, show the venue assignment modal
+    if (
+      quoteItems.length > 0 &&
+      session?.user?.venues &&
+      session.user.venues.length > 1
+    ) {
+      setShowQuoteVenueModal(true);
+      // Don't proceed with order submission here - wait for modal callback
+    } else {
+      // No need to show modal, proceed with order
+      await proceedWithOrderSubmission({});
+    }
+  };
+
+  // Handle closing the modal without assigning venues
+  const handleCloseModal = () => {
+    setShowQuoteVenueModal(false);
+
+    // If modal was closed without assignments, use default assignment (first venue)
+    if (items.some((item) => item.venueId === "0")) {
+      const defaultAssignments: Record<string, string> = {};
+      const defaultVenueId =
+        session?.user?.venues?.[0]?.trxVenueId.toString() || "0";
+
+      items.forEach((item) => {
+        if (item.venueId === "0") {
+          defaultAssignments[item.id] = defaultVenueId;
+        }
+      });
+
+      proceedWithOrderSubmission(defaultAssignments);
     }
   };
 
@@ -153,6 +204,19 @@ export default function CartPage() {
             submitting={submitting}
             continueShoppingUrl={getContinueShoppingUrl()}
           />
+
+          {/* Quote Venue Assignment Modal */}
+          {session?.user?.venues && (
+            <QuoteVenueAssignmentModal
+              isOpen={showQuoteVenueModal}
+              onClose={handleCloseModal}
+              quoteItems={items.filter(
+                (item) => !item.venueId || String(item.venueId) === "0"
+              )}
+              venues={session.user.venues}
+              onSubmit={handleQuoteVenueAssignment}
+            />
+          )}
         </div>
       )}
     </PageContainer>

@@ -18,64 +18,170 @@ interface CartItem {
 // POST: Create orders when a user checks out their cart
 export async function POST(request: NextRequest) {
   try {
-    // Verify user is authenticated
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { items, comment, purchaseOrder } = await request.json();
+    const { items, comment, purchaseOrder, quoteVenueAssignments } =
+      await request.json();
 
-    // Only process venue-specific items (venueId !== "0")
-    const venueItems = items.filter((item: CartItem) => item.venueId !== "0");
-
-    if (venueItems.length === 0) {
-      // No venue-specific items to process
-      return NextResponse.json({
-        message: "No venue-specific items to create orders for",
-        success: true,
-      });
-    }
-
-    // Group items by venue
-    const itemsByVenue = venueItems.reduce(
-      (acc: Record<string, CartItem[]>, item: CartItem) => {
-        if (!acc[item.venueId]) {
-          acc[item.venueId] = [];
-        }
-        acc[item.venueId].push(item);
-        return acc;
-      },
-      {}
+    // Process venue-specific items with prices (regular orders)
+    const venueItems = items.filter(
+      (item: CartItem) => item.venueId && String(item.venueId) !== "0"
     );
 
-    // Create orders for each venue
+    // Process quote items (catalog items without venue)
+    const quoteItems = items.filter(
+      (item: CartItem) => !item.venueId || String(item.venueId) === "0"
+    );
+
+    // Track all created orders
     const orderResults = [];
-    for (const [venueId, items] of Object.entries(itemsByVenue)) {
-      // Type assertion to fix the unknown type
-      const cartItems = items as CartItem[];
 
-      // Create order in database
-      const order = await prisma.order.create({
-        data: {
-          trxVenueId: parseInt(venueId),
-          status: "new",
-          customerPo: purchaseOrder || null,
-          customerNote: comment || null,
-          lineItems: {
-            create: cartItems.map((item: CartItem) => ({
-              trxProductId: BigInt(item.id),
-              qty: item.quantity,
-            })),
-          },
+    // 1. Create regular orders for venue-specific items
+    if (venueItems.length > 0) {
+      // Group items by venue
+      const itemsByVenue = venueItems.reduce(
+        (acc: Record<string, CartItem[]>, item: CartItem) => {
+          if (!acc[item.venueId]) {
+            acc[item.venueId] = [];
+          }
+          acc[item.venueId].push(item);
+          return acc;
         },
-      });
+        {}
+      );
 
-      orderResults.push({
-        venueId,
-        orderId: order.id,
-        itemCount: cartItems.length,
-      });
+      // Create orders for each venue
+      for (const [venueId, items] of Object.entries(itemsByVenue)) {
+        const cartItems = items as CartItem[];
+
+        const order = await prisma.order.create({
+          data: {
+            trxVenueId: parseInt(venueId),
+            status: "new",
+            customerPo: purchaseOrder || null,
+            customerNote: comment || null,
+            lineItems: {
+              create: cartItems.map((item: CartItem) => ({
+                trxProductId: BigInt(item.id),
+                qty: item.quantity,
+              })),
+            },
+          },
+        });
+
+        orderResults.push({
+          venueId,
+          orderId: order.id,
+          itemCount: cartItems.length,
+          status: "new",
+        });
+      }
+    }
+
+    // 2. Create quote orders for catalog items
+    if (quoteItems.length > 0) {
+      // If quoteVenueAssignments is provided, use it to assign quote items to venues
+      if (
+        quoteVenueAssignments &&
+        Object.keys(quoteVenueAssignments).length > 0
+      ) {
+        // Group quote items by the assigned venue from quoteVenueAssignments
+        const quoteItemsByVenue: Record<string, CartItem[]> = {};
+
+        quoteItems.forEach((item: CartItem) => {
+          const venueId = quoteVenueAssignments[item.id] || "000000";
+          if (!quoteItemsByVenue[venueId]) {
+            quoteItemsByVenue[venueId] = [];
+          }
+          quoteItemsByVenue[venueId].push(item);
+        });
+
+        // Create quote orders for each venue
+        for (const [venueId, items] of Object.entries(quoteItemsByVenue)) {
+          const order = await prisma.order.create({
+            data: {
+              trxVenueId: parseInt(venueId),
+              status: "quote",
+              customerPo: purchaseOrder || null,
+              customerNote: comment || null,
+              lineItems: {
+                create: items.map((item: CartItem) => ({
+                  trxProductId: BigInt(item.id),
+                  qty: item.quantity,
+                })),
+              },
+            },
+          });
+
+          orderResults.push({
+            venueId,
+            orderId: order.id,
+            itemCount: items.length,
+            status: "quote",
+          });
+        }
+      }
+      // If only one venue exists for the user, assign all quote items to that venue
+      else if (session.user.venues && session.user.venues.length === 1) {
+        const venueId = session.user.venues[0].trxVenueId.toString();
+
+        const order = await prisma.order.create({
+          data: {
+            trxVenueId: parseInt(venueId),
+            status: "quote",
+            customerPo: purchaseOrder || null,
+            customerNote: comment || null,
+            lineItems: {
+              create: quoteItems.map((item: CartItem) => ({
+                trxProductId: BigInt(item.id),
+                qty: item.quantity,
+              })),
+            },
+          },
+        });
+
+        orderResults.push({
+          venueId,
+          orderId: order.id,
+          itemCount: quoteItems.length,
+          status: "quote",
+        });
+      }
+      // If user has no venues or multiple venues but no assignment, default to the first venue or 0
+      else {
+        // For users with multiple venues but no assignments provided
+        let venueId = "0";
+
+        // Try to use the first venue if available
+        if (session.user.venues && session.user.venues.length > 0) {
+          venueId = session.user.venues[0].trxVenueId.toString();
+        }
+
+        const order = await prisma.order.create({
+          data: {
+            trxVenueId: parseInt(venueId),
+            status: "quote",
+            customerPo: purchaseOrder || null,
+            customerNote: comment || null,
+            lineItems: {
+              create: quoteItems.map((item: CartItem) => ({
+                trxProductId: BigInt(item.id),
+                qty: item.quantity,
+              })),
+            },
+          },
+        });
+
+        orderResults.push({
+          venueId,
+          orderId: order.id,
+          itemCount: quoteItems.length,
+          status: "quote",
+        });
+      }
     }
 
     return NextResponse.json({

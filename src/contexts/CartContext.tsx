@@ -2,20 +2,7 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-
-interface CartItem {
-  id: string;
-  sku: string;
-  title: string;
-  quantity: number;
-  manufacturer: string | null;
-  category: string | null;
-  uom: string | null;
-  imageSrc: string | null;
-  price?: number | null;
-  venueId?: string;
-  venueName?: string;
-}
+import { CartItem } from "@/types/cart";
 
 interface CartContextType {
   items: CartItem[];
