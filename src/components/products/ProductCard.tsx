@@ -200,123 +200,99 @@ export default function ProductCard({ product }: ProductCardProps) {
       }}
     >
       <div
-        className="group relative border rounded-lg p-2 sm:p-4 hover:shadow-lg transition-shadow bg-white h-full flex flex-col justify-between"
+        className="group relative border rounded-lg p-1 sm:p-4 hover:shadow-lg transition-shadow bg-white h-full flex flex-col sm:flex-col justify-between"
         style={{ maxWidth: "100%", width: "100%", overflow: "hidden" }}
       >
         {/* Top content section */}
-        <div className="flex flex-col">
-          {/* Image container with fixed dimensions */}
-          <div
-            className="h-44 w-full max-w-[250px] mx-auto bg-white mb-2 sm:mb-4 flex items-center justify-center overflow-hidden rounded border border-gray-100"
-            style={{ maxHeight: "176px" }}
-          >
-            <div
-              className="flex items-center justify-center w-full h-full p-3"
-              style={{ maxWidth: "100%" }}
-            >
-              <ProductImageCarousel
-                images={product.images}
-                title={product.title}
-              />
-            </div>
+        <div className="flex flex-row sm:flex-col gap-2 sm:gap-0">
+          {/* Image on the left for mobile, top for desktop */}
+          <div className="flex-shrink-0 w-20 h-20 sm:w-full sm:h-44 bg-white flex items-center justify-center overflow-hidden rounded border border-gray-100">
+            <ProductImageCarousel
+              images={product.images}
+              title={product.title}
+            />
           </div>
-
-          {/* Product Info */}
-          <div className="space-y-1 sm:space-y-2">
-            {/* Product details with fixed heights */}
-            <div className="min-h-[40px] sm:min-h-[48px]">
+          {/* Info and actions on the right for mobile, below for desktop */}
+          <div className="flex flex-col justify-between flex-1 min-w-0">
+            <div className="space-y-0.5 sm:space-y-2">
               <h3 className="font-medium text-gray-900 text-xs sm:text-sm line-clamp-2">
                 SKU: {product.sku}
               </h3>
-            </div>
-
-            <div className="min-h-[20px] sm:min-h-[24px]">
-              <p className="text-xs sm:text-sm text-gray-900">
+              <p className="text-xs sm:text-sm text-gray-900 truncate">
                 {product.manufacturer}
               </p>
-            </div>
-
-            {/* Description - Fixed height with line clamp */}
-            <div className="min-h-[40px] sm:min-h-[48px]">
               <p className="text-xs sm:text-sm text-gray-600 line-clamp-2">
                 {product.description}
               </p>
-            </div>
-
-            {/* Availability - Fixed height regardless of whether it's shown */}
-            <div className="min-h-[20px] sm:min-h-[24px]">
               {product.qtyAvailable > 0 && (
                 <p className="text-xs sm:text-sm text-green-600">
-                  Quantity in Stock: {product.qtyAvailable}
+                  In Stock: {product.qtyAvailable}
                 </p>
               )}
+              <div className="flex flex-wrap gap-1 mt-1 sm:mt-2">
+                {product.aqcat && (
+                  <button
+                    onClick={handleMoreFromCollection}
+                    className="text-xs text-blue-600 hover:text-blue-800 text-left"
+                  >
+                    More Like This: {product.aqcat}
+                  </button>
+                )}
+                {product.pattern && (
+                  <button
+                    onClick={handleMoreOfPattern}
+                    className="text-xs text-blue-600 hover:text-blue-800 text-left capitalize"
+                  >
+                    More of This Pattern: {product.pattern.toLowerCase()}
+                  </button>
+                )}
+              </div>
             </div>
-
-            {/* Filter Links - Fixed height section */}
-            <div className="space-y-1 mt-2 min-h-[60px] sm:min-h-[72px]">
-              {product.aqcat && (
-                <button
-                  onClick={handleMoreFromCollection}
-                  className="mt-2 text-xs text-blue-600 hover:text-blue-800 block w-full text-left"
-                >
-                  More Like This: {product.aqcat}
-                </button>
-              )}
-              {product.pattern && (
-                <button
-                  onClick={handleMoreOfPattern}
-                  className="text-xs text-blue-600 hover:text-blue-800 block w-full text-left capitalize"
-                >
-                  More of This Pattern: {product.pattern.toLowerCase()}
-                </button>
+            {/* Cart Controls - right side for mobile, bottom for desktop */}
+            <div className="mt-2 sm:mt-4 flex items-center gap-1 sm:gap-2">
+              {session?.user ? (
+                <>
+                  <div
+                    className="flex-1"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                  >
+                    <QuantityInput
+                      onQuantityChange={setQuantity}
+                      initialQuantity={1}
+                      className="w-full"
+                      preventPropagation={true}
+                    />
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleAddToCart(e);
+                    }}
+                    className="flex-shrink-0 bg-blue-600 text-white px-2 sm:px-3 py-1.5 sm:py-2 rounded text-xs sm:text-sm hover:bg-blue-700 transition-colors whitespace-nowrap"
+                  >
+                    Add to Cart
+                  </button>
+                </>
+              ) : (
+                <div className="text-center w-full">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      router.push("/login");
+                    }}
+                    className="text-blue-600 hover:text-blue-800 text-xs sm:text-sm"
+                  >
+                    Login to purchase
+                  </button>
+                </div>
               )}
             </div>
           </div>
-        </div>
-
-        {/* Cart Controls - Always at the bottom */}
-        <div className="mt-4">
-          {session?.user ? (
-            <div className="flex items-center gap-2">
-              <div
-                className="flex-1"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-              >
-                <QuantityInput
-                  onQuantityChange={setQuantity}
-                  initialQuantity={1}
-                  className="w-full"
-                  preventPropagation={true}
-                />
-              </div>
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleAddToCart(e);
-                }}
-                className="flex-shrink-0 bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition-colors whitespace-nowrap"
-              >
-                Add to Cart
-              </button>
-            </div>
-          ) : (
-            <div className="text-center">
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  router.push("/login");
-                }}
-                className="text-blue-600 hover:text-blue-800 text-sm"
-              >
-                Login to purchase
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </Link>

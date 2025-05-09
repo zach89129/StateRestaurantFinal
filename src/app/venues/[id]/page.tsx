@@ -518,7 +518,7 @@ export default function VenuePage({
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 xs:px-0">
         {/* Header with venue name */}
         <div className="flex flex-col md:flex-row md:items-center justify-start mb-6 w-[72vw]">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
@@ -711,49 +711,40 @@ export default function VenuePage({
               {currentProducts.map((product) => (
                 <div
                   key={product.id}
-                  className="bg-white border rounded-lg p-4 space-y-3"
+                  className="bg-white border rounded-lg p-2 flex flex-row gap-2 items-start"
                 >
-                  {/* Product Header */}
-                  <div className="flex gap-4">
-                    <div className="relative h-20 w-20 flex-shrink-0">
-                      <ImageCarousel
-                        images={product.images}
-                        title={product.title}
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium text-gray-900 mt-1">
+                  {/* Image */}
+                  <div className="relative h-16 w-16 flex-shrink-0">
+                    <ImageCarousel
+                      images={product.images}
+                      title={product.title}
+                    />
+                  </div>
+                  {/* Info and actions */}
+                  <div className="flex flex-col justify-between flex-1 min-w-0 gap-1">
+                    <div>
+                      <h3 className="text-xs font-medium text-gray-900 line-clamp-2">
                         {product.title}
                       </h3>
                       {product.manufacturer && (
-                        <p className="text-sm text-gray-500">
+                        <p className="text-xs text-gray-500 truncate">
                           {product.manufacturer}
                         </p>
                       )}
+                      <div className="text-xs text-gray-600 line-clamp-2">
+                        <ProductDescription description={product.description} />
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Product Description */}
-                  <div className="text-sm">
-                    <ProductDescription description={product.description} />
-                  </div>
-
-                  {/* Product Details */}
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <span className="text-gray-500">UOM:</span>{" "}
+                    <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-xs mt-1">
+                      <span className="text-gray-500">UOM:</span>
                       <span className="text-gray-900">
                         {product.uom || "-"}
                       </span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Available:</span>{" "}
+                      <span className="text-gray-500">Available:</span>
                       <span className="text-gray-900">
                         {product.qtyAvailable || 0}
                       </span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Price:</span>{" "}
+                      <span className="text-gray-500">Price:</span>
                       <span className="text-gray-900">
                         {pricingData[product.id]
                           ? `$${pricingData[product.id]?.toFixed(2)}`
@@ -762,35 +753,33 @@ export default function VenuePage({
                           : "-"}
                       </span>
                     </div>
-                  </div>
-
-                  {/* Add to Cart Section */}
-                  {session?.user && (
-                    <div className="flex items-center gap-2 pt-2">
-                      <div className="flex-1">
-                        <QuantityInput
-                          onQuantityChange={(quantity) =>
-                            handleQuantityChange(product.id, quantity)
-                          }
-                          initialQuantity={1}
-                          max={9999}
-                        />
+                    {session?.user && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <div className="flex-1">
+                          <QuantityInput
+                            onQuantityChange={(quantity) =>
+                              handleQuantityChange(product.id, quantity)
+                            }
+                            initialQuantity={1}
+                            max={9999}
+                          />
+                        </div>
+                        <button
+                          onClick={() => handleAddToCart(product)}
+                          disabled={session.user.seePrices && loadingPrices}
+                          className={`bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 transition-colors whitespace-nowrap text-xs font-medium ${
+                            session.user.seePrices && loadingPrices
+                              ? "opacity-50 cursor-not-allowed"
+                              : ""
+                          }`}
+                        >
+                          {session.user.seePrices && loadingPrices
+                            ? "Loading..."
+                            : "Add"}
+                        </button>
                       </div>
-                      <button
-                        onClick={() => handleAddToCart(product)}
-                        disabled={session.user.seePrices && loadingPrices}
-                        className={`bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap text-sm font-medium ${
-                          session.user.seePrices && loadingPrices
-                            ? "opacity-50 cursor-not-allowed"
-                            : ""
-                        }`}
-                      >
-                        {session.user.seePrices && loadingPrices
-                          ? "Loading..."
-                          : "Add to Cart"}
-                      </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
