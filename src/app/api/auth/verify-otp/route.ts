@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
         {
           error: "No phone number on file",
           message:
-            "Please contact State Restaurant to add a phone number to your account.",
+            "Oops! We couldn't find a phone number on file for your account. Please contact State Restaurant to add a phone number to your account.",
           code: "NO_PHONE",
         },
         { status: 400 }

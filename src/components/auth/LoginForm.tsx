@@ -106,9 +106,9 @@ export default function LoginForm() {
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded">
             {error.code === "NO_PHONE" && (
               <>
-                {/* <p className="text-red-700">{error.message}</p> */}
+                <p className="text-red-700">{error.message}</p>
                 <p className="text-sm text-red-600 mt-1">
-                  Contact: (555) 123-4567 or support@staterestaurant.com
+                  (702) 733-1515 or info@staterestaurant.com
                 </p>
               </>
             )}

@@ -130,7 +130,7 @@ export default function InitialLogin() {
               {error.code === "NO_PHONE" && (
                 <>
                   <p className="text-sm text-red-600 mt-1">
-                    Contact: (555) 123-4567 or support@staterestaurant.com
+                    (702) 733-1515 or info@staterestaurant.com
                   </p>
                 </>
               )}
