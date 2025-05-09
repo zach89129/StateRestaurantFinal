@@ -188,9 +188,12 @@ export default function ProductCard({ product }: ProductCardProps) {
     }
   };
 
+  // Convert the product SKU to a base64 string for url params, products with special characters in the SKU will break the url
+  const base64Product = btoa(product.sku);
+
   return (
     <Link
-      href={`/product/${product.sku}`}
+      href={`/product/${base64Product}`}
       key={`product-link-${product.trx_product_id}`}
       onClick={(e) => {
         // If the click originated from the quantity input or its children, prevent navigation
