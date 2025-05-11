@@ -12,6 +12,7 @@ declare module "next-auth" {
         venueName: string;
       }[];
       isSuperuser: boolean;
+      isSalesTeam: boolean;
       trxCustomerId: string;
       seePrices: boolean;
     };
@@ -27,6 +28,7 @@ declare module "next-auth" {
       venueName: string;
     }[];
     isSuperuser: boolean;
+    isSalesTeam: boolean;
     trxCustomerId: string;
     seePrices: boolean;
   }
@@ -43,6 +45,7 @@ declare module "next-auth/jwt" {
       venueName: string;
     }[];
     isSuperuser: boolean;
+    isSalesTeam: boolean;
     trxCustomerId: string;
     seePrices: boolean;
   }

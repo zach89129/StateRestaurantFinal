@@ -9,9 +9,12 @@ import { useRouter, usePathname } from "next/navigation";
 import { useCart } from "@/contexts/CartContext";
 import { useSearch } from "@/contexts/SearchContext";
 import CategoryNav from "./CategoryNav";
+import { useSalesTeamVenue } from "@/contexts/SalesTeamVenueContext";
 
 export default function Header() {
   const { data: session, status, update } = useSession();
+  const [salesVenueInput, setSalesVenueInput] = useState<string>("");
+  const { salesVenue, setSalesVenue } = useSalesTeamVenue();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileDropdownOpen, setIsMobileDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -77,6 +80,14 @@ export default function Header() {
       setIsMobileVenueDropdownOpen(false);
     }
   }, [isSearchVisible]);
+
+  const handleSetSalesVenue = () => {
+    const venueNumber = Number(salesVenueInput);
+    if (!isNaN(venueNumber) && salesVenueInput.length === 5) {
+      setSalesVenue(venueNumber);
+      setSalesVenueInput("");
+    }
+  };
 
   return (
     <header className="bg-zinc-800 sticky top-0 z-50 shadow-md w-full">
@@ -347,6 +358,39 @@ export default function Header() {
                         ))}
                       </div>
                     )}
+                    {session?.user?.isSalesTeam && (
+                      <div className="pl-4 mt-4 space-y-2">
+                        <div className="text-gray-300">
+                          Sales Team Venue Control
+                        </div>
+                        {salesVenue > 0 && (
+                          <div className="text-sm text-gray-400">
+                            Current Venue: {salesVenue}
+                          </div>
+                        )}
+                        <div className="flex flex-row gap-2">
+                          <input
+                            type="text"
+                            maxLength={5}
+                            placeholder="Venue ID"
+                            value={salesVenueInput}
+                            className="border border-gray-300 rounded-md p-2 w-32 text-black"
+                            onChange={(e) =>
+                              setSalesVenueInput(
+                                e.target.value.replace(/\D/g, "").slice(0, 5)
+                              )
+                            }
+                          />
+                          <button
+                            onClick={handleSetSalesVenue}
+                            className="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+                            disabled={salesVenueInput.length !== 5}
+                          >
+                            Set Venue
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -532,6 +576,36 @@ export default function Header() {
                 <Link href="/orders" className="hover:text-blue-200">
                   Order History
                 </Link>
+              </li>
+            )}
+            {session?.user?.isSalesTeam && (
+              <li className="ml-auto">
+                <div className="flex items-center gap-2">
+                  {salesVenue > 0 && (
+                    <div className="text-sm text-gray-400">
+                      Venue: {salesVenue}
+                    </div>
+                  )}
+                  <input
+                    type="text"
+                    maxLength={5}
+                    placeholder="Venue ID"
+                    value={salesVenueInput}
+                    className="border border-gray-300 rounded-md p-1 w-32 text-black text-sm"
+                    onChange={(e) =>
+                      setSalesVenueInput(
+                        e.target.value.replace(/\D/g, "").slice(0, 5)
+                      )
+                    }
+                  />
+                  <button
+                    onClick={handleSetSalesVenue}
+                    className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700 disabled:bg-gray-400 text-sm"
+                    disabled={salesVenueInput.length !== 5}
+                  >
+                    Set Venue
+                  </button>
+                </div>
               </li>
             )}
           </ul>

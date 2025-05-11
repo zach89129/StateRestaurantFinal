@@ -13,9 +13,12 @@ interface User {
     venueName: string;
   }[];
   isSuperuser: boolean;
+  isSalesTeam: boolean;
   trxCustomerId: string;
   seePrices: boolean;
 }
+
+const salesTeamEmails = ["scott.miller@staterestaurant.com"];
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -67,6 +70,7 @@ export const authOptions: AuthOptions = {
 
             // Check if user is superuser
             const isSuperuser = customer.email === process.env.SUPERUSER_ACCT;
+            const isSalesTeam = customer.email.includes("staterestaurant.com");
 
             // Format venues for session
             const venues = customer.venues.map((venue) => ({
@@ -89,6 +93,7 @@ export const authOptions: AuthOptions = {
               email: customer.email,
               venues: venues,
               isSuperuser,
+              isSalesTeam,
               trxCustomerId: customer.trxCustomerId.toString(),
               seePrices: customer.seePrices,
             } as User;
@@ -173,6 +178,7 @@ export const authOptions: AuthOptions = {
         token.email = user.email;
         token.venues = user.venues;
         token.isSuperuser = user.isSuperuser;
+        token.isSalesTeam = user.isSalesTeam;
         token.trxCustomerId = user.trxCustomerId;
         token.name = user.email; // Add name to ensure compatibility
         token.seePrices = user.seePrices;
@@ -194,6 +200,7 @@ export const authOptions: AuthOptions = {
           venueName: string;
         }[];
         session.user.isSuperuser = token.isSuperuser as boolean;
+        session.user.isSalesTeam = token.isSalesTeam as boolean;
         session.user.trxCustomerId = token.trxCustomerId as string;
         session.user.name = token.email as string; // Add name to ensure compatibility
         session.user.seePrices = token.seePrices as boolean;
