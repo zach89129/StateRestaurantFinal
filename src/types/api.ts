@@ -51,7 +51,7 @@ export interface ProductInput {
     metaData?: {
       aqcat?: string;
       pattern?: string;
-      quickShip?: boolean;
+      quickship?: boolean;
     };
     images?: { src: string }[];
   }[];

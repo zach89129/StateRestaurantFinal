@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
             tags: product.tags,
             aqcat: product.metaData?.aqcat,
             pattern: product.metaData?.pattern,
-            quickship: product.metaData?.quickShip,
+            quickship: product.metaData?.quickship,
           };
 
           // Only include defined fields in update
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
               qtyAvailable: product.qty_available,
               aqcat: product.metaData?.aqcat,
               pattern: product.metaData?.pattern,
-              quickship: product.metaData?.quickShip || false,
+              quickship: product.metaData?.quickship || false,
               images: product.images?.length
                 ? {
                     createMany: {
