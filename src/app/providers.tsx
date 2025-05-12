@@ -3,7 +3,7 @@
 import { SessionProvider } from "next-auth/react";
 import { CartProvider } from "@/contexts/CartContext";
 import SessionHelper from "@/components/auth/SessionHelper";
-
+import { SalesTeamVenueProvider } from "@/contexts/SalesTeamVenueContext";
 export function Providers({ children }: { children: React.ReactNode }) {
   // Determine if we're in production or development
   const isProduction = process.env.NODE_ENV === "production";
@@ -15,8 +15,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
       refetchOnWindowFocus={false} // Only refresh when specifically needed, not on window focus
       refetchWhenOffline={false}
     >
-      <SessionHelper />
-      <CartProvider>{children}</CartProvider>
+      <SalesTeamVenueProvider>
+        <SessionHelper />
+        <CartProvider>{children}</CartProvider>
+      </SalesTeamVenueProvider>
     </SessionProvider>
   );
 }

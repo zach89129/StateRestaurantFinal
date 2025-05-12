@@ -7,6 +7,7 @@ import { useCart } from "@/contexts/CartContext";
 import QuantityInput from "@/components/products/QuantityInput";
 import VenueFilterSidebar from "@/components/venues/VenueFilterSidebar";
 import Link from "next/link";
+import { useSearch } from "@/contexts/SearchContext";
 
 interface VenueProduct {
   id: string;
@@ -85,7 +86,7 @@ export default function VenuePage({
   const [pricingError, setPricingError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 25;
-
+  const { isSearchVisible } = useSearch();
   const filteredProducts = useMemo(() => {
     return (
       venue?.products.filter((product) => {
@@ -387,6 +388,84 @@ export default function VenuePage({
     };
   };
 
+  // Calculate filtered options based on current selections
+  const getFilteredOptions = useMemo(() => {
+    if (!venue?.products) {
+      return {
+        categories: [],
+        manufacturers: [],
+        patterns: [],
+        collections: [],
+      };
+    }
+
+    let filteredProducts = venue.products;
+
+    // Filter products based on current selections
+    if (selectedCategories.length > 0) {
+      filteredProducts = filteredProducts.filter(
+        (product) =>
+          product.category && selectedCategories.includes(product.category)
+      );
+    }
+
+    if (selectedManufacturers.length > 0) {
+      filteredProducts = filteredProducts.filter(
+        (product) =>
+          product.manufacturer &&
+          selectedManufacturers.includes(product.manufacturer)
+      );
+    }
+
+    if (selectedPatterns.length > 0) {
+      filteredProducts = filteredProducts.filter(
+        (product) =>
+          product.pattern && selectedPatterns.includes(product.pattern)
+      );
+    }
+
+    if (selectedCollections.length > 0) {
+      filteredProducts = filteredProducts.filter(
+        (product) =>
+          product.aqcat && selectedCollections.includes(product.aqcat)
+      );
+    }
+
+    if (selectedQuickShip) {
+      filteredProducts = filteredProducts.filter(
+        (product) => product.quickship
+      );
+    }
+
+    // Extract unique values from filtered products
+    const categories = new Set<string>();
+    const manufacturers = new Set<string>();
+    const patterns = new Set<string>();
+    const collections = new Set<string>();
+
+    filteredProducts.forEach((product) => {
+      if (product.category) categories.add(product.category);
+      if (product.manufacturer) manufacturers.add(product.manufacturer);
+      if (product.pattern && product.pattern !== "")
+        patterns.add(product.pattern);
+      if (product.aqcat && product.aqcat !== "") collections.add(product.aqcat);
+    });
+
+    return {
+      categories: Array.from(categories).sort(),
+      manufacturers: Array.from(manufacturers).sort(),
+      patterns: Array.from(patterns).sort(),
+      collections: Array.from(collections).sort(),
+    };
+  }, [
+    venue?.products,
+    selectedCategories,
+    selectedManufacturers,
+    selectedPatterns,
+    selectedCollections,
+    selectedQuickShip,
+  ]);
+
   // Add this function to handle image carousel
   function ImageCarousel({
     images,
@@ -517,9 +596,9 @@ export default function VenuePage({
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 xs:px-0">
         {/* Header with venue name */}
-        <div className="flex flex-col md:flex-row md:items-center justify-start mb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-start mb-6 w-[72vw]">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
             {venue.venueName} Products
           </h1>
@@ -547,7 +626,13 @@ export default function VenuePage({
         {/* Filter Button (Mobile & Desktop) */}
         <button
           onClick={toggleFilter}
-          className="fixed top-[110px] md:top-[180px] right-4 flex items-center gap-2 px-4 py-3 bg-copper text-white border border-copper shadow-lg hover:bg-copper-hover transition-colors md:py-2 md:rounded-lg rounded-full"
+          className={`fixed top-[110px] md:top-[180px] right-4 flex items-center gap-2 px-4 py-3 bg-copper text-white border border-copper shadow-lg hover:bg-copper-hover transition-colors md:py-2 md:rounded-lg rounded-full ${
+            isSearchVisible ? "top-[150px]" : "top-[100px]"
+          } transition-all duration-300 ease-in-out`}
+          style={{
+            willChange: "transform, top",
+            transition: "top 0.3s ease-in-out",
+          }}
         >
           <svg
             className="w-5 h-5"
@@ -582,6 +667,7 @@ export default function VenuePage({
         {/* Filter Sidebar */}
         <VenueFilterSidebar
           sortOptions={getSortOptions(venue.products)}
+          filteredOptions={getFilteredOptions}
           selectedCategories={selectedCategories}
           selectedManufacturers={selectedManufacturers}
           selectedPatterns={selectedPatterns}
@@ -704,49 +790,40 @@ export default function VenuePage({
               {currentProducts.map((product) => (
                 <div
                   key={product.id}
-                  className="bg-white border rounded-lg p-4 space-y-3"
+                  className="bg-white border rounded-lg p-2 flex flex-row gap-2 items-start"
                 >
-                  {/* Product Header */}
-                  <div className="flex gap-4">
-                    <div className="relative h-20 w-20 flex-shrink-0">
-                      <ImageCarousel
-                        images={product.images}
-                        title={product.title}
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium text-gray-900 mt-1">
+                  {/* Image */}
+                  <div className="relative h-16 w-16 flex-shrink-0">
+                    <ImageCarousel
+                      images={product.images}
+                      title={product.title}
+                    />
+                  </div>
+                  {/* Info and actions */}
+                  <div className="flex flex-col justify-between flex-1 min-w-0 gap-1">
+                    <div>
+                      <h3 className="text-xs font-medium text-gray-900 line-clamp-2">
                         {product.title}
                       </h3>
                       {product.manufacturer && (
-                        <p className="text-sm text-gray-500">
+                        <p className="text-xs text-gray-500 truncate">
                           {product.manufacturer}
                         </p>
                       )}
+                      <div className="text-xs text-gray-600 line-clamp-2">
+                        <ProductDescription description={product.description} />
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Product Description */}
-                  <div className="text-sm">
-                    <ProductDescription description={product.description} />
-                  </div>
-
-                  {/* Product Details */}
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <span className="text-gray-500">UOM:</span>{" "}
+                    <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-xs mt-1">
+                      <span className="text-gray-500">UOM:</span>
                       <span className="text-gray-900">
                         {product.uom || "-"}
                       </span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Available:</span>{" "}
+                      <span className="text-gray-500">Available:</span>
                       <span className="text-gray-900">
                         {product.qtyAvailable || 0}
                       </span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Price:</span>{" "}
+                      <span className="text-gray-500">Price:</span>
                       <span className="text-gray-900">
                         {pricingData[product.id]
                           ? `$${pricingData[product.id]?.toFixed(2)}`
@@ -755,35 +832,33 @@ export default function VenuePage({
                           : "-"}
                       </span>
                     </div>
-                  </div>
-
-                  {/* Add to Cart Section */}
-                  {session?.user && (
-                    <div className="flex items-center gap-2 pt-2">
-                      <div className="flex-1">
-                        <QuantityInput
-                          onQuantityChange={(quantity) =>
-                            handleQuantityChange(product.id, quantity)
-                          }
-                          initialQuantity={1}
-                          max={9999}
-                        />
+                    {session?.user && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <div className="flex-1">
+                          <QuantityInput
+                            onQuantityChange={(quantity) =>
+                              handleQuantityChange(product.id, quantity)
+                            }
+                            initialQuantity={1}
+                            max={9999}
+                          />
+                        </div>
+                        <button
+                          onClick={() => handleAddToCart(product)}
+                          disabled={session.user.seePrices && loadingPrices}
+                          className={`bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 transition-colors whitespace-nowrap text-xs font-medium ${
+                            session.user.seePrices && loadingPrices
+                              ? "opacity-50 cursor-not-allowed"
+                              : ""
+                          }`}
+                        >
+                          {session.user.seePrices && loadingPrices
+                            ? "Loading..."
+                            : "Add"}
+                        </button>
                       </div>
-                      <button
-                        onClick={() => handleAddToCart(product)}
-                        disabled={session.user.seePrices && loadingPrices}
-                        className={`bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap text-sm font-medium ${
-                          session.user.seePrices && loadingPrices
-                            ? "opacity-50 cursor-not-allowed"
-                            : ""
-                        }`}
-                      >
-                        {session.user.seePrices && loadingPrices
-                          ? "Loading..."
-                          : "Add to Cart"}
-                      </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

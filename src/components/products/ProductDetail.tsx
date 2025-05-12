@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useCart } from "@/contexts/CartContext";
 import Link from "next/link";
@@ -8,6 +8,14 @@ import QuantityInput from "./QuantityInput";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import { Product } from "@/types/product";
+import { useSalesTeamVenue } from "@/contexts/SalesTeamVenueContext";
+
+// Loading spinner component
+function LoadingSpinner() {
+  return (
+    <div className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
+  );
+}
 
 interface ProductDetailProps {
   product: Product;
@@ -20,6 +28,52 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showFullDescription, setShowFullDescription] = useState(false);
   const router = useRouter();
+  const { salesVenue } = useSalesTeamVenue();
+  const [isLoadingPrice, setIsLoadingPrice] = useState(false);
+  const [price, setPrice] = useState<number | null>(null);
+  const [priceError, setPriceError] = useState<string | null>(null);
+
+  // Reset price when venue changes
+  useEffect(() => {
+    setPrice(null);
+    setPriceError(null);
+  }, [salesVenue]);
+
+  const handleGetPrice = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!salesVenue) {
+      setPriceError("No venue selected");
+      return;
+    }
+
+    setIsLoadingPrice(true);
+    setPriceError(null);
+
+    try {
+      const response = await fetch(
+        `/api/pricing?venueId=${salesVenue}&productId=${product.id}`
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch price");
+      }
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || "Failed to fetch price");
+      }
+
+      setPrice(data.price);
+    } catch (err) {
+      setPriceError("Error fetching price");
+      setPrice(null);
+    } finally {
+      setIsLoadingPrice(false);
+    }
+  };
 
   const nextImage = () => {
     setCurrentImageIndex((prev) =>
@@ -237,21 +291,63 @@ export default function ProductDetail({ product }: ProductDetailProps) {
               {/* Add to Cart Section - Only show if logged in */}
               {session?.user ? (
                 <div className="pt-6 border-t">
-                  <div className="flex flex-col sm:flex-row gap-4 items-center w-full">
-                    <div className="w-full sm:w-40">
-                      <QuantityInput
-                        onQuantityChange={setQuantity}
-                        initialQuantity={1}
-                        className="w-full"
-                        preventPropagation={true}
-                      />
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-col sm:flex-row gap-4 items-center w-full">
+                      <div className="w-full sm:w-40">
+                        <QuantityInput
+                          onQuantityChange={setQuantity}
+                          initialQuantity={1}
+                          className="w-full"
+                          preventPropagation={true}
+                        />
+                      </div>
+                      <button
+                        onClick={handleAddToCart}
+                        className="bg-blue-600 text-white w-full sm:w-auto px-8 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        Add to Cart
+                      </button>
+
+                      {/* Price button for desktop - only show for sales team */}
+                      {session.user.isSalesTeam && (
+                        <div className="hidden sm:block">
+                          <button
+                            onClick={handleGetPrice}
+                            className="price-button bg-gray-100 hover:bg-gray-200 px-8 py-2 rounded-lg text-black"
+                          >
+                            {isLoadingPrice ? (
+                              <LoadingSpinner />
+                            ) : price ? (
+                              `${price.toFixed(2)} per ${product.uom}`
+                            ) : priceError ? (
+                              priceError
+                            ) : (
+                              "Get Price"
+                            )}
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <button
-                      onClick={handleAddToCart}
-                      className="bg-blue-600 text-white w-full sm:w-auto px-8 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      Add to Cart
-                    </button>
+
+                    {/* Price button for mobile - only show for sales team */}
+                    {session.user.isSalesTeam && (
+                      <div className="sm:hidden w-full">
+                        <button
+                          onClick={handleGetPrice}
+                          className="price-button w-full bg-gray-100 hover:bg-gray-200 py-2 rounded-lg text-black"
+                        >
+                          {isLoadingPrice ? (
+                            <LoadingSpinner />
+                          ) : price ? (
+                            `${price.toFixed(2)} per ${product.uom}`
+                          ) : priceError ? (
+                            priceError
+                          ) : (
+                            "Get Price"
+                          )}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (

@@ -13,6 +13,12 @@ interface SortOptions {
 
 interface VenueFilterSidebarProps {
   sortOptions: SortOptions;
+  filteredOptions: {
+    categories: string[];
+    manufacturers: string[];
+    patterns: string[];
+    collections: string[];
+  };
   selectedCategories: string[];
   selectedManufacturers: string[];
   selectedPatterns: string[];
@@ -32,6 +38,7 @@ interface VenueFilterSidebarProps {
 
 export default function VenueFilterSidebar({
   sortOptions,
+  filteredOptions,
   selectedCategories,
   selectedManufacturers,
   selectedPatterns,
@@ -66,6 +73,20 @@ export default function VenueFilterSidebar({
     setPatternSearch("");
     setCollectionSearch("");
   };
+
+  const filteredCategories = filterItems(
+    filteredOptions.categories,
+    categorySearch
+  );
+  const filteredManufacturers = filterItems(
+    filteredOptions.manufacturers,
+    manufacturerSearch
+  );
+  const filteredPatterns = filterItems(filteredOptions.patterns, patternSearch);
+  const filteredCollections = filterItems(
+    filteredOptions.collections,
+    collectionSearch
+  );
 
   return (
     <>
@@ -182,21 +203,19 @@ export default function VenueFilterSidebar({
                   onChange={(e) => setCategorySearch(e.target.value)}
                 />
                 <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {filterItems(sortOptions.categories, categorySearch).map(
-                    (category) => (
-                      <label key={category} className="flex items-center">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 rounded border-gray-300"
-                          checked={selectedCategories.includes(category)}
-                          onChange={() => onCategoryChange(category)}
-                        />
-                        <span className="ml-2 text-sm text-gray-900">
-                          {category}
-                        </span>
-                      </label>
-                    )
-                  )}
+                  {filteredCategories.map((category) => (
+                    <label key={category} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-gray-300"
+                        checked={selectedCategories.includes(category)}
+                        onChange={() => onCategoryChange(category)}
+                      />
+                      <span className="ml-2 text-sm text-gray-900">
+                        {category}
+                      </span>
+                    </label>
+                  ))}
                 </div>
               </div>
             </CollapsibleSection>
@@ -211,21 +230,19 @@ export default function VenueFilterSidebar({
                   onChange={(e) => setPatternSearch(e.target.value)}
                 />
                 <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {filterItems(sortOptions.patterns, patternSearch).map(
-                    (pattern) => (
-                      <label key={pattern} className="flex items-center">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 rounded border-gray-300"
-                          checked={selectedPatterns.includes(pattern)}
-                          onChange={() => onPatternChange(pattern)}
-                        />
-                        <span className="ml-2 text-sm text-gray-900">
-                          {pattern}
-                        </span>
-                      </label>
-                    )
-                  )}
+                  {filteredPatterns.map((pattern) => (
+                    <label key={pattern} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-gray-300"
+                        checked={selectedPatterns.includes(pattern)}
+                        onChange={() => onPatternChange(pattern)}
+                      />
+                      <span className="ml-2 text-sm text-gray-900">
+                        {pattern}
+                      </span>
+                    </label>
+                  ))}
                 </div>
               </div>
             </CollapsibleSection>
@@ -240,21 +257,19 @@ export default function VenueFilterSidebar({
                   onChange={(e) => setCollectionSearch(e.target.value)}
                 />
                 <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {filterItems(sortOptions.collections, collectionSearch).map(
-                    (collection) => (
-                      <label key={collection} className="flex items-center">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 rounded border-gray-300"
-                          checked={selectedCollections.includes(collection)}
-                          onChange={() => onCollectionChange(collection)}
-                        />
-                        <span className="ml-2 text-sm text-gray-900">
-                          {collection}
-                        </span>
-                      </label>
-                    )
-                  )}
+                  {filteredCollections.map((collection) => (
+                    <label key={collection} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-gray-300"
+                        checked={selectedCollections.includes(collection)}
+                        onChange={() => onCollectionChange(collection)}
+                      />
+                      <span className="ml-2 text-sm text-gray-900">
+                        {collection}
+                      </span>
+                    </label>
+                  ))}
                 </div>
               </div>
             </CollapsibleSection>
@@ -269,10 +284,7 @@ export default function VenueFilterSidebar({
                   onChange={(e) => setManufacturerSearch(e.target.value)}
                 />
                 <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {filterItems(
-                    sortOptions.manufacturers,
-                    manufacturerSearch
-                  ).map((manufacturer) => (
+                  {filteredManufacturers.map((manufacturer) => (
                     <label key={manufacturer} className="flex items-center">
                       <input
                         type="checkbox"

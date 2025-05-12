@@ -2,7 +2,21 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { CartItem } from "@/types/cart";
+import { useSalesTeamVenue } from "@/contexts/SalesTeamVenueContext";
+
+interface CartItem {
+  id: string;
+  sku: string;
+  title: string;
+  quantity: number;
+  manufacturer: string | null;
+  category: string | null;
+  uom: string | null;
+  imageSrc: string | null;
+  price?: number | null;
+  venueId?: string;
+  venueName?: string;
+}
 
 interface CartContextType {
   items: CartItem[];
@@ -19,6 +33,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
+  const { salesVenue } = useSalesTeamVenue();
   const [items, setItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -119,12 +134,26 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     quantity: number
   ) => {
     const newItems = [...items];
-    const existingItem = newItems.find((i) => i.id === item.id);
+
+    // If user is sales team and has a venue selected, add venueId to the item
+    const shouldAddVenue =
+      session?.user?.isSalesTeam && salesVenue > 0 && !item.venueId;
+    const itemWithVenue = shouldAddVenue
+      ? { ...item, venueId: salesVenue.toString() }
+      : item;
+
+    const existingItem = newItems.find((i) => {
+      // Match both id and venueId (if exists) to prevent mixing items from different venues
+      if (itemWithVenue.venueId) {
+        return i.id === itemWithVenue.id && i.venueId === itemWithVenue.venueId;
+      }
+      return i.id === itemWithVenue.id && !i.venueId;
+    });
 
     if (existingItem) {
       existingItem.quantity += quantity;
     } else {
-      newItems.push({ ...item, quantity });
+      newItems.push({ ...itemWithVenue, quantity });
     }
 
     await updateCart(newItems);

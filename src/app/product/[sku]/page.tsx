@@ -13,10 +13,24 @@ export default async function ProductPage({ params }: PageProps) {
   const resolvedParams = await params;
   const { sku } = resolvedParams;
 
+  // Decode the base64 product SKU
+  const decodeBase64 = (value: string) => {
+    if (!value) return "";
+    try {
+      return Buffer.from(decodeURIComponent(value), "base64")
+        .toString("utf-8")
+        .trim();
+    } catch (e) {
+      console.error("Error decoding value:", value, e);
+      return "";
+    }
+  };
+
+  const decodedSku = decodeBase64(sku);
   // Fetch product data
   const product = await prisma.product.findFirst({
     where: {
-      sku: sku,
+      sku: decodedSku,
     },
     include: {
       images: true,
