@@ -11,6 +11,12 @@ import { useSearch } from "@/contexts/SearchContext";
 import CategoryNav from "./CategoryNav";
 import { useSalesTeamVenue } from "@/contexts/SalesTeamVenueContext";
 
+const DEFAULT_VENUES = [
+  { name: "R", id: 94670 },
+  { name: "M", id: 94669 },
+  { name: "H", id: 94668 },
+];
+
 export default function Header() {
   const { data: session, status, update } = useSession();
   const [salesVenueInput, setSalesVenueInput] = useState<string>("");
@@ -87,6 +93,16 @@ export default function Header() {
       setSalesVenue(venueNumber);
       setSalesVenueInput("");
     }
+  };
+
+  const handleDefaultVenueSelect = (venueId: number) => {
+    setSalesVenue(venueId);
+    setSalesVenueInput("");
+  };
+
+  const handleClearVenue = () => {
+    setSalesVenue(0);
+    setSalesVenueInput("");
   };
 
   return (
@@ -363,31 +379,57 @@ export default function Header() {
                         <div className="text-gray-300">
                           Sales Team Venue Control
                         </div>
-                        {salesVenue > 0 && (
-                          <div className="text-sm text-gray-400">
-                            Current Venue: {salesVenue}
-                          </div>
-                        )}
-                        <div className="flex flex-row gap-2">
-                          <input
-                            type="text"
-                            maxLength={5}
-                            placeholder="Venue ID"
-                            value={salesVenueInput}
-                            className="border border-gray-300 rounded-md p-2 w-32 text-black"
+                        <div className="flex justify-between items-center">
+                          {salesVenue > 0 && (
+                            <>
+                              <div className="text-sm text-gray-400">
+                                Current Venue: {salesVenue}
+                              </div>
+                              <button
+                                onClick={handleClearVenue}
+                                className="text-xs text-red-400 hover:text-red-300 px-2 py-1"
+                              >
+                                Clear Venue
+                              </button>
+                            </>
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <select
+                            className="border border-gray-300 rounded-md p-2 text-black"
                             onChange={(e) =>
-                              setSalesVenueInput(
-                                e.target.value.replace(/\D/g, "").slice(0, 5)
-                              )
+                              handleDefaultVenueSelect(Number(e.target.value))
                             }
-                          />
-                          <button
-                            onClick={handleSetSalesVenue}
-                            className="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
-                            disabled={salesVenueInput.length !== 5}
+                            value={salesVenue || ""}
                           >
-                            Set Venue
-                          </button>
+                            <option value="">Select Venue</option>
+                            {DEFAULT_VENUES.map((venue) => (
+                              <option key={venue.id} value={venue.id}>
+                                {venue.name} - {venue.id}
+                              </option>
+                            ))}
+                          </select>
+                          <div className="flex flex-row gap-2">
+                            <input
+                              type="text"
+                              maxLength={5}
+                              placeholder="Custom Venue ID"
+                              value={salesVenueInput}
+                              className="border border-gray-300 rounded-md p-2 w-32 text-black"
+                              onChange={(e) =>
+                                setSalesVenueInput(
+                                  e.target.value.replace(/\D/g, "").slice(0, 5)
+                                )
+                              }
+                            />
+                            <button
+                              onClick={handleSetSalesVenue}
+                              className="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+                              disabled={salesVenueInput.length !== 5}
+                            >
+                              Set Venue
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -581,15 +623,41 @@ export default function Header() {
             {session?.user?.isSalesTeam && (
               <li className="ml-auto">
                 <div className="flex items-center gap-2">
-                  {salesVenue > 0 && (
+                  {salesVenue > 0 ? (
+                    <>
+                      <div className="text-sm text-gray-400">
+                        Venue: {salesVenue}
+                      </div>
+                      <button
+                        onClick={handleClearVenue}
+                        className="text-xs text-red-400 hover:text-red-300"
+                      >
+                        Clear
+                      </button>
+                    </>
+                  ) : (
                     <div className="text-sm text-gray-400">
-                      Venue: {salesVenue}
+                      No Venue Selected
                     </div>
                   )}
+                  <select
+                    className="border border-gray-300 rounded-md p-1 text-black text-sm"
+                    onChange={(e) =>
+                      handleDefaultVenueSelect(Number(e.target.value))
+                    }
+                    value={salesVenue || ""}
+                  >
+                    <option value="">Select Venue</option>
+                    {DEFAULT_VENUES.map((venue) => (
+                      <option key={venue.id} value={venue.id}>
+                        {venue.name} - {venue.id}
+                      </option>
+                    ))}
+                  </select>
                   <input
                     type="text"
                     maxLength={5}
-                    placeholder="Venue ID"
+                    placeholder="Custom Venue ID"
                     value={salesVenueInput}
                     className="border border-gray-300 rounded-md p-1 w-32 text-black text-sm"
                     onChange={(e) =>
