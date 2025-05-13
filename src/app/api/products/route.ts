@@ -9,7 +9,10 @@ const MAX_PAGE_SIZE = 100;
 type ProductUpdateData = Prisma.ProductUpdateInput;
 
 export async function POST(request: NextRequest) {
+  console.log("POST /api/products - Starting request processing");
+
   if (!request.body) {
+    console.log("POST /api/products - Missing request body");
     return NextResponse.json(
       { error: "Missing request body" },
       { status: 400 }
@@ -18,28 +21,28 @@ export async function POST(request: NextRequest) {
 
   try {
     const body: ProductInput = await request.json();
+    console.log("POST /api/products - Received request body:", {
+      productCount: body.products?.length || 0,
+      products: body.products?.map((p) => ({
+        trx_product_id: p.trx_product_id,
+        sku: p.sku,
+        title: p.title,
+      })),
+    });
 
     if (
       !body.products ||
       !Array.isArray(body.products) ||
       body.products.length > MAX_PAGE_SIZE
     ) {
-      console.log(
-        {
-          error: body.products
-            ? `Maximum batch size is ${MAX_PAGE_SIZE} products`
-            : "Invalid products format",
-        },
-        body.products
-      );
-      return NextResponse.json(
-        {
-          error: body.products
-            ? `Maximum batch size is ${MAX_PAGE_SIZE} products`
-            : "Invalid products format",
-        },
-        { status: 400 }
-      );
+      const error = body.products
+        ? `Maximum batch size is ${MAX_PAGE_SIZE} products`
+        : "Invalid products format";
+      console.log("POST /api/products - Validation error:", {
+        error,
+        receivedProducts: body.products,
+      });
+      return NextResponse.json({ error }, { status: 400 });
     }
 
     const results = [];
@@ -47,6 +50,10 @@ export async function POST(request: NextRequest) {
 
     for (const product of body.products) {
       try {
+        console.log(
+          `Processing product: ${product.trx_product_id} (SKU: ${product.sku})`
+        );
+
         if (!product.trx_product_id) {
           throw new Error("Missing trx_product_id");
         }
@@ -57,6 +64,7 @@ export async function POST(request: NextRequest) {
         });
 
         if (existingProduct) {
+          console.log(`Updating existing product: ${product.trx_product_id}`);
           // Update existing product
           const updateData: ProductUpdateData = {
             sku: product.sku,
@@ -99,6 +107,14 @@ export async function POST(request: NextRequest) {
             include: { images: true },
           });
 
+          console.log(
+            `Successfully updated product: ${product.trx_product_id}`,
+            {
+              sku: updatedProduct.sku,
+              imageCount: updatedProduct.images.length,
+            }
+          );
+
           results.push({
             trx_product_id: Number(updatedProduct.id),
             ...updatedProduct,
@@ -106,6 +122,7 @@ export async function POST(request: NextRequest) {
             images: updatedProduct.images.map((img) => ({ url: img.url })),
           });
         } else {
+          console.log(`Creating new product: ${product.trx_product_id}`);
           // Create new product - validate required fields
           const requiredFields = [
             "sku",
@@ -157,6 +174,14 @@ export async function POST(request: NextRequest) {
             include: { images: true },
           });
 
+          console.log(
+            `Successfully created new product: ${product.trx_product_id}`,
+            {
+              sku: newProduct.sku,
+              imageCount: newProduct.images.length,
+            }
+          );
+
           results.push({
             trx_product_id: Number(newProduct.id),
             ...newProduct,
@@ -165,6 +190,10 @@ export async function POST(request: NextRequest) {
           });
         }
       } catch (err) {
+        console.error(
+          `Error processing product ${product.trx_product_id}:`,
+          err
+        );
         errors.push({
           product_id: product.trx_product_id,
           sku: product.sku,
@@ -172,7 +201,13 @@ export async function POST(request: NextRequest) {
         });
       }
     }
-    console.log(results, errors);
+
+    console.log("POST /api/products - Completed processing", {
+      successCount: results.length,
+      errorCount: errors.length,
+      errors: errors.length > 0 ? errors : undefined,
+    });
+
     return NextResponse.json({
       success: true,
       processed: results.length,
@@ -180,7 +215,7 @@ export async function POST(request: NextRequest) {
       results: convertBigIntToString(results),
     });
   } catch (error) {
-    console.error("Error processing request:", error);
+    console.error("POST /api/products - Fatal error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

@@ -5,6 +5,7 @@ import Footer from "@/components/layout/Footer";
 import { Providers } from "./providers";
 import { Suspense } from "react";
 import { SearchProvider } from "@/contexts/SearchContext";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -43,6 +44,7 @@ export default function RootLayout({
             </SearchProvider>
           </Providers>
         </Suspense>
+        <SpeedInsights />
       </body>
     </html>
   );
