@@ -24,6 +24,14 @@ export async function POST(request: NextRequest) {
       !Array.isArray(body.products) ||
       body.products.length > MAX_PAGE_SIZE
     ) {
+      console.log(
+        {
+          error: body.products
+            ? `Maximum batch size is ${MAX_PAGE_SIZE} products`
+            : "Invalid products format",
+        },
+        body.products
+      );
       return NextResponse.json(
         {
           error: body.products
@@ -164,7 +172,7 @@ export async function POST(request: NextRequest) {
         });
       }
     }
-
+    console.log(results, errors);
     return NextResponse.json({
       success: true,
       processed: results.length,

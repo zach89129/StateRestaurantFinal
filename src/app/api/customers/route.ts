@@ -209,7 +209,7 @@ export async function POST(req: NextRequest) {
 
     // Convert any remaining BigInt values to strings
     const safeResults = convertBigIntToString(results);
-
+    console.log(safeResults, errors);
     return NextResponse.json({
       success: true,
       processed: results.length,

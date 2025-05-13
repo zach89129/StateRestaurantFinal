@@ -146,7 +146,7 @@ export async function POST(request: Request) {
 
     // Convert any remaining BigInt values to strings
     const safeResults = convertBigIntToString(results);
-
+    console.log(safeResults, errors);
     return NextResponse.json({
       success: true,
       venueProducts: safeResults,
