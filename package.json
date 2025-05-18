@@ -12,7 +12,10 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
     "@heroicons/react": "^2.2.0",
+    "@mui/material": "^7.1.0",
     "@prisma/client": "^5.22.0",
     "@tailwindcss/aspect-ratio": "^0.4.2",
     "@types/nodemailer": "^6.4.17",

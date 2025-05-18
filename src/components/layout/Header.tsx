@@ -10,12 +10,8 @@ import { useCart } from "@/contexts/CartContext";
 import { useSearch } from "@/contexts/SearchContext";
 import CategoryNav from "./CategoryNav";
 import { useSalesTeamVenue } from "@/contexts/SalesTeamVenueContext";
-
-const DEFAULT_VENUES = [
-  { name: "R", id: 94670 },
-  { name: "M", id: 94669 },
-  { name: "H", id: 94668 },
-];
+import { Autocomplete, TextField } from "@mui/material";
+import { DEFAULT_VENUES, Venue } from "@/const/venues";
 
 export default function Header() {
   const { data: session, status, update } = useSession();
@@ -34,6 +30,12 @@ export default function Header() {
   const isVenuePage = pathname?.includes("/venues/");
   const dropdownRef = useRef<HTMLLIElement>(null);
   const venueDropdownRef = useRef<HTMLLIElement>(null);
+  const [selectedVenue, setSelectedVenue] = useState<{
+    name: string;
+    id: number;
+  } | null>(null);
+  const [venueOptions, setVenueOptions] = useState<Venue[]>([]);
+  const [inputValue, setInputValue] = useState("");
 
   // Force refresh session when component mounts and periodically
   useEffect(() => {
@@ -87,14 +89,6 @@ export default function Header() {
     }
   }, [isSearchVisible]);
 
-  const handleSetSalesVenue = () => {
-    const venueNumber = Number(salesVenueInput);
-    if (!isNaN(venueNumber) && salesVenueInput.length === 5) {
-      setSalesVenue(venueNumber);
-      setSalesVenueInput("");
-    }
-  };
-
   const handleDefaultVenueSelect = (venueId: number) => {
     setSalesVenue(venueId);
     setSalesVenueInput("");
@@ -103,7 +97,36 @@ export default function Header() {
   const handleClearVenue = () => {
     setSalesVenue(0);
     setSalesVenueInput("");
+    setSelectedVenue(null);
   };
+
+  const filterVenues = (query: string) => {
+    if (!query) return venueOptions;
+    const lowercaseQuery = query.toLowerCase();
+    return venueOptions.filter(
+      (venue) =>
+        venue.name.toLowerCase().includes(lowercaseQuery) ||
+        venue.id.toString().includes(lowercaseQuery)
+    );
+  };
+
+  useEffect(() => {
+    const loadVenues = async () => {
+      if (session?.user?.isSalesTeam) {
+        try {
+          const response = await fetch("/api/venues/search");
+          if (!response.ok) throw new Error("Failed to fetch venues");
+          const data = await response.json();
+          setVenueOptions(data);
+        } catch (error) {
+          console.error("Error fetching venues:", error);
+          setVenueOptions([]);
+        }
+      }
+    };
+
+    loadVenues();
+  }, [session?.user?.isSalesTeam]);
 
   return (
     <header className="bg-zinc-800 sticky top-0 z-50 shadow-md w-full">
@@ -399,40 +422,69 @@ export default function Header() {
                     </div>
                     <div className="flex flex-col gap-2">
                       <select
-                        className="border border-gray-300 rounded-md p-2 text-black"
+                        className="border border-gray-300 rounded-md p-2 text-black text-sm w-full"
                         onChange={(e) =>
                           handleDefaultVenueSelect(Number(e.target.value))
                         }
                         value={salesVenue || ""}
                       >
-                        <option value="">Select Venue</option>
+                        <option value="">Defaults</option>
                         {DEFAULT_VENUES.map((venue) => (
                           <option key={venue.id} value={venue.id}>
                             {venue.name} - {venue.id}
                           </option>
                         ))}
                       </select>
-                      <div className="flex flex-row gap-2">
-                        <input
-                          type="text"
-                          maxLength={5}
-                          placeholder="Custom Venue ID"
-                          value={salesVenueInput}
-                          className="border border-gray-300 rounded-md p-2 flex-1 text-black"
-                          onChange={(e) =>
-                            setSalesVenueInput(
-                              e.target.value.replace(/\D/g, "").slice(0, 5)
-                            )
+                      <Autocomplete
+                        options={venueOptions}
+                        getOptionLabel={(option) =>
+                          `${option.name} - ${option.id}`
+                        }
+                        value={
+                          salesVenue === 0
+                            ? null
+                            : venueOptions.find((v) => v.id === salesVenue) ||
+                              null
+                        }
+                        onChange={(_, newValue) => {
+                          if (newValue) {
+                            setSalesVenue(newValue.id);
                           }
-                        />
-                        <button
-                          onClick={handleSetSalesVenue}
-                          className="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400 whitespace-nowrap"
-                          disabled={salesVenueInput.length !== 5}
-                        >
-                          Set Venue
-                        </button>
-                      </div>
+                        }}
+                        onInputChange={(_, newInputValue) => {
+                          setInputValue(newInputValue);
+                        }}
+                        filterOptions={(options, { inputValue }) =>
+                          filterVenues(inputValue)
+                        }
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            placeholder="Search venues..."
+                            size="small"
+                            className="bg-white rounded-md"
+                            sx={{
+                              "& .MuiOutlinedInput-root": {
+                                padding: "8px",
+                                height: "32px",
+                                fontSize: "0.875rem",
+                                "& fieldset": {
+                                  borderColor: "rgb(209 213 219)",
+                                },
+                                "& input": {
+                                  padding: "0",
+                                },
+                              },
+                            }}
+                          />
+                        )}
+                        size="small"
+                        clearOnBlur={false}
+                        blurOnSelect={true}
+                        popupIcon={null}
+                        className="w-full"
+                        key={salesVenue}
+                      />
                     </div>
                   </div>
                 )}
@@ -648,32 +700,60 @@ export default function Header() {
                     }
                     value={salesVenue || ""}
                   >
-                    <option value="">Select Venue</option>
+                    <option value="">Defaults</option>
                     {DEFAULT_VENUES.map((venue) => (
                       <option key={venue.id} value={venue.id}>
                         {venue.name} - {venue.id}
                       </option>
                     ))}
                   </select>
-                  <input
-                    type="text"
-                    maxLength={5}
-                    placeholder="Custom Venue ID"
-                    value={salesVenueInput}
-                    className="border border-gray-300 rounded-md p-1 w-32 text-black text-sm"
-                    onChange={(e) =>
-                      setSalesVenueInput(
-                        e.target.value.replace(/\D/g, "").slice(0, 5)
-                      )
+                  <Autocomplete
+                    options={venueOptions}
+                    getOptionLabel={(option) => `${option.name} - ${option.id}`}
+                    value={
+                      salesVenue === 0
+                        ? null
+                        : venueOptions.find((v) => v.id === salesVenue) || null
                     }
+                    onChange={(_, newValue) => {
+                      if (newValue) {
+                        setSalesVenue(newValue.id);
+                      }
+                    }}
+                    onInputChange={(_, newInputValue) => {
+                      setInputValue(newInputValue);
+                    }}
+                    filterOptions={(options, { inputValue }) =>
+                      filterVenues(inputValue)
+                    }
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        placeholder="Search venues..."
+                        size="small"
+                        className="bg-white rounded-md"
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            padding: "8px",
+                            height: "32px",
+                            fontSize: "0.875rem",
+                            "& fieldset": {
+                              borderColor: "rgb(209 213 219)",
+                            },
+                            "& input": {
+                              padding: "0",
+                            },
+                          },
+                        }}
+                      />
+                    )}
+                    size="small"
+                    clearOnBlur={false}
+                    blurOnSelect={true}
+                    popupIcon={null}
+                    className="w-[300px]"
+                    key={salesVenue}
                   />
-                  <button
-                    onClick={handleSetSalesVenue}
-                    className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700 disabled:bg-gray-400 text-sm"
-                    disabled={salesVenueInput.length !== 5}
-                  >
-                    Set Venue
-                  </button>
                 </div>
               </li>
             )}
