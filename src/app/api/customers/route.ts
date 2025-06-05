@@ -132,11 +132,8 @@ export async function POST(req: NextRequest) {
         let customer;
 
         if (existingCustomer) {
-          // If customer exists, delete and recreate it to completely replace it
-          // First, delete the _CustomerToVenue relations
-          await prisma.$executeRaw`DELETE FROM _CustomerToVenue WHERE A = ${trx_customer_id}`;
-
-          // Then, disconnect all venues
+          // If customer exists, update it instead of deleting and recreating
+          // First disconnect all venues
           if (existingCustomer.venues.length > 0) {
             await prisma.customer.update({
               where: { trxCustomerId: trx_customer_id },
@@ -150,13 +147,9 @@ export async function POST(req: NextRequest) {
             });
           }
 
-          // Then, delete the customer
-          await prisma.customer.delete({
+          // Then update the customer with new data and connect new venues
+          customer = await prisma.customer.update({
             where: { trxCustomerId: trx_customer_id },
-          });
-
-          // Finally, create a new customer with the new data
-          customer = await prisma.customer.create({
             data: {
               ...baseCustomerData,
               ...venuesConnection,
@@ -166,7 +159,7 @@ export async function POST(req: NextRequest) {
             },
           });
         } else {
-          // If customer doesn't exist, just create it
+          // If customer doesn't exist, create it
           customer = await prisma.customer.create({
             data: {
               ...baseCustomerData,
@@ -314,7 +307,22 @@ export async function GET(req: NextRequest) {
 //deleting entire customer record
 export async function DELETE(request: NextRequest) {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (e) {
+      return NextResponse.json(
+        { error: "Invalid JSON in request body" },
+        { status: 400 }
+      );
+    }
+
+    if (!body || typeof body !== "object") {
+      return NextResponse.json(
+        { error: "Request body must be a JSON object" },
+        { status: 400 }
+      );
+    }
 
     if (!body.trx_customer_ids || !Array.isArray(body.trx_customer_ids)) {
       return NextResponse.json(
@@ -323,10 +331,47 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    if (body.trx_customer_ids.length === 0) {
+      return NextResponse.json(
+        { error: "trx_customer_ids array cannot be empty" },
+        { status: 400 }
+      );
+    }
+
+    // Validate that all IDs are numbers
+    const validIds = body.trx_customer_ids.every(
+      (id: number) => typeof id === "number"
+    );
+    if (!validIds) {
+      return NextResponse.json(
+        { error: "All trx_customer_ids must be numbers" },
+        { status: 400 }
+      );
+    }
+
     // First, delete all _CustomerToVenue relations for these customers
     for (const customerId of body.trx_customer_ids) {
       await prisma.$executeRaw`DELETE FROM _CustomerToVenue WHERE A = ${customerId}`;
     }
+
+    // Delete associated cart items and carts first
+    await prisma.cartItem.deleteMany({
+      where: {
+        cart: {
+          customerId: {
+            in: body.trx_customer_ids,
+          },
+        },
+      },
+    });
+
+    await prisma.cart.deleteMany({
+      where: {
+        customerId: {
+          in: body.trx_customer_ids,
+        },
+      },
+    });
 
     // Then delete the customers
     const result = await prisma.customer.deleteMany({
