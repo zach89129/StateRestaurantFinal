@@ -289,7 +289,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                 </p>
                 {product.qtyAvailable > 0 && (
                   <p className="text-xs sm:text-sm text-green-600">
-                    In Stock: {product.qtyAvailable}
+                    In Stock: {product.qtyAvailable} {product.uom}
                   </p>
                 )}
                 <div className="flex flex-wrap gap-1 mt-1 sm:mt-2">
