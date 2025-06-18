@@ -6,6 +6,7 @@ import { Providers } from "./providers";
 import { Suspense } from "react";
 import { SearchProvider } from "@/contexts/SearchContext";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/react";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -45,6 +46,7 @@ export default function RootLayout({
           </Providers>
         </Suspense>
         <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );
