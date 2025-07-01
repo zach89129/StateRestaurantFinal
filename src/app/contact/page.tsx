@@ -36,12 +36,6 @@ export default function ContactPage() {
       image: "/team/StateMatthew.avif",
     },
     {
-      name: "Sean Stafford",
-      title: "Account Executive",
-      phone: "(702) 733-1515",
-      image: "/team/StateSean.avif",
-    },
-    {
       name: "John Holley",
       title: "Account Executive",
       phone: "(702) 733-1515",
@@ -64,7 +58,7 @@ export default function ContactPage() {
   return (
     <PageContainer title="Contact">
       {/* Team Members Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 mb-12 sm:mb-20">
+      <div className="flex flex-wrap justify-center gap-4 sm:gap-6 lg:gap-8 mb-12 sm:mb-20">
         {teamMembers.map((member) => (
           <TeamMemberCard
             key={member.name}
