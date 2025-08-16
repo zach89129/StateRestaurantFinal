@@ -432,7 +432,7 @@ function ProductsContent() {
         {/* Mobile Filter Button */}
         <button
           onClick={toggleFilter}
-          className={`fixed right-4 z-30 md:hidden flex items-center gap-2 px-4 py-3 bg-copper text-white border border-copper rounded-full shadow-lg hover:bg-copper-hover ${
+          className={`fixed right-4 z-30 lg:hidden flex items-center gap-2 px-4 py-3 bg-copper text-white border border-copper rounded-full shadow-lg hover:bg-copper-hover ${
             isSearchVisible ? "top-[150px]" : "top-[100px]"
           } transition-all duration-300 ease-in-out`}
         >
