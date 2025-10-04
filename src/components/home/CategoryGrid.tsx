@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import PromotionalBanner from "./PromotionalBanner";
 
 const featuredCollections = [
   {
@@ -51,21 +52,7 @@ export default function CategoryGrid() {
     <section className="py-4 sm:py-8 md:py-16 bg-white">
       <div className="container mx-auto px-2 sm:px-4">
         {/* Promotional Banner Card */}
-        <div className="mb-6 sm:mb-8">
-          <Link href="/promotion-details">
-            <div className="relative h-[300px] sm:h-[350px] md:h-[400px] overflow-hidden rounded-lg group cursor-pointer bg-white">
-              <Image
-                src="/promotions/promotionBanner.jpg"
-                alt="Promotion details"
-                fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw"
-                className="object-contain transition-transform duration-300 group-hover:scale-105"
-                priority
-              />
-              <div className="absolute inset-0" />
-            </div>
-          </Link>
-        </div>
+        <PromotionalBanner />
 
         <div className="grid grid-cols-1 md:grid-cols-8 gap-3 sm:gap-4 md:gap-8">
           {featuredCollections.map((collection, index) => (
