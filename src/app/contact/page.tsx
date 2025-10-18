@@ -36,6 +36,12 @@ export default function ContactPage() {
       image: "/team/StateMatthew.avif",
     },
     {
+      name: "Ashley McClure",
+      title: "Account Executive",
+      phone: "(702) 733-1515",
+      image: "/team/StateAshley.jpg",
+    },
+    {
       name: "John Holley",
       title: "Account Executive",
       phone: "(702) 733-1515",
