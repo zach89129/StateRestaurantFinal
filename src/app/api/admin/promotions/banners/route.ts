@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get("file") as File;
     const name = formData.get("name") as string;
+    const targetUrl = formData.get("targetUrl") as string | null;
 
     if (!file || !name) {
       return NextResponse.json(
@@ -41,6 +42,7 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         imageUrl: blob.url,
+        targetUrl: targetUrl || null,
         isActive: false, // New banners are inactive by default
       },
     });

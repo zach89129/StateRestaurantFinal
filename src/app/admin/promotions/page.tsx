@@ -45,6 +45,7 @@ export default function PromotionsPage() {
   const [bannerForm, setBannerForm] = useState({
     name: "",
     file: null as File | null,
+    targetUrl: "",
   });
 
   // Detail form state
@@ -109,6 +110,9 @@ export default function PromotionsPage() {
       const formData = new FormData();
       formData.append("file", bannerForm.file);
       formData.append("name", bannerForm.name);
+      if (bannerForm.targetUrl) {
+        formData.append("targetUrl", bannerForm.targetUrl);
+      }
 
       const response = await fetch("/api/admin/promotions/banners", {
         method: "POST",
@@ -119,7 +123,7 @@ export default function PromotionsPage() {
         throw new Error("Failed to create banner");
       }
 
-      setBannerForm({ name: "", file: null });
+      setBannerForm({ name: "", file: null, targetUrl: "" });
       fetchData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create banner");
@@ -307,6 +311,24 @@ export default function PromotionsPage() {
                   className="mt-1 block w-full border border-gray-300 text-gray-900 rounded-md shadow-sm p-2"
                   required
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Target URL (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={bannerForm.targetUrl}
+                  onChange={(e) =>
+                    setBannerForm({ ...bannerForm, targetUrl: e.target.value })
+                  }
+                  placeholder="https://example.com or leave blank for /promotion-details"
+                  className="mt-1 block w-full border border-gray-300 text-gray-900 rounded-md shadow-sm p-2"
+                />
+                <p className="mt-1 text-sm text-gray-500">
+                  Leave blank to link to the default promotion details page.
+                  Enter full URL including https://
+                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">

@@ -8,6 +8,7 @@ interface PromotionBanner {
   id: number;
   name: string;
   imageUrl: string;
+  targetUrl: string | null;
   isActive: boolean;
 }
 
@@ -49,9 +50,41 @@ export default function PromotionalBanner() {
     return null;
   }
 
+  // Determine the target URL
+  const targetUrl = banner.targetUrl || "/promotion-details";
+
+  // Check if it's an external link (not staterestaurant.com)
+  const isExternal =
+    banner.targetUrl &&
+    !banner.targetUrl.includes("staterestaurant.com") &&
+    (banner.targetUrl.startsWith("http://") ||
+      banner.targetUrl.startsWith("https://"));
+
+  // For internal links or staterestaurant.com links, use Next.js Link
+  if (!isExternal) {
+    return (
+      <div className="mb-6 sm:mb-8">
+        <Link href={targetUrl}>
+          <div className="relative h-[300px] sm:h-[350px] md:h-[400px] overflow-hidden rounded-lg group cursor-pointer bg-white">
+            <Image
+              src={banner.imageUrl}
+              alt={banner.name}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw"
+              className="object-contain transition-transform duration-300 group-hover:scale-105"
+              priority
+            />
+            <div className="absolute inset-0" />
+          </div>
+        </Link>
+      </div>
+    );
+  }
+
+  // For external links, use regular anchor tag with target="_blank"
   return (
     <div className="mb-6 sm:mb-8">
-      <Link href="/promotion-details">
+      <a href={targetUrl} target="_blank" rel="noopener noreferrer">
         <div className="relative h-[300px] sm:h-[350px] md:h-[400px] overflow-hidden rounded-lg group cursor-pointer bg-white">
           <Image
             src={banner.imageUrl}
@@ -63,7 +96,7 @@ export default function PromotionalBanner() {
           />
           <div className="absolute inset-0" />
         </div>
-      </Link>
+      </a>
     </div>
   );
 }
