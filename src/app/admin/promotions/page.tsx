@@ -7,6 +7,7 @@ interface PromotionBanner {
   id: number;
   name: string;
   imageUrl: string;
+  targetUrl: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -16,6 +17,7 @@ interface PromotionDetail {
   id: number;
   name: string;
   imageUrl: string;
+  targetUrl: string | null;
   order: number;
   isActive: boolean;
   createdAt: string;
@@ -53,6 +55,7 @@ export default function PromotionsPage() {
     name: "",
     file: null as File | null,
     order: 0,
+    targetUrl: "",
   });
 
   // Content form state
@@ -139,6 +142,9 @@ export default function PromotionsPage() {
       formData.append("file", detailForm.file);
       formData.append("name", detailForm.name);
       formData.append("order", detailForm.order.toString());
+      if (detailForm.targetUrl) {
+        formData.append("targetUrl", detailForm.targetUrl);
+      }
 
       const response = await fetch("/api/admin/promotions/details", {
         method: "POST",
@@ -149,7 +155,7 @@ export default function PromotionsPage() {
         throw new Error("Failed to create promotion detail");
       }
 
-      setDetailForm({ name: "", file: null, order: 0 });
+      setDetailForm({ name: "", file: null, order: 0, targetUrl: "" });
       fetchData();
     } catch (err) {
       setError(
@@ -384,6 +390,18 @@ export default function PromotionsPage() {
                     <p className="text-sm text-gray-500">
                       Created: {new Date(banner.createdAt).toLocaleDateString()}
                     </p>
+                    {banner.targetUrl ? (
+                      <p
+                        className="text-xs text-blue-600 mt-1 truncate"
+                        title={banner.targetUrl}
+                      >
+                        🔗 Links to: {banner.targetUrl}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-gray-400 mt-1">
+                        → Default: /promotion-details
+                      </p>
+                    )}
                     <div className="mt-4 flex space-x-2">
                       <button
                         onClick={() =>
@@ -453,6 +471,24 @@ export default function PromotionsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
+                  Call to Action URL (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={detailForm.targetUrl}
+                  onChange={(e) =>
+                    setDetailForm({ ...detailForm, targetUrl: e.target.value })
+                  }
+                  placeholder="https://example.com (optional)"
+                  className="mt-1 block w-full border border-gray-300 text-gray-900 rounded-md shadow-sm p-2"
+                />
+                <p className="mt-1 text-sm text-gray-500">
+                  If provided, a button will appear below the image. Leave blank
+                  for image-only display.
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
                   Image File
                 </label>
                 <input
@@ -501,6 +537,14 @@ export default function PromotionsPage() {
                       Order: {detail.order} | Created:{" "}
                       {new Date(detail.createdAt).toLocaleDateString()}
                     </p>
+                    {detail.targetUrl && (
+                      <p
+                        className="text-xs text-blue-600 mt-1 truncate"
+                        title={detail.targetUrl}
+                      >
+                        🔗 Has CTA: {detail.targetUrl}
+                      </p>
+                    )}
                     <div className="mt-4">
                       <button
                         onClick={() => deleteDetail(detail.id)}

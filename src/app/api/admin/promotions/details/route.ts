@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
     const file = formData.get("file") as File;
     const name = formData.get("name") as string;
     const order = parseInt(formData.get("order") as string) || 0;
+    const targetUrl = formData.get("targetUrl") as string | null;
 
     if (!file || !name) {
       return NextResponse.json(
@@ -43,6 +44,7 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         imageUrl: blob.url,
+        targetUrl: targetUrl || null,
         order,
         isActive: true,
       },

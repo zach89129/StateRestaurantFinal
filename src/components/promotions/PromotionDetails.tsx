@@ -7,6 +7,7 @@ interface PromotionDetail {
   id: number;
   name: string;
   imageUrl: string;
+  targetUrl: string | null;
   order: number;
   isActive: boolean;
 }
@@ -67,6 +68,18 @@ export default function PromotionDetails() {
             className="w-full h-auto rounded-lg shadow-md"
             priority={detail.order === 0}
           />
+          {detail.targetUrl && (
+            <div className="mt-4 text-center">
+              <a
+                href={detail.targetUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block bg-[#B87B5C] text-white px-6 py-3 rounded-lg hover:bg-[#A66D4F] transition-colors text-base font-medium shadow-md"
+              >
+                Learn More →
+              </a>
+            </div>
+          )}
         </div>
       ))}
     </div>
