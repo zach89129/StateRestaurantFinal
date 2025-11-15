@@ -133,7 +133,7 @@ export default function OrdersPage() {
                     )}
                   </div>
                   <div>
-                    <span
+                    {/* <span
                       className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
                         order.status === "new"
                           ? "bg-blue-100 text-blue-800"
@@ -147,7 +147,7 @@ export default function OrdersPage() {
                         : order.status === "imported"
                         ? "Imported"
                         : order.status || "Unknown"}
-                    </span>
+                    </span> */}
                   </div>
                 </div>
               </div>
@@ -159,7 +159,7 @@ export default function OrdersPage() {
                     <div key={index} className="border-b pb-3">
                       <div className="mb-2">
                         <Link
-                          href={`/product/${item.sku}`}
+                          href={`/product/${btoa(item.sku)}`}
                           className="text-blue-600 hover:underline font-medium break-words"
                         >
                           {item.title}
@@ -196,7 +196,7 @@ export default function OrdersPage() {
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="px-4 py-3">
                             <Link
-                              href={`/product/${item.sku}`}
+                              href={`/product/${btoa(item.sku)}`}
                               className="text-blue-600 hover:underline"
                             >
                               {item.title}

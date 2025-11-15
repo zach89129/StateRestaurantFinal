@@ -26,8 +26,16 @@ export async function POST(request: NextRequest) {
 
     const { items, comment, purchaseOrder } = await request.json();
 
-    // Only process venue-specific items (venueId !== "0")
-    const venueItems = items.filter((item: CartItem) => item.venueId !== "0");
+    // Only process venue-specific items (venueId !== "0" and is a valid number)
+    const venueItems = items.filter((item: CartItem) => {
+      const venueIdNum = parseInt(item.venueId);
+      return (
+        item.venueId &&
+        item.venueId !== "0" &&
+        !isNaN(venueIdNum) &&
+        venueIdNum > 0
+      );
+    });
 
     if (venueItems.length === 0) {
       // No venue-specific items to process
@@ -55,10 +63,17 @@ export async function POST(request: NextRequest) {
       // Type assertion to fix the unknown type
       const cartItems = items as CartItem[];
 
+      // Parse and validate venueId
+      const venueIdNum = parseInt(venueId);
+      if (isNaN(venueIdNum) || venueIdNum <= 0) {
+        console.error(`Invalid venueId: ${venueId}, skipping order creation`);
+        continue;
+      }
+
       // Create order in database
       const order = await prisma.order.create({
         data: {
-          trxVenueId: parseInt(venueId),
+          trxVenueId: venueIdNum,
           status: "new",
           customerPo: purchaseOrder || null,
           customerNote: comment || null,

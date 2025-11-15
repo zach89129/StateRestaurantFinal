@@ -64,6 +64,15 @@ export default function CategoryNav({
                 All Products
               </Link>
             </li>
+            <li>
+              <Link
+                href="/products/?pattern_b64=X0RFQUQgSU5WRU5UT1JZ&page=1"
+                className="block text-red-500 underline hover:text-red-400"
+                onClick={onClose}
+              >
+                CLOSEOUT INVENTORY
+              </Link>
+            </li>
             {categories.map((category) => (
               <li key={category}>
                 <button
@@ -97,6 +106,15 @@ export default function CategoryNav({
               onClick={onClose}
             >
               All Products
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/products/?pattern_b64=X0RFQUQgSU5WRU5UT1JZ&page=1"
+              className="block px-4 py-2 text-red-500 underline hover:bg-zinc-700 hover:text-red-400"
+              onClick={onClose}
+            >
+              CLOSE-OUT INVENTORY
             </Link>
           </li>
           {categories.map((category) => (

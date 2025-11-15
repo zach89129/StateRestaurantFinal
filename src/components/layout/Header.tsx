@@ -490,18 +490,20 @@ export default function Header() {
                 )}
 
                 {/* TODO: Add order history back in once joe finishes api */}
-                {/* {session?.user && (
-                  <Link
-                    href="/orders"
-                    className="block text-gray-300 hover:text-white"
-                    onClick={() => {
-                      setIsMobileMenuOpen(false);
-                      setIsMobileDropdownOpen(false);
-                    }}
-                  >
-                    Order History
-                  </Link>
-                )} */}
+                {session?.user &&
+                  session?.user?.venues &&
+                  session.user.venues.length > 0 && (
+                    <Link
+                      href="/orders"
+                      className="block text-gray-300 hover:text-white"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        setIsMobileDropdownOpen(false);
+                      }}
+                    >
+                      Order History
+                    </Link>
+                  )}
               </div>
             </div>
 
@@ -666,13 +668,15 @@ export default function Header() {
                 )}
               </li>
             )}
-            {session?.user && (
-              <li>
-                <Link href="/orders" className="hover:text-blue-200">
-                  Order History
-                </Link>
-              </li>
-            )}
+            {session?.user &&
+              session?.user?.venues &&
+              session.user.venues.length > 0 && (
+                <li>
+                  <Link href="/orders" className="hover:text-blue-200">
+                    Order History
+                  </Link>
+                </li>
+              )}
             {session?.user?.isSalesTeam && (
               <li className="ml-auto">
                 <div className="flex items-center gap-2">

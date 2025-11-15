@@ -18,8 +18,6 @@ interface User {
   seePrices: boolean;
 }
 
-const salesTeamEmails = ["scott.miller@staterestaurant.com"];
-
 export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
