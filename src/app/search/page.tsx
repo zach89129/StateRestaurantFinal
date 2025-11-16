@@ -74,6 +74,11 @@ function SearchContent() {
     searchParams.get("collection_b64")?.split(",").filter(Boolean) || [];
   const selectedQuickShip = searchParams.get("quickShip") === "true";
 
+  const DEAD_INVENTORY_PATTERN_B64 = "X0RFQUQgSU5WRU5UT1JZ";
+  const selectedCloseOut = selectedPatterns.includes(
+    DEAD_INVENTORY_PATTERN_B64
+  );
+
   const { isSearchVisible } = useSearch();
 
   // Update the search effect
@@ -247,6 +252,31 @@ function SearchContent() {
     router.push(`/search?${params.toString()}`, { scroll: false });
   };
 
+  const handleCloseOutChange = (value: boolean) => {
+    const params = new URLSearchParams(searchParams);
+    const currentPatterns =
+      params.get("pattern_b64")?.split(",").filter(Boolean) || [];
+
+    if (value) {
+      if (!currentPatterns.includes(DEAD_INVENTORY_PATTERN_B64)) {
+        currentPatterns.push(DEAD_INVENTORY_PATTERN_B64);
+      }
+    } else {
+      const index = currentPatterns.indexOf(DEAD_INVENTORY_PATTERN_B64);
+      if (index > -1) {
+        currentPatterns.splice(index, 1);
+      }
+    }
+
+    if (currentPatterns.length > 0) {
+      params.set("pattern_b64", currentPatterns.join(","));
+    } else {
+      params.delete("pattern_b64");
+    }
+    params.set("page", "1");
+    router.push(`/search?${params.toString()}`, { scroll: false });
+  };
+
   const handleClearAll = () => {
     const params = new URLSearchParams();
     params.set("q", searchTerm);
@@ -298,11 +328,13 @@ function SearchContent() {
             selectedPatterns={selectedPatterns}
             selectedCollections={selectedCollections}
             selectedQuickShip={selectedQuickShip}
+            selectedCloseOut={selectedCloseOut}
             onCategoryChange={handleCategoryChange}
             onManufacturerChange={handleManufacturerChange}
             onPatternChange={handlePatternChange}
             onCollectionChange={handleCollectionChange}
             onQuickShipChange={handleQuickShipChange}
+            onCloseOutChange={handleCloseOutChange}
             onClearAll={handleClearAll}
             onClose={() => setIsFilterOpen(false)}
             isOpen={isFilterOpen}

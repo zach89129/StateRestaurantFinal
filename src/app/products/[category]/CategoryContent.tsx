@@ -77,6 +77,11 @@ export default function CategoryContent({ category }: Props) {
     searchParams.get("collection_b64")?.split(",").filter(Boolean) || [];
   const selectedQuickShip = searchParams.get("quickShip") === "true";
 
+  const DEAD_INVENTORY_PATTERN_B64 = "X0RFQUQgSU5WRU5UT1JZ";
+  const selectedCloseOut = selectedPatterns.includes(
+    DEAD_INVENTORY_PATTERN_B64
+  );
+
   // Fetch products
   useEffect(() => {
     const fetchProducts = async () => {
@@ -193,6 +198,33 @@ export default function CategoryContent({ category }: Props) {
     });
   };
 
+  const handleCloseOutChange = (value: boolean) => {
+    const params = new URLSearchParams(searchParams.toString());
+    const currentPatterns =
+      params.get("pattern_b64")?.split(",").filter(Boolean) || [];
+
+    if (value) {
+      if (!currentPatterns.includes(DEAD_INVENTORY_PATTERN_B64)) {
+        currentPatterns.push(DEAD_INVENTORY_PATTERN_B64);
+      }
+    } else {
+      const index = currentPatterns.indexOf(DEAD_INVENTORY_PATTERN_B64);
+      if (index > -1) {
+        currentPatterns.splice(index, 1);
+      }
+    }
+
+    if (currentPatterns.length > 0) {
+      params.set("pattern_b64", currentPatterns.join(","));
+    } else {
+      params.delete("pattern_b64");
+    }
+    params.set("page", "1");
+    router.push(`/products/${category}?${params.toString()}`, {
+      scroll: false,
+    });
+  };
+
   const handleClearAll = () => {
     // Reset to category page with only the category filter
     const params = new URLSearchParams();
@@ -262,11 +294,13 @@ export default function CategoryContent({ category }: Props) {
               selectedPatterns={selectedPatterns}
               selectedCollections={selectedCollections}
               selectedQuickShip={selectedQuickShip}
+              selectedCloseOut={selectedCloseOut}
               onCategoryChange={handleCollectionChange}
               onManufacturerChange={handleManufacturerChange}
               onPatternChange={handlePatternChange}
               onCollectionChange={handleCollectionChange}
               onQuickShipChange={handleQuickShipChange}
+              onCloseOutChange={handleCloseOutChange}
               onClearAll={handleClearAll}
               isCategoryPage={true}
               isOpen={isFilterOpen}

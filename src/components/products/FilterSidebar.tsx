@@ -56,11 +56,13 @@ interface FilterSidebarProps {
   selectedPatterns: string[];
   selectedCollections: string[];
   selectedQuickShip: boolean;
+  selectedCloseOut: boolean;
   onCategoryChange: (category: string) => void;
   onManufacturerChange: (manufacturer: string) => void;
   onPatternChange: (pattern: string) => void;
   onCollectionChange: (collection: string) => void;
   onQuickShipChange: (value: boolean) => void;
+  onCloseOutChange: (value: boolean) => void;
   onClearAll: () => void;
   isCategoryPage?: boolean;
   isOpen: boolean;
@@ -81,11 +83,13 @@ interface FilterContentProps {
   selectedPatterns: string[];
   selectedCollections: string[];
   selectedQuickShip: boolean;
+  selectedCloseOut: boolean;
   onCategoryChange: (category: string) => void;
   onManufacturerChange: (manufacturer: string) => void;
   onPatternChange: (pattern: string) => void;
   onCollectionChange: (collection: string) => void;
   onQuickShipChange: (value: boolean) => void;
+  onCloseOutChange: (value: boolean) => void;
   onClearAll: () => void;
   isCategoryPage?: boolean;
   isMobile: boolean;
@@ -99,11 +103,13 @@ const FilterContent = memo(function FilterContent({
   selectedPatterns,
   selectedCollections,
   selectedQuickShip,
+  selectedCloseOut,
   onCategoryChange,
   onManufacturerChange,
   onPatternChange,
   onCollectionChange,
   onQuickShipChange,
+  onCloseOutChange,
   onClearAll,
   isCategoryPage = false,
   isMobile,
@@ -209,7 +215,8 @@ const FilterContent = memo(function FilterContent({
           selectedManufacturers?.length > 0 ||
           selectedPatterns?.length > 0 ||
           selectedCollections?.length > 0 ||
-          selectedQuickShip) && (
+          selectedQuickShip ||
+          selectedCloseOut) && (
           <button
             onClick={handleClearAll}
             className="text-sm text-gray-600 hover:text-gray-900"
@@ -231,6 +238,20 @@ const FilterContent = memo(function FilterContent({
             <span className="ml-2 text-sm text-gray-700">
               Quick Ship Available
             </span>
+          </label>
+        </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="CLOSE OUT ITEMS" defaultOpen={!isMobile}>
+        <div className="space-y-2">
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border-gray-300"
+              checked={selectedCloseOut}
+              onChange={() => onCloseOutChange(!selectedCloseOut)}
+            />
+            <span className="ml-2 text-sm text-gray-700">Close Out Items</span>
           </label>
         </div>
       </CollapsibleSection>
@@ -371,11 +392,13 @@ export default function FilterSidebar({
   selectedPatterns = [],
   selectedCollections = [],
   selectedQuickShip = false,
+  selectedCloseOut = false,
   onCategoryChange,
   onManufacturerChange,
   onPatternChange,
   onCollectionChange,
   onQuickShipChange,
+  onCloseOutChange,
   onClearAll,
   isCategoryPage = false,
   isOpen,
@@ -430,11 +453,13 @@ export default function FilterSidebar({
             selectedPatterns={selectedPatterns}
             selectedCollections={selectedCollections}
             selectedQuickShip={selectedQuickShip}
+            selectedCloseOut={selectedCloseOut}
             onCategoryChange={onCategoryChange}
             onManufacturerChange={onManufacturerChange}
             onPatternChange={onPatternChange}
             onCollectionChange={onCollectionChange}
             onQuickShipChange={onQuickShipChange}
+            onCloseOutChange={onCloseOutChange}
             onClearAll={onClearAll}
             isCategoryPage={isCategoryPage}
             isMobile={isMobile}
@@ -485,11 +510,13 @@ export default function FilterSidebar({
             selectedPatterns={selectedPatterns}
             selectedCollections={selectedCollections}
             selectedQuickShip={selectedQuickShip}
+            selectedCloseOut={selectedCloseOut}
             onCategoryChange={onCategoryChange}
             onManufacturerChange={onManufacturerChange}
             onPatternChange={onPatternChange}
             onCollectionChange={onCollectionChange}
             onQuickShipChange={onQuickShipChange}
+            onCloseOutChange={onCloseOutChange}
             onClearAll={onClearAll}
             isCategoryPage={isCategoryPage}
             isMobile={isMobile}
