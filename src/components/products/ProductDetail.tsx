@@ -232,7 +232,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                     {product.title}
                   </h1>
                   <p className="text-gray-600">{product.manufacturer}</p>
-                  {session?.user?.isSuperuser && product.manufacturer && (
+                  {session?.user?.isSalesTeam && product.manufacturer && (
                     <button
                       onClick={() => setShowManufacturerModal(true)}
                       className="mt-3 text-sm text-blue-600 hover:text-blue-800 font-medium hover:underline"
