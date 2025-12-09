@@ -58,3 +58,5 @@ scripts/generate-api-key.js
 /windowsvmstuff
 
 /scripts
+
+*.md

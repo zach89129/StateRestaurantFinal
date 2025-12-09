@@ -172,3 +172,16 @@ model PromotionContent {
 
   @@map("promotion_content")
 }
+
+model ManufacturerDetails {
+  id                  Int      @id @default(autoincrement())
+  sku                 String   @unique
+  manufacturer        String
+  details             String   @db.Text
+  sources             String   @db.Text
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@index([sku])
+  @@map("manufacturer_details")
+}
