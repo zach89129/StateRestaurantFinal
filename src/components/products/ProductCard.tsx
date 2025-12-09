@@ -150,6 +150,8 @@ function ProductImageCarousel({
   );
 }
 
+const DEAD_INVENTORY_DEFAULT_VENUE = 94670;
+
 export default function ProductCard({ product }: ProductCardProps) {
   const { data: session } = useSession();
   const { addItem } = useCart();
@@ -159,6 +161,8 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [isLoadingPrice, setIsLoadingPrice] = useState(false);
   const [price, setPrice] = useState<number | null>(null);
   const [priceError, setPriceError] = useState<string | null>(null);
+
+  const isDeadInventory = product.pattern === "_DEAD INVENTORY";
 
   // Reset price when venue changes
   useEffect(() => {
@@ -170,7 +174,9 @@ export default function ProductCard({ product }: ProductCardProps) {
     e.preventDefault();
     e.stopPropagation();
 
-    if (!salesVenue) {
+    const venueId = isDeadInventory ? DEAD_INVENTORY_DEFAULT_VENUE : salesVenue;
+
+    if (!venueId) {
       setPriceError("No venue selected");
       return;
     }
@@ -179,8 +185,9 @@ export default function ProductCard({ product }: ProductCardProps) {
     setPriceError(null);
 
     try {
+      const deadInventoryParam = isDeadInventory ? "&isDeadInventory=true" : "";
       const response = await fetch(
-        `/api/pricing?venueId=${salesVenue}&productId=${product.trx_product_id}`
+        `/api/pricing?venueId=${venueId}&productId=${product.trx_product_id}${deadInventoryParam}`
       );
 
       if (!response.ok) {
@@ -312,8 +319,8 @@ export default function ProductCard({ product }: ProductCardProps) {
                 </div>
               </div>
 
-              {/* Price button for mobile - only show for sales team */}
-              {session?.user?.isSalesTeam && (
+              {/* Price button for mobile - show for sales team or dead inventory */}
+              {(session?.user?.isSalesTeam || isDeadInventory) && (
                 <div className="sm:hidden">
                   <button
                     onClick={handleGetPrice}
@@ -362,8 +369,8 @@ export default function ProductCard({ product }: ProductCardProps) {
                 </button>
               </div>
 
-              {/* Price button for desktop - only show for sales team */}
-              {session.user.isSalesTeam && (
+              {/* Price button for desktop - show for sales team or dead inventory */}
+              {(session.user.isSalesTeam || isDeadInventory) && (
                 <div className="hidden sm:block">
                   <button
                     onClick={handleGetPrice}
@@ -383,17 +390,35 @@ export default function ProductCard({ product }: ProductCardProps) {
               )}
             </div>
           ) : (
-            <div className="text-center w-full">
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  router.push("/login");
-                }}
-                className="text-blue-600 hover:text-blue-800 text-xs sm:text-sm"
-              >
-                Login to purchase
-              </button>
+            <div className="flex flex-col gap-2 w-full">
+              <div className="text-center">
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    router.push("/login");
+                  }}
+                  className="text-blue-600 hover:text-blue-800 text-xs sm:text-sm"
+                >
+                  Login to purchase
+                </button>
+              </div>
+              {isDeadInventory && (
+                <button
+                  onClick={handleGetPrice}
+                  className="price-button w-full text-xs sm:text-sm bg-gray-100 hover:bg-gray-200 py-1.5 rounded text-black"
+                >
+                  {isLoadingPrice ? (
+                    <LoadingSpinner />
+                  ) : price ? (
+                    `${price.toFixed(2)} per ${product.uom}`
+                  ) : priceError ? (
+                    priceError
+                  ) : (
+                    "Get Price"
+                  )}
+                </button>
+              )}
             </div>
           )}
         </div>

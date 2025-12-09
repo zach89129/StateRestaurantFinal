@@ -33,20 +33,22 @@ export async function GET(request: Request) {
   apiKey = apiKey.trim();
 
   try {
-    // Get session to verify user is allowed to see prices
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
     // Parse URL parameters
     const url = new URL(request.url);
     const venueId = url.searchParams.get("venueId");
     const productId = url.searchParams.get("productId");
     const productIds = url.searchParams.get("productIds");
+    const isDeadInventory = url.searchParams.get("isDeadInventory") === "true";
+
+    // Get session to verify user is allowed to see prices
+    // Allow unauthenticated requests only for dead inventory items
+    const session = await getServerSession(authOptions);
+    if (!session?.user && !isDeadInventory) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
     if (!venueId) {
       return NextResponse.json(
