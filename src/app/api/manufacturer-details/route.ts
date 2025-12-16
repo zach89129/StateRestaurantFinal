@@ -26,7 +26,7 @@ interface SerperResponse {
   organic?: SerperResult[];
 }
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession();
 
@@ -37,9 +37,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const searchParams = request.nextUrl.searchParams;
-    const sku = searchParams.get("sku");
-    const manufacturer = searchParams.get("manufacturer");
+    const { stateSku, manufacturer, details } = await request.json();
+
+    const sku = stateSku.split("-").slice(1).join("-");
 
     if (!sku || !manufacturer) {
       return NextResponse.json(
@@ -189,60 +189,67 @@ export async function GET(request: NextRequest) {
       .map(
         (result: SearchResult, index: number) =>
           `Source ${index + 1} - ${result.title || "Unknown"}
-URL: ${result.url}
-Content: ${result.content}`
+    URL: ${result.url}
+    Content: ${result.content}`
       )
       .join("\n\n");
 
     const systemPrompt = `You are a product information specialist. Extract comprehensive factual product information from the provided sources.
 
-CRITICAL RULES - NEVER BREAK THESE:
-1. ABSOLUTELY NO PRICING INFORMATION - Do not include prices, MSRP, costs, or any dollar amounts
-2. NO CUSTOMER REVIEWS OR RATINGS - Only include factual specifications
-3. NO WEBSITE LINKS OR URLs in your response
-4. NO COMPETITOR MENTIONS - Do not name other retailers or suppliers
-5. Be thorough - extract ALL available technical details and specifications
-6. Use PLAIN TEXT ONLY - no markdown formatting, no asterisks, no special characters
-7. Write in clear, simple sentences and bullet points using hyphens (-)
-8. If specific information is not available, state "Information not available"
+    CRITICAL RULES - NEVER BREAK THESE:
+    1. ABSOLUTELY NO PRICING INFORMATION - Do not include prices, MSRP, costs, or any dollar amounts
+    2. NO CUSTOMER REVIEWS OR RATINGS - Only include factual specifications
+    3. NO WEBSITE LINKS OR URLs in your response
+    4. NO COMPETITOR MENTIONS - Do not name other retailers or suppliers
+    5. Be thorough - extract ALL available technical details and specifications
+    6. Use PLAIN TEXT ONLY - no markdown formatting, no asterisks, no special characters
+    7. Write in clear, simple sentences and bullet points using hyphens (-)
+    8. If specific information is not available, state "Information not available"
 
-Extract the following information if available:
-- Technical Specifications: dimensions, materials, weight, capacity, voltage, power, features, construction details, certifications
-- Material Details & Construction: materials used, build quality, design features
-- Care & Maintenance Instructions: cleaning, maintenance requirements
-- Warranty Information: warranty terms and coverage
-- Certifications & Compliance: safety certifications (NSF, UL, FDA, etc.), compliance standards`;
+    Extract the following information if available:
+    - Technical Specifications: dimensions, materials, weight, capacity, voltage, power, features, construction details, certifications
+    - Material Details & Construction: materials used, build quality, design features
+    - Care & Maintenance Instructions: cleaning, maintenance requirements
+    - Warranty Information: warranty terms and coverage
+    - Certifications & Compliance: safety certifications (NSF, UL, FDA, etc.), compliance standards
+
+    If any of the above categories have duplicate information, consolidate it so that we dont have repeating information in the response. the response should be concise and informative with minimal repeating or redundant information.
+    `;
 
     const userPrompt = `Product SKU: ${sku}
-Manufacturer: ${manufacturer}
+    Manufacturer: ${manufacturer}
+    In-House product details: ${details}
 
-Extract ALL available product information from the following sources. Be thorough and detailed. Remember: NO pricing, NO reviews, NO links, NO competitor mentions, NO markdown formatting.
+    Extract ALL available product information from the following sources. Be thorough and detailed. Remember: NO pricing, NO reviews, NO links, NO competitor mentions, NO markdown formatting.
 
-SOURCES TO ANALYZE:
-${contextText}
+    SOURCES TO ANALYZE:
+    ${contextText}
 
-Provide a comprehensive response in PLAIN TEXT with these exact section labels:
+    Provide a comprehensive response in PLAIN TEXT with these exact section labels (NOTE: IMPORTANT if there is repeating information between the labels or redundancy, consolidate the response to be consice and avoid repeating information or sections .):
 
-Technical Specifications:
-(List all specifications as simple bullet points with hyphens. Include dimensions, weight, capacity, voltage, power, materials, features, certifications)
+    Technical Specifications:
+    (List all specifications as simple bullet points with hyphens. Include dimensions, weight, capacity, voltage, power, materials, features, certifications)
 
-Materials & Construction:
-(Describe materials used, build quality, and design features in simple sentences)
+    Materials & Construction:
+    (Describe materials used, build quality, and design features in simple sentences)
 
-Care & Maintenance:
-(List cleaning and maintenance instructions as simple bullet points)
+    Care & Maintenance:
+    (List cleaning and maintenance instructions as simple bullet points)
 
-Warranty:
-(State warranty terms in simple sentences)
+    Warranty:
+    (State warranty terms in simple sentences)
 
-Certifications:
-(List any safety certifications like NSF, UL, FDA, etc.)
+    Certifications:
+    (List any safety certifications like NSF, UL, FDA, etc.)
 
-Format rules:
-- Use simple hyphens (-) for bullet points
-- NO asterisks, NO bold text, NO special formatting
-- Write clear, concise sentences
-- Keep it readable and professional`;
+    Response filter rules IMPORTANT: 
+    - If the data gathered from the web sources does not roughly match the In-House product details, it is probably not a match and you should just say that no information was found. 
+
+    Format rules:
+    - Use simple hyphens (-) for bullet points
+    - NO asterisks, NO bold text, NO special formatting
+    - Write clear, concise sentences
+    - Keep it readable and professional`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
@@ -300,14 +307,15 @@ Format rules:
       };
 
       sections.specifications = cleanSection(specMatch?.[1]);
-      sections.materials = cleanSection(materialMatch?.[1]);
-      sections.care = cleanSection(careMatch?.[1]);
+      // sections.materials = cleanSection(materialMatch?.[1]);
+      // sections.care = cleanSection(careMatch?.[1]);
       sections.warranty = cleanSection(warrantyMatch?.[1]);
       sections.certifications = cleanSection(certMatch?.[1]);
 
       return sections;
     };
 
+    // const parsedDetails = aiResponse;
     const parsedDetails = parseAIResponse(aiResponse);
 
     const detailsPayload = {
@@ -334,6 +342,7 @@ Format rules:
     console.log(
       "[Manufacturer Details] Successfully generated and cached details"
     );
+    console.log(detailsPayload);
 
     return NextResponse.json({
       success: true,

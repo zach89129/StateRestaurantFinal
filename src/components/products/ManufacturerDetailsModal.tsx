@@ -17,6 +17,7 @@ interface ManufacturerDetailsModalProps {
   onClose: () => void;
   sku: string;
   manufacturer: string;
+  inHouseDetails: string;
 }
 
 export default function ManufacturerDetailsModal({
@@ -24,6 +25,7 @@ export default function ManufacturerDetailsModal({
   onClose,
   sku,
   manufacturer,
+  inHouseDetails,
 }: ManufacturerDetailsModalProps) {
   const [details, setDetails] = useState<ManufacturerDetails | null>(null);
   const [loading, setLoading] = useState(false);
@@ -42,11 +44,18 @@ export default function ManufacturerDetailsModal({
     setError(null);
 
     try {
-      const response = await fetch(
-        `/api/manufacturer-details?sku=${encodeURIComponent(
-          sku
-        )}&manufacturer=${encodeURIComponent(manufacturer)}`
-      );
+      const body = {
+        stateSku: encodeURIComponent(sku),
+        manufacturer: encodeURIComponent(manufacturer),
+        details: inHouseDetails,
+      };
+      const response = await fetch(`/api/manufacturer-details?`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
 
       const data = await response.json();
 
@@ -151,7 +160,7 @@ export default function ManufacturerDetailsModal({
                   content={details.specifications}
                 />
 
-                <DetailSection
+                {/* <DetailSection
                   title="Materials & Construction"
                   content={details.materials}
                 />
@@ -159,7 +168,7 @@ export default function ManufacturerDetailsModal({
                 <DetailSection
                   title="Care & Maintenance"
                   content={details.care}
-                />
+                /> */}
 
                 <DetailSection
                   title="Warranty Information"
