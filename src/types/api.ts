@@ -52,6 +52,7 @@ export interface ProductInput {
       aqcat?: string;
       pattern?: string;
       quickship?: boolean;
+      aqid?: string | number;
     };
     images?: { src: string }[];
   }[];

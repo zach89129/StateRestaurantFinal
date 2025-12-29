@@ -319,7 +319,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                   {product.title}
                 </h1>
                 <p className="text-gray-600">{product.manufacturer}</p>
-                {session?.user?.isSalesTeam && product.manufacturer && (
+                {product.manufacturer && (
                   <button
                     onClick={handleGetManufacturerDetails}
                     disabled={isLoadingManufacturerDetails}
@@ -364,7 +364,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
               )}
 
               {/* Manufacturer Details Section - Inline */}
-              {session?.user?.isSalesTeam && product.manufacturer && (
+              {product.manufacturer && (
                 <div className="mt-6 pt-6 border-t">
                   {showManufacturerDetails && (
                     <div className="space-y-2">

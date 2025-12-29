@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import OpenAI from "openai";
 
@@ -28,15 +27,6 @@ interface SerperResponse {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession();
-
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
     const { stateSku, manufacturer, details } = await request.json();
 
     const sku = stateSku.split("-").slice(1).join("-");

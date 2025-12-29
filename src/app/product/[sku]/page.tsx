@@ -51,8 +51,9 @@ export default async function ProductPage({ params }: PageProps) {
     category: product.category || "",
     uom: product.uom || "",
     qtyAvailable: product.qtyAvailable ? Number(product.qtyAvailable) : 0,
-    aqcat: product.aqcat || "",
-    pattern: product.pattern || "",
+    aqcat: product.aqcat || null,
+    pattern: product.pattern || null,
+    aqid: product.aqid || null,
     quickship: product.quickship || false,
     images: product.images.map((img) => ({ url: img.url })),
   };

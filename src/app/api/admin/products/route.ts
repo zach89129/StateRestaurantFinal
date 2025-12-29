@@ -15,6 +15,7 @@ type SerializedProduct = {
   qtyAvailable: number;
   aqcat: string | null;
   pattern: string | null;
+  aqid: string | null;
   quickship: boolean;
   images: {
     id: string;
@@ -60,6 +61,7 @@ function serializeProduct(product: any): SerializedProduct {
     qtyAvailable: product.qtyAvailable ? Number(product.qtyAvailable) : 0,
     aqcat: product.aqcat,
     pattern: product.pattern,
+    aqid: product.aqid,
     quickship: product.quickship || false,
     images: product.images.map((img: any) => ({
       id: String(img.id),

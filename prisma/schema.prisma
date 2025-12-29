@@ -20,6 +20,7 @@ model Product {
   tags            String?
   aqcat           String?        @map("aqcat") @db.VarChar(255)
   pattern         String?        @map("pattern") @db.VarChar(255)
+  aqid            String?        @map("aqid") @db.VarChar(255)
   quickship       Boolean?       @default(false) @map("quickship")
   images          ProductImage[]
   venueProducts   VenueProduct[] @relation("ProductToVenueProduct")

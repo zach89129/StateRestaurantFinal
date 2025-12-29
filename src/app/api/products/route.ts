@@ -78,6 +78,10 @@ export async function POST(request: NextRequest) {
             tags: product.tags,
             aqcat: product.metaData?.aqcat,
             pattern: product.metaData?.pattern,
+            aqid:
+              product.metaData?.aqid !== undefined
+                ? String(product.metaData.aqid)
+                : undefined,
             quickship: product.metaData?.quickship,
           };
 
@@ -162,6 +166,10 @@ export async function POST(request: NextRequest) {
               qtyAvailable: product.qty_available,
               aqcat: product.metaData?.aqcat,
               pattern: product.metaData?.pattern,
+              aqid:
+                product.metaData?.aqid !== undefined
+                  ? String(product.metaData.aqid)
+                  : undefined,
               quickship: product.metaData?.quickship || false,
               images: product.images?.length
                 ? {

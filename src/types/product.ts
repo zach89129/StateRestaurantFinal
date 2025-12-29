@@ -10,6 +10,7 @@ export interface Product {
   qtyAvailable: number;
   aqcat: string | null;
   pattern: string | null;
+  aqid: string | number | null;
   quickship: boolean;
   images: { url: string }[];
 }
