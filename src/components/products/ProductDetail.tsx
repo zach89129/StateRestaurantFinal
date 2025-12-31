@@ -1,11 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useCart } from "@/contexts/CartContext";
 import Link from "next/link";
 import QuantityInput from "./QuantityInput";
-import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ShareIcon,
+  EnvelopeIcon,
+  LinkIcon,
+  ChatBubbleLeftRightIcon,
+} from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import { Product } from "@/types/product";
 import { useSalesTeamVenue } from "@/contexts/SalesTeamVenueContext";
@@ -80,12 +87,34 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   const [showManufacturerDetails, setShowManufacturerDetails] = useState(false);
   const [manufacturerDetailsCached, setManufacturerDetailsCached] =
     useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const shareMenuRef = useRef<HTMLDivElement>(null);
 
   // Reset price when venue changes
   useEffect(() => {
     setPrice(null);
     setPriceError(null);
   }, [salesVenue]);
+
+  // Close share menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        shareMenuRef.current &&
+        !shareMenuRef.current.contains(event.target as Node)
+      ) {
+        setShowShareMenu(false);
+      }
+    };
+
+    if (showShareMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showShareMenu]);
 
   const fetchManufacturerDetails = async () => {
     if (!product.manufacturer || !product.sku) return;
@@ -234,6 +263,43 @@ export default function ProductDetail({ product }: ProductDetailProps) {
     return null;
   };
 
+  const getShareUrl = () => {
+    if (typeof window === "undefined") return "";
+    const encodedSku = btoa(product.sku);
+    return `${window.location.origin}/product/${encodedSku}`;
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      const url = getShareUrl();
+      await navigator.clipboard.writeText(url);
+      setShowShareMenu(false);
+    } catch (err) {
+      console.error("Failed to copy link:", err);
+    }
+  };
+
+  const handleEmailShare = () => {
+    const url = getShareUrl();
+    const subject = encodeURIComponent(
+      `Check out this product: ${product.title}`
+    );
+    const body = encodeURIComponent(
+      `I wanted to share this product with you:\n\n${product.title}\n${product.manufacturer}\nSKU: ${product.sku}\n\nView it here: ${url}`
+    );
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    setShowShareMenu(false);
+  };
+
+  const handleTextShare = () => {
+    const url = getShareUrl();
+    const message = encodeURIComponent(
+      `Check out this product: ${product.title} - ${url}`
+    );
+    window.location.href = `sms:?body=${message}`;
+    setShowShareMenu(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -315,9 +381,49 @@ export default function ProductDetail({ product }: ProductDetailProps) {
             {/* Right Column - Info */}
             <div className="space-y-6">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                  {product.title}
-                </h1>
+                <div className="flex items-start justify-between gap-4 mb-2">
+                  <h1 className="text-2xl font-bold text-gray-900 flex-1">
+                    {product.title}
+                  </h1>
+                  <div className="relative" ref={shareMenuRef}>
+                    <button
+                      onClick={() => setShowShareMenu(!showShareMenu)}
+                      className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 active:bg-gray-200 rounded-full transition-colors touch-manipulation"
+                      aria-label="Share product"
+                      aria-expanded={showShareMenu}
+                    >
+                      <ShareIcon className="h-5 w-5" />
+                    </button>
+                    {showShareMenu && (
+                      <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-w-[calc(100vw-2rem)]">
+                        <div className="p-2">
+                          <button
+                            onClick={handleEmailShare}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-700 hover:bg-gray-50 active:bg-gray-100 rounded-md transition-colors touch-manipulation min-h-[44px]"
+                          >
+                            <EnvelopeIcon className="h-5 w-5 text-gray-600 flex-shrink-0" />
+                            <span>Email</span>
+                          </button>
+                          <button
+                            onClick={handleTextShare}
+                            className="sm:hidden w-full flex items-center gap-3 px-4 py-3 text-left text-gray-700 hover:bg-gray-50 active:bg-gray-100 rounded-md transition-colors touch-manipulation min-h-[44px]"
+                          >
+                            <ChatBubbleLeftRightIcon className="h-5 w-5 text-gray-600 flex-shrink-0" />
+                            <span>Text</span>
+                          </button>
+                          <div className="border-t border-gray-200 my-1"></div>
+                          <button
+                            onClick={handleCopyLink}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-700 hover:bg-gray-50 active:bg-gray-100 rounded-md transition-colors touch-manipulation min-h-[44px]"
+                          >
+                            <LinkIcon className="h-5 w-5 text-gray-600 flex-shrink-0" />
+                            <span>Copy Link</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
                 <p className="text-gray-600">{product.manufacturer}</p>
                 {product.manufacturer && (
                   <button
