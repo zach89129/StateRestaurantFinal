@@ -31,19 +31,32 @@ export async function GET(request: NextRequest) {
     const quickShip = searchParams.get("quickShip") === "true";
 
     // Build search criteria
-    const whereClause: Prisma.ProductWhereInput = {
-      OR: [
-        { title: { contains: searchTerm } },
-        { sku: { contains: searchTerm } },
-        { description: { contains: searchTerm } },
-        { longDescription: { contains: searchTerm } },
-        { manufacturer: { contains: searchTerm } },
-        { category: { contains: searchTerm } },
-        { uom: { contains: searchTerm } },
-        { aqcat: { contains: searchTerm } },
-        { pattern: { contains: searchTerm } },
-      ],
-    };
+    // Split search term into individual words and treat all fields as one
+    // Each word must match in at least one field (AND logic across words, OR logic across fields)
+    const searchWords = searchTerm
+      .trim()
+      .split(/\s+/)
+      .filter((word) => word.length > 0);
+
+    const whereClause: Prisma.ProductWhereInput = {};
+
+    // If there are search words, build AND conditions for each word
+    // Each word must match in at least one field (AND logic across words, OR logic across fields)
+    if (searchWords.length > 0) {
+      whereClause.AND = searchWords.map((word) => ({
+        OR: [
+          { title: { contains: word } },
+          { sku: { contains: word } },
+          { description: { contains: word } },
+          { longDescription: { contains: word } },
+          { manufacturer: { contains: word } },
+          { category: { contains: word } },
+          { uom: { contains: word } },
+          { aqcat: { contains: word } },
+          { pattern: { contains: word } },
+        ],
+      }));
+    }
 
     // Add filters if present
     if (categories.length > 0) whereClause.category = { in: categories };
