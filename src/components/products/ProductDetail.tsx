@@ -282,10 +282,10 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   const handleEmailShare = () => {
     const url = getShareUrl();
     const subject = encodeURIComponent(
-      `Check out this product: ${product.title}`
+      `Regarding link to State website product below:`
     );
     const body = encodeURIComponent(
-      `I wanted to share this product with you:\n\n${product.title}\n${product.manufacturer}\nSKU: ${product.sku}\n\nView it here: ${url}`
+      `The item below is from the State website:\n\n${product.title}\n${product.manufacturer}\nSKU: ${product.sku}\n\nView it here: ${url}`
     );
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
     setShowShareMenu(false);
@@ -294,7 +294,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   const handleTextShare = () => {
     const url = getShareUrl();
     const message = encodeURIComponent(
-      `Check out this product: ${product.title} - ${url}`
+      `Please see link to State website product below: ${product.title} - ${url}`
     );
     window.location.href = `sms:?body=${message}`;
     setShowShareMenu(false);
