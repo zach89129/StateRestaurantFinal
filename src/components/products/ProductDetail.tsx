@@ -8,7 +8,7 @@ import QuantityInput from "./QuantityInput";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
-  ShareIcon,
+  ArrowUpTrayIcon,
   EnvelopeIcon,
   LinkIcon,
   ChatBubbleLeftRightIcon,
@@ -392,7 +392,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                       aria-label="Share product"
                       aria-expanded={showShareMenu}
                     >
-                      <ShareIcon className="h-5 w-5" />
+                      <ArrowUpTrayIcon className="h-5 w-5" />
                     </button>
                     {showShareMenu && (
                       <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-w-[calc(100vw-2rem)]">
