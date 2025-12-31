@@ -429,13 +429,13 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                   <button
                     onClick={handleGetManufacturerDetails}
                     disabled={isLoadingManufacturerDetails}
-                    className="mt-3 text-sm text-blue-600 hover:text-blue-800 font-medium hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="mt-3 text-md text-blue-600 hover:text-blue-800 font-medium hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isLoadingManufacturerDetails
                       ? "Loading Manufacturer Details..."
                       : showManufacturerDetails
                       ? "Hide Manufacturer Details"
-                      : "Get Manufacturer Details"}
+                      : "Click here to get more details!"}
                   </button>
                 )}
               </div>
