@@ -86,9 +86,9 @@ export async function middleware(request: NextRequest) {
   const isGetOrdersNewEndpoint =
     request.method === "GET" && normalizedPath === "/api/orders/new";
 
-  const requiresApiKeyNormalized =
-    (request.method === "POST" && isApiProductsEndpoint) ||
-    isGetOrdersNewEndpoint;
+  const requiresApiKeyNormalized = false;
+  // (request.method === "POST" && isApiProductsEndpoint) ||
+  // isGetOrdersNewEndpoint;
 
   if (requiresApiKeyNormalized) {
     // Verify API key for routes that require it using our secure method

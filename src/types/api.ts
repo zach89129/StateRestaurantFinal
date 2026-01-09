@@ -50,9 +50,10 @@ export interface ProductInput {
     tags?: string;
     metaData?: {
       aqcat?: string;
-      pattern?: string;
+      pattern?: string[];
       quickship?: boolean;
       aqid?: string | number;
+      dead?: boolean;
     };
     images?: { src: string }[];
   }[];

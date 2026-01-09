@@ -66,7 +66,7 @@ export default function CategoryNav({
             </li>
             <li>
               <Link
-                href="/products/?pattern_b64=X0RFQUQgSU5WRU5UT1JZ&page=1"
+                href="/products/?dead=true&page=1"
                 className="block text-red-500 underline hover:text-red-400"
                 onClick={onClose}
               >
@@ -110,7 +110,7 @@ export default function CategoryNav({
           </li>
           <li>
             <Link
-              href="/products/?pattern_b64=X0RFQUQgSU5WRU5UT1JZ&page=1"
+              href="/products/?dead=true&page=1"
               className="block px-4 py-2 text-red-500 underline hover:bg-zinc-700 hover:text-red-400"
               onClick={onClose}
             >

@@ -16,7 +16,7 @@ interface Product {
   tags: string | null;
   imageSrc: string | null;
   aqcat: string | null;
-  pattern: string | null;
+  pattern: string[] | null;
   quickship: boolean;
 }
 
@@ -47,7 +47,7 @@ export default function EditProductPage({
         throw new Error(data.error || "Failed to fetch product");
       }
 
-      setProduct(data.product);
+      setProduct(data.product as Product);
     } catch (error) {
       console.error("Error fetching product:", error);
       setError(
@@ -80,7 +80,7 @@ export default function EditProductPage({
           uom: product.uom,
           qtyAvailable: product.qtyAvailable,
           aqcat: product.aqcat,
-          pattern: product.pattern,
+          pattern: product.pattern || null,
           quickship: product.quickship,
           images: product.imageSrc ? [product.imageSrc] : [],
         }),
@@ -301,7 +301,11 @@ export default function EditProductPage({
             type="text"
             id="pattern"
             name="pattern"
-            value={product.pattern || ""}
+            value={
+              Array.isArray(product.pattern)
+                ? product.pattern.join(", ")
+                : product.pattern || ""
+            }
             onChange={handleInputChange}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
           />

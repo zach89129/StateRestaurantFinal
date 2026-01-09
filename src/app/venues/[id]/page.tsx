@@ -21,7 +21,7 @@ interface VenueProduct {
   price: number | null;
   images: { src: string }[];
   aqcat: string | null;
-  pattern: string | null;
+  pattern: string[] | null;
   quickship: boolean;
 }
 
@@ -41,7 +41,7 @@ interface VenueProductsResponse {
     price: number | null;
     images: { src: string }[];
     aqcat: string | null;
-    pattern: string | null;
+    pattern: string[] | null;
     quickship: boolean;
   }[];
 }
@@ -106,7 +106,8 @@ export default function VenuePage({
 
         const matchesPattern =
           selectedPatterns.length === 0 ||
-          (product.pattern && selectedPatterns.includes(product.pattern));
+          (product.pattern &&
+            product.pattern.some((p) => selectedPatterns.includes(p)));
 
         const matchesCollection =
           selectedCollections.length === 0 ||
@@ -375,7 +376,9 @@ export default function VenuePage({
     products.forEach((product) => {
       if (product.category) categories.add(product.category);
       if (product.manufacturer) manufacturers.add(product.manufacturer);
-      if (product.pattern) patterns.add(product.pattern);
+      if (product.pattern) {
+        product.pattern.forEach((p) => patterns.add(p));
+      }
       if (product.aqcat) collections.add(product.aqcat);
     });
 
@@ -420,7 +423,8 @@ export default function VenuePage({
     if (selectedPatterns.length > 0) {
       filteredProducts = filteredProducts.filter(
         (product) =>
-          product.pattern && selectedPatterns.includes(product.pattern)
+          product.pattern &&
+          product.pattern.some((p) => selectedPatterns.includes(p))
       );
     }
 
@@ -446,8 +450,11 @@ export default function VenuePage({
     filteredProducts.forEach((product) => {
       if (product.category) categories.add(product.category);
       if (product.manufacturer) manufacturers.add(product.manufacturer);
-      if (product.pattern && product.pattern !== "")
-        patterns.add(product.pattern);
+      if (product.pattern) {
+        product.pattern.forEach((p) => {
+          if (p && p !== "") patterns.add(p);
+        });
+      }
       if (product.aqcat && product.aqcat !== "") collections.add(product.aqcat);
     });
 

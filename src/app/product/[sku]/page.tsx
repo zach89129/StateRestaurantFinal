@@ -52,9 +52,16 @@ export default async function ProductPage({ params }: PageProps) {
     uom: product.uom || "",
     qtyAvailable: product.qtyAvailable ? Number(product.qtyAvailable) : 0,
     aqcat: product.aqcat || null,
-    pattern: product.pattern || null,
+    pattern:
+      product.pattern && typeof product.pattern === "string"
+        ? product.pattern
+            .split(",")
+            .map((p: string) => p.trim())
+            .filter(Boolean)
+        : null,
     aqid: product.aqid || null,
     quickship: product.quickship || false,
+    dead: product.dead || false,
     images: product.images.map((img) => ({ url: img.url })),
   };
 

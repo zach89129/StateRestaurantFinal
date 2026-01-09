@@ -26,9 +26,10 @@ interface Product {
   uom: string;
   qtyAvailable: number;
   aqcat: string | null;
-  pattern: string | null;
+  pattern: string[] | null;
   quickship: boolean;
   images: { url: string }[];
+  dead: boolean;
 }
 
 interface ProductCardProps {
@@ -162,7 +163,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [price, setPrice] = useState<number | null>(null);
   const [priceError, setPriceError] = useState<string | null>(null);
 
-  const isDeadInventory = product.pattern === "_DEAD INVENTORY";
+  const isDeadInventory = product.dead ?? false;
 
   // Reset price when venue changes
   useEffect(() => {
@@ -233,12 +234,11 @@ export default function ProductCard({ product }: ProductCardProps) {
     router.push(`/products?category_b64=${base64Category}&page=1`);
   };
 
-  const handleMoreOfPattern = (e: React.MouseEvent) => {
+  const handleMoreOfPattern = (e: React.MouseEvent, pattern: string) => {
     e.preventDefault();
-    if (product.pattern) {
-      const base64Pattern = btoa(product.pattern);
-      router.push(`/products?pattern_b64=${base64Pattern}&page=1`);
-    }
+    e.stopPropagation();
+    const base64Pattern = btoa(pattern);
+    router.push(`/products?pattern_b64=${base64Pattern}&page=1`);
   };
 
   const handleMoreFromCollection = (e: React.MouseEvent) => {
@@ -283,12 +283,12 @@ export default function ProductCard({ product }: ProductCardProps) {
           {/* Info section */}
           <div className="flex flex-col justify-between flex-1 min-w-0">
             {/* Title and price button section */}
-            <div className="flex justify-between items-start">
-              <div className="space-y-0.5 sm:space-y-2 flex-1">
+            <div className="flex justify-between items-start gap-2">
+              <div className="space-y-0.5 sm:space-y-2 flex-1 min-w-0">
                 <h3 className="font-medium text-gray-900 text-xs sm:text-sm line-clamp-2">
                   SKU: {product.sku}
                 </h3>
-                <p className="text-xs sm:text-sm text-gray-900 truncate">
+                <p className="text-xs sm:text-sm text-gray-900 truncate overflow-hidden text-ellipsis whitespace-nowrap">
                   {product.manufacturer}
                 </p>
                 <p className="text-xs sm:text-sm text-gray-600 line-clamp-2">
@@ -308,14 +308,18 @@ export default function ProductCard({ product }: ProductCardProps) {
                       More Like This: {product.aqcat}
                     </button>
                   )}
-                  {product.pattern && (
-                    <button
-                      onClick={handleMoreOfPattern}
-                      className="text-xs text-blue-600 hover:text-blue-800 text-left capitalize"
-                    >
-                      More of This Pattern: {product.pattern.toLowerCase()}
-                    </button>
-                  )}
+                  {product.pattern &&
+                    Array.isArray(product.pattern) &&
+                    product.pattern.length > 0 &&
+                    product.pattern.map((pattern: string, index: number) => (
+                      <button
+                        key={index}
+                        onClick={(e) => handleMoreOfPattern(e, pattern)}
+                        className="text-xs text-blue-600 hover:text-blue-800 text-left capitalize"
+                      >
+                        More of This Pattern: {pattern.toLowerCase()}
+                      </button>
+                    ))}
                 </div>
               </div>
 

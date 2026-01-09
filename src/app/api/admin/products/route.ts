@@ -14,7 +14,7 @@ type SerializedProduct = {
   uom: string | null;
   qtyAvailable: number;
   aqcat: string | null;
-  pattern: string | null;
+  pattern: string[] | null;
   aqid: string | null;
   quickship: boolean;
   images: {
@@ -60,7 +60,9 @@ function serializeProduct(product: any): SerializedProduct {
     uom: product.uom,
     qtyAvailable: product.qtyAvailable ? Number(product.qtyAvailable) : 0,
     aqcat: product.aqcat,
-    pattern: product.pattern,
+    pattern: product.pattern
+      ? product.pattern.split(",").map((p: string) => p.trim())
+      : null,
     aqid: product.aqid,
     quickship: product.quickship || false,
     images: product.images.map((img: any) => ({
@@ -231,7 +233,7 @@ export async function POST(
         uom,
         qtyAvailable,
         aqcat: aqcat || null,
-        pattern: pattern || null,
+        pattern: Array.isArray(pattern) ? pattern.join(",") : pattern || null,
         quickship: quickship || false,
         images: {
           createMany: {
@@ -302,7 +304,7 @@ export async function PUT(
         uom,
         qtyAvailable,
         aqcat: aqcat || null,
-        pattern: pattern || null,
+        pattern: Array.isArray(pattern) ? pattern.join(",") : pattern || null,
         quickship: quickship || false,
         images: {
           createMany: {

@@ -19,9 +19,10 @@ interface Product {
   uom: string;
   qtyAvailable: number;
   aqcat: string | null;
-  pattern: string | null;
+  pattern: string[] | null;
   quickship: boolean;
   images: { url: string }[];
+  dead: boolean;
 }
 
 interface PaginationInfo {
@@ -82,12 +83,7 @@ function ProductsContent() {
   const selectedCollections =
     searchParams.get("collection_b64")?.split(",").filter(Boolean) || [];
   const selectedQuickShip = searchParams.get("quickShip") === "true";
-
-  // Check if _DEAD INVENTORY pattern is selected
-  const DEAD_INVENTORY_PATTERN_B64 = "X0RFQUQgSU5WRU5UT1JZ";
-  const selectedCloseOut = selectedPatterns.includes(
-    DEAD_INVENTORY_PATTERN_B64
-  );
+  const selectedCloseOut = searchParams.get("dead") === "true";
 
   // Fetch products with current filters and pagination
   useEffect(() => {
@@ -230,26 +226,10 @@ function ProductsContent() {
 
   const handleCloseOutChange = (value: boolean) => {
     const params = new URLSearchParams(searchParams.toString());
-    const currentPatterns =
-      params.get("pattern_b64")?.split(",").filter(Boolean) || [];
-
     if (value) {
-      // Add _DEAD INVENTORY pattern if not already present
-      if (!currentPatterns.includes(DEAD_INVENTORY_PATTERN_B64)) {
-        currentPatterns.push(DEAD_INVENTORY_PATTERN_B64);
-      }
+      params.set("dead", "true");
     } else {
-      // Remove _DEAD INVENTORY pattern
-      const index = currentPatterns.indexOf(DEAD_INVENTORY_PATTERN_B64);
-      if (index > -1) {
-        currentPatterns.splice(index, 1);
-      }
-    }
-
-    if (currentPatterns.length > 0) {
-      params.set("pattern_b64", currentPatterns.join(","));
-    } else {
-      params.delete("pattern_b64");
+      params.delete("dead");
     }
     params.set("page", "1");
     router.push(`/products?${params.toString()}`, { scroll: false });

@@ -77,12 +77,17 @@ export async function POST(request: NextRequest) {
             qtyAvailable: product.qty_available,
             tags: product.tags,
             aqcat: product.metaData?.aqcat,
-            pattern: product.metaData?.pattern,
+            pattern: product.metaData?.pattern
+              ? Array.isArray(product.metaData.pattern)
+                ? product.metaData.pattern.join(",")
+                : product.metaData.pattern
+              : undefined,
             aqid:
               product.metaData?.aqid !== undefined
                 ? String(product.metaData.aqid)
                 : undefined,
             quickship: product.metaData?.quickship,
+            dead: product.metaData?.dead,
           };
 
           // Only include defined fields in update
@@ -123,6 +128,10 @@ export async function POST(request: NextRequest) {
             trx_product_id: Number(updatedProduct.id),
             ...updatedProduct,
             id: undefined,
+            pattern: updatedProduct.pattern
+              ? updatedProduct.pattern.split(",").map((p) => p.trim())
+              : null,
+            dead: updatedProduct.dead || false,
             images: updatedProduct.images.map((img) => ({ url: img.url })),
           });
         } else {
@@ -165,12 +174,17 @@ export async function POST(request: NextRequest) {
               uom: product.uom,
               qtyAvailable: product.qty_available,
               aqcat: product.metaData?.aqcat,
-              pattern: product.metaData?.pattern,
+              pattern: product.metaData?.pattern
+                ? Array.isArray(product.metaData.pattern)
+                  ? product.metaData.pattern.join(",")
+                  : product.metaData.pattern
+                : undefined,
               aqid:
                 product.metaData?.aqid !== undefined
                   ? String(product.metaData.aqid)
                   : undefined,
               quickship: product.metaData?.quickship || false,
+              dead: product.metaData?.dead || false,
               images: product.images?.length
                 ? {
                     createMany: {
@@ -194,6 +208,10 @@ export async function POST(request: NextRequest) {
             trx_product_id: Number(newProduct.id),
             ...newProduct,
             id: undefined,
+            pattern: newProduct.pattern
+              ? newProduct.pattern.split(",").map((p) => p.trim())
+              : null,
+            dead: newProduct.dead || false,
             images: newProduct.images.map((img) => ({ src: img.url })),
           });
         }
@@ -276,13 +294,20 @@ export async function GET(request: NextRequest) {
     const collection = searchParams.get("collection_b64")
       ? decodeBase64(searchParams.get("collection_b64"))
       : null;
-    const pattern = searchParams.get("pattern_b64")
+    const patternParam = searchParams.get("pattern_b64")
       ? decodeBase64(searchParams.get("pattern_b64"))
       : searchParams.get("pattern")?.trim();
+    const patterns = patternParam
+      ? patternParam
+          .split(",")
+          .filter(Boolean)
+          .map((p) => p.trim())
+      : [];
 
     const quickShip = searchParams.get("quickShip") === "true";
+    const dead = searchParams.get("dead") === "true";
 
-    // Build where clause
+    // Build where clause (pattern filtering done in application code)
     const whereClause: Prisma.ProductWhereInput = {};
     const conditions: Prisma.ProductWhereInput[] = [];
 
@@ -291,25 +316,44 @@ export async function GET(request: NextRequest) {
     if (manufacturers.length > 0)
       conditions.push({ manufacturer: { in: manufacturers } });
     if (collection) conditions.push({ aqcat: collection });
-    if (pattern) conditions.push({ pattern: { equals: pattern } });
+    // Pattern filtering will be done in application code after fetching
+    // because we need to check if any pattern in the comma-separated string matches
     if (quickShip) conditions.push({ quickship: { equals: true } });
+    if (dead) conditions.push({ dead: { equals: true } });
 
     // Add conditions if there are any
     if (conditions.length > 0) {
       whereClause.AND = conditions;
     }
 
-    // Get total count for pagination
-    const total = await prisma.product.count({ where: whereClause });
-
-    // Get products with pagination
-    const products = await prisma.product.findMany({
+    // Get all products matching other filters (pattern filtering done in code)
+    let allProducts = await prisma.product.findMany({
       where: whereClause,
       include: { images: true },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-      orderBy: { title: sort === "name-desc" ? "desc" : "asc" },
     });
+
+    // Filter by patterns if specified (check if any pattern in comma-separated string matches)
+    if (patterns.length > 0) {
+      allProducts = allProducts.filter((product) => {
+        if (!product.pattern) return false;
+        const productPatterns = product.pattern.split(",").map((p) => p.trim());
+        return productPatterns.some((p) => patterns.includes(p));
+      });
+    }
+
+    // Sort products
+    allProducts.sort((a, b) => {
+      if (sort === "name-desc") {
+        return b.title.localeCompare(a.title);
+      }
+      return a.title.localeCompare(b.title);
+    });
+
+    // Get total count after pattern filtering
+    const total = allProducts.length;
+
+    // Apply pagination
+    const products = allProducts.slice((page - 1) * pageSize, page * pageSize);
 
     // Fetch filter options
     const noFiltersApplied = conditions.length === 0;
@@ -336,7 +380,6 @@ export async function GET(request: NextRequest) {
         }),
         prisma.product.findMany({
           select: { pattern: true },
-          distinct: ["pattern"],
           where: { pattern: { not: null } },
         }),
         prisma.product.findMany({
@@ -356,10 +399,17 @@ export async function GET(request: NextRequest) {
           .map((m) => m.manufacturer)
           .filter(Boolean)
           .sort(),
-        availablePatterns: allPatterns
-          .map((p) => p.pattern)
-          .filter(Boolean)
-          .sort(),
+        availablePatterns: [
+          ...new Set(
+            allPatterns.flatMap((p) => {
+              if (!p.pattern) return [];
+              return p.pattern
+                .split(",")
+                .map((pat) => pat.trim())
+                .filter(Boolean);
+            })
+          ),
+        ].sort(),
         availableCollections: allCollections
           .map((c) => c.aqcat)
           .filter(Boolean)
@@ -368,7 +418,7 @@ export async function GET(request: NextRequest) {
       };
     } else {
       // Get filtered options based on current filter state
-      const allFilteredProducts = await prisma.product.findMany({
+      let allFilteredProducts = await prisma.product.findMany({
         where: whereClause,
         select: {
           category: true,
@@ -378,6 +428,17 @@ export async function GET(request: NextRequest) {
           quickship: true,
         },
       });
+
+      // Apply pattern filtering if specified
+      if (patterns.length > 0) {
+        allFilteredProducts = allFilteredProducts.filter((product) => {
+          if (!product.pattern) return false;
+          const productPatterns = product.pattern
+            .split(",")
+            .map((p) => p.trim());
+          return productPatterns.some((p) => patterns.includes(p));
+        });
+      }
 
       // Get all categories if category filter is applied
       const availableCategories =
@@ -406,7 +467,15 @@ export async function GET(request: NextRequest) {
           ),
         ].sort(),
         availablePatterns: [
-          ...new Set(allFilteredProducts.map((p) => p.pattern).filter(Boolean)),
+          ...new Set(
+            allFilteredProducts.flatMap((p) => {
+              if (!p.pattern) return [];
+              return p.pattern
+                .split(",")
+                .map((pat) => pat.trim())
+                .filter(Boolean);
+            })
+          ),
         ].sort(),
         availableCollections: [
           ...new Set(allFilteredProducts.map((p) => p.aqcat).filter(Boolean)),
@@ -424,6 +493,10 @@ export async function GET(request: NextRequest) {
       category: product.category || "",
       manufacturer: product.manufacturer || "",
       description: product.description || "",
+      pattern: product.pattern
+        ? product.pattern.split(",").map((p) => p.trim())
+        : null,
+      dead: product.dead || false,
       images: product.images.map((img) => ({ url: img.url })),
     }));
 
@@ -443,9 +516,10 @@ export async function GET(request: NextRequest) {
       filters: {
         appliedCategories: categories || [],
         appliedManufacturers: manufacturers || [],
-        appliedPattern: pattern || "",
+        appliedPattern: patterns.join(",") || "",
         appliedCollection: collection || "",
         appliedQuickShip: quickShip,
+        appliedDead: dead,
         ...filterOptions,
       },
     });

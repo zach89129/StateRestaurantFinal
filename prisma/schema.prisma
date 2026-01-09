@@ -22,6 +22,7 @@ model Product {
   pattern         String?        @map("pattern") @db.VarChar(255)
   aqid            String?        @map("aqid") @db.VarChar(255)
   quickship       Boolean?       @default(false) @map("quickship")
+  dead            Boolean?       @default(false) @map("dead")
   images          ProductImage[]
   venueProducts   VenueProduct[] @relation("ProductToVenueProduct")
 

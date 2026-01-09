@@ -230,11 +230,9 @@ export default function ProductDetail({ product }: ProductDetailProps) {
     );
   };
 
-  const handleMoreOfPattern = () => {
-    if (product.pattern) {
-      const encodedPattern = btoa(product.pattern);
-      router.push(`/products?pattern_b64=${encodedPattern}&page=1`);
-    }
+  const handleMoreOfPattern = (pattern: string) => {
+    const encodedPattern = btoa(pattern);
+    router.push(`/products?pattern_b64=${encodedPattern}&page=1`);
   };
 
   const handleMoreFromCollection = () => {
@@ -585,14 +583,18 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                       More Like This: {product.aqcat}
                     </button>
                   )}
-                  {product.pattern && (
-                    <button
-                      onClick={handleMoreOfPattern}
-                      className="text-blue-600 hover:text-blue-800 text-left capitalize"
-                    >
-                      More of This Pattern: {product.pattern.toLowerCase()}
-                    </button>
-                  )}
+                  {product.pattern &&
+                    Array.isArray(product.pattern) &&
+                    product.pattern.length > 0 &&
+                    product.pattern.map((pattern: string, index: number) => (
+                      <button
+                        key={index}
+                        onClick={() => handleMoreOfPattern(pattern)}
+                        className="text-blue-600 hover:text-blue-800 text-left capitalize"
+                      >
+                        More of This Pattern: {pattern.toLowerCase()}
+                      </button>
+                    ))}
                 </div>
               </div>
 

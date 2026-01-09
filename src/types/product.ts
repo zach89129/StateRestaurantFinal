@@ -9,8 +9,9 @@ export interface Product {
   uom: string;
   qtyAvailable: number;
   aqcat: string | null;
-  pattern: string | null;
+  pattern: string[] | null;
   aqid: string | number | null;
   quickship: boolean;
+  dead: boolean;
   images: { url: string }[];
 }

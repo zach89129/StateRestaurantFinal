@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
     const patterns = decodeParams("pattern_b64");
     const collections = decodeParams("collection_b64");
     const quickShip = searchParams.get("quickShip") === "true";
+    const dead = searchParams.get("dead") === "true";
 
     // Build search criteria
     // Split search term into individual words and treat all fields as one
@@ -77,11 +78,13 @@ export async function GET(request: NextRequest) {
     if (collections.length > 0) {
       andConditions.push({ aqcat: { in: collections } });
     }
-    if (patterns.length > 0) {
-      andConditions.push({ pattern: { in: patterns } });
-    }
+    // Pattern filtering will be done in application code after fetching
+    // because we need to check if any pattern in the comma-separated string matches
     if (quickShip) {
       andConditions.push({ quickship: { equals: true } });
+    }
+    if (dead) {
+      andConditions.push({ dead: { equals: true } });
     }
 
     // Only add AND if we have conditions
@@ -137,6 +140,15 @@ export async function GET(request: NextRequest) {
       include: { images: true },
     });
 
+    // Filter by patterns if specified (check if any pattern in comma-separated string matches)
+    if (patterns.length > 0) {
+      products = products.filter((product) => {
+        if (!product.pattern) return false;
+        const productPatterns = product.pattern.split(",").map((p) => p.trim());
+        return productPatterns.some((p) => patterns.includes(p));
+      });
+    }
+
     // Post-filter to ensure whole word matches only
     if (searchWords.length > 0) {
       const wordRegexes = searchWords.map((word) => {
@@ -148,6 +160,9 @@ export async function GET(request: NextRequest) {
         // Each search word must match as a whole word in at least one field
         return searchWords.every((word, idx) => {
           const regex = wordRegexes[idx];
+          const productPatterns = product.pattern
+            ? product.pattern.split(",").map((p) => p.trim())
+            : [];
           const searchableFields = [
             product.title,
             product.sku,
@@ -157,7 +172,7 @@ export async function GET(request: NextRequest) {
             product.category,
             product.uom,
             product.aqcat,
-            product.pattern,
+            ...productPatterns,
           ]
             .filter(Boolean)
             .join(" ");
@@ -181,6 +196,10 @@ export async function GET(request: NextRequest) {
       trx_product_id: Number(product.id),
       id: Number(product.id),
       qtyAvailable: Number(product.qtyAvailable),
+      pattern: product.pattern
+        ? product.pattern.split(",").map((p) => p.trim())
+        : null,
+      dead: product.dead || false,
       images: product.images.map((img) => ({ url: img.url })),
     }));
 
@@ -222,7 +241,10 @@ export async function GET(request: NextRequest) {
             matches.push("uom");
           if (product.aqcat?.toLowerCase().includes(wordLower))
             matches.push("aqcat");
-          if (product.pattern?.toLowerCase().includes(wordLower))
+          const productPatterns = product.pattern
+            ? product.pattern.split(",").map((p) => p.trim())
+            : [];
+          if (productPatterns.some((p) => p?.toLowerCase().includes(wordLower)))
             matches.push("pattern");
 
           console.log(
@@ -260,7 +282,10 @@ export async function GET(request: NextRequest) {
                 fieldValue = product.aqcat || "";
                 break;
               case "pattern":
-                fieldValue = product.pattern || "";
+                const productPatterns = product.pattern
+                  ? product.pattern.split(",").map((p) => p.trim())
+                  : [];
+                fieldValue = productPatterns.join(", ") || "";
                 break;
             }
             console.log(`    ${field}: "${fieldValue}"`);
@@ -298,6 +323,9 @@ export async function GET(request: NextRequest) {
       allMatchingProducts = allMatchingProducts.filter((product) => {
         return searchWords.every((word, idx) => {
           const regex = wordRegexes[idx];
+          const productPatterns = product.pattern
+            ? product.pattern.split(",").map((p) => p.trim())
+            : [];
           const searchableFields = [
             product.title,
             product.sku,
@@ -307,13 +335,22 @@ export async function GET(request: NextRequest) {
             product.category,
             product.uom,
             product.aqcat,
-            product.pattern,
+            ...productPatterns,
           ]
             .filter(Boolean)
             .join(" ");
 
           return regex.test(searchableFields);
         });
+      });
+    }
+
+    // Filter by patterns if specified
+    if (patterns.length > 0) {
+      allMatchingProducts = allMatchingProducts.filter((product) => {
+        if (!product.pattern) return false;
+        const productPatterns = product.pattern.split(",").map((p) => p.trim());
+        return productPatterns.some((p) => patterns.includes(p));
       });
     }
 
@@ -328,7 +365,15 @@ export async function GET(request: NextRequest) {
         ),
       ].sort(),
       availablePatterns: [
-        ...new Set(allMatchingProducts.map((p) => p.pattern).filter(Boolean)),
+        ...new Set(
+          allMatchingProducts.flatMap((p) => {
+            if (!p.pattern) return [];
+            return p.pattern
+              .split(",")
+              .map((pat) => pat.trim())
+              .filter(Boolean);
+          })
+        ),
       ].sort(),
       availableCollections: [
         ...new Set(allMatchingProducts.map((p) => p.aqcat).filter(Boolean)),
@@ -356,6 +401,7 @@ export async function GET(request: NextRequest) {
         appliedCollection: collections.join(",") || "",
         appliedPattern: patterns.join(",") || "",
         appliedQuickShip: quickShip,
+        appliedDead: dead,
       },
     });
   } catch (error) {
