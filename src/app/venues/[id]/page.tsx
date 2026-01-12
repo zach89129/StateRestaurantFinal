@@ -23,6 +23,7 @@ interface VenueProduct {
   aqcat: string | null;
   pattern: string[] | null;
   quickship: boolean;
+  dead: boolean;
 }
 
 interface VenueProductsResponse {
@@ -43,6 +44,7 @@ interface VenueProductsResponse {
     aqcat: string | null;
     pattern: string[] | null;
     quickship: boolean;
+    dead: boolean;
   }[];
 }
 

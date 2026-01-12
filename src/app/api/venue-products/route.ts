@@ -226,6 +226,10 @@ export async function GET(request: NextRequest) {
         venue.venueProduct?.products.map((product) => ({
           ...product,
           id: Number(product.id),
+          pattern: product.pattern
+            ? product.pattern.split(",").map((p) => p.trim())
+            : null,
+          dead: product.dead || false,
           images: product.images.map((img) => ({ src: img.url })),
         })) || [];
 
