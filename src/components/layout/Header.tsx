@@ -362,7 +362,7 @@ export default function Header() {
                       }
                       className="flex items-center justify-between w-full text-gray-300 hover:text-white"
                     >
-                      Venue Products
+                      Order Guide(s)
                       <svg
                         className={`w-4 h-4 transition-transform ${
                           isMobileVenueDropdownOpen ? "rotate-180" : ""
@@ -632,7 +632,7 @@ export default function Header() {
                   onClick={() => setIsVenueDropdownOpen(!isVenueDropdownOpen)}
                   className="hover:text-blue-200 flex items-center gap-1"
                 >
-                  Venue Products
+                  Order Guide(s)
                   <svg
                     className={`w-4 h-4 transition-transform ${
                       isVenueDropdownOpen ? "rotate-180" : ""
