@@ -103,7 +103,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   const [aqDocuments, setAqDocuments] = useState<AqDocument[]>([]);
   const [isLoadingDocuments, setIsLoadingDocuments] = useState(false);
   const [documentsError, setDocumentsError] = useState<string | null>(null);
-  const [showResources, setShowResources] = useState(false);
+  const [showResources, setShowResources] = useState(true);
   const shareMenuRef = useRef<HTMLDivElement>(null);
 
   // Reset price when venue changes
@@ -548,70 +548,6 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                 </div>
               )}
 
-              {product.aqid && (
-                <div className="mt-6 pt-6 border-t">
-                  <button
-                    onClick={() => setShowResources((prev) => !prev)}
-                    className="w-full flex items-center justify-between text-left"
-                    aria-expanded={showResources}
-                  >
-                    <span className="text-lg font-semibold text-gray-900">
-                      Resources
-                    </span>
-                    {showResources ? (
-                      <ChevronUpIcon className="h-5 w-5 text-gray-500" />
-                    ) : (
-                      <ChevronDownIcon className="h-5 w-5 text-gray-500" />
-                    )}
-                  </button>
-                  {showResources && (
-                    <div className="mt-3">
-                      {isLoadingDocuments ? (
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                          <LoadingSpinner />
-                          <span>Loading resources...</span>
-                        </div>
-                      ) : documentsError ? (
-                        <p className="text-sm text-gray-500">
-                          {documentsError}
-                        </p>
-                      ) : aqDocuments.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {aqDocuments.map((doc) => {
-                            const isVideo =
-                              doc.mediaType?.toLowerCase() === "video";
-
-                            return (
-                              <a
-                                key={doc.url}
-                                href={doc.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 hover:border-blue-300 hover:text-blue-700 hover:bg-blue-50 transition-colors"
-                              >
-                                {isVideo ? (
-                                  <PlayCircleIcon className="h-5 w-5 text-gray-500" />
-                                ) : (
-                                  <DocumentTextIcon className="h-5 w-5 text-gray-500" />
-                                )}
-                                <span className="flex-1 truncate">
-                                  {formatDocumentName(doc.name)}
-                                </span>
-                                <ArrowTopRightOnSquareIcon className="h-4 w-4 text-gray-400" />
-                              </a>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-gray-500">
-                          No resources available.
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
               {/* Manufacturer Details Section - Inline */}
               {product.manufacturer && (
                 <div className="mt-6 pt-6 border-t">
@@ -742,6 +678,70 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                     ))}
                 </div>
               </div>
+
+              {product.aqid && (
+                <div className="mt-6 pt-6 border-t">
+                  <button
+                    onClick={() => setShowResources((prev) => !prev)}
+                    className="w-full flex items-center justify-between text-left"
+                    aria-expanded={showResources}
+                  >
+                    <span className="text-lg font-semibold text-gray-900">
+                      Resources
+                    </span>
+                    {showResources ? (
+                      <ChevronUpIcon className="h-5 w-5 text-gray-500" />
+                    ) : (
+                      <ChevronDownIcon className="h-5 w-5 text-gray-500" />
+                    )}
+                  </button>
+                  {showResources && (
+                    <div className="mt-3">
+                      {isLoadingDocuments ? (
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <LoadingSpinner />
+                          <span>Loading resources...</span>
+                        </div>
+                      ) : documentsError ? (
+                        <p className="text-sm text-gray-500">
+                          {documentsError}
+                        </p>
+                      ) : aqDocuments.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {aqDocuments.map((doc) => {
+                            const isVideo =
+                              doc.mediaType?.toLowerCase() === "video";
+
+                            return (
+                              <a
+                                key={doc.url}
+                                href={doc.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 hover:border-blue-300 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+                              >
+                                {isVideo ? (
+                                  <PlayCircleIcon className="h-5 w-5 text-gray-500" />
+                                ) : (
+                                  <DocumentTextIcon className="h-5 w-5 text-gray-500" />
+                                )}
+                                <span className="flex-1 truncate">
+                                  {formatDocumentName(doc.name)}
+                                </span>
+                                <ArrowTopRightOnSquareIcon className="h-4 w-4 text-gray-400" />
+                              </a>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500">
+                          No resources available.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Add to Cart Section - Only show if logged in */}
               {session?.user ? (
