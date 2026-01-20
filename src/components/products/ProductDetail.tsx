@@ -8,10 +8,15 @@ import QuantityInput from "./QuantityInput";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
   ArrowUpTrayIcon,
   EnvelopeIcon,
   LinkIcon,
   ChatBubbleLeftRightIcon,
+  DocumentTextIcon,
+  PlayCircleIcon,
+  ArrowTopRightOnSquareIcon,
 } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import { Product } from "@/types/product";
@@ -60,6 +65,13 @@ interface ProductDetailProps {
   product: Product;
 }
 
+interface AqDocument {
+  name?: string;
+  url: string;
+  mediaType?: string | null;
+  mimeType?: string | null;
+}
+
 export default function ProductDetail({ product }: ProductDetailProps) {
   const { data: session } = useSession();
   const { addItem } = useCart();
@@ -88,6 +100,10 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   const [manufacturerDetailsCached, setManufacturerDetailsCached] =
     useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [aqDocuments, setAqDocuments] = useState<AqDocument[]>([]);
+  const [isLoadingDocuments, setIsLoadingDocuments] = useState(false);
+  const [documentsError, setDocumentsError] = useState<string | null>(null);
+  const [showResources, setShowResources] = useState(false);
   const shareMenuRef = useRef<HTMLDivElement>(null);
 
   // Reset price when venue changes
@@ -115,6 +131,53 @@ export default function ProductDetail({ product }: ProductDetailProps) {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showShareMenu]);
+
+  useEffect(() => {
+    if (!product.aqid) {
+      setAqDocuments([]);
+      setDocumentsError(null);
+      setIsLoadingDocuments(false);
+      return;
+    }
+
+    let isActive = true;
+
+    const loadDocuments = async () => {
+      setIsLoadingDocuments(true);
+      setDocumentsError(null);
+
+      try {
+        const response = await fetch(
+          `/api/products/documents?aqid=${encodeURIComponent(
+            String(product.aqid)
+          )}`
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch documents");
+        }
+
+        const data: { documents?: AqDocument[] } = await response.json();
+
+        if (!isActive) return;
+
+        setAqDocuments(Array.isArray(data.documents) ? data.documents : []);
+      } catch {
+        if (!isActive) return;
+        setDocumentsError("Resources unavailable");
+      } finally {
+        if (isActive) {
+          setIsLoadingDocuments(false);
+        }
+      }
+    };
+
+    loadDocuments();
+
+    return () => {
+      isActive = false;
+    };
+  }, [product.aqid]);
 
   const fetchManufacturerDetails = async () => {
     if (!product.manufacturer || !product.sku) return;
@@ -298,6 +361,24 @@ export default function ProductDetail({ product }: ProductDetailProps) {
     setShowShareMenu(false);
   };
 
+  const formatDocumentName = (name?: string) => {
+    if (!name) return "Document";
+    const normalized = name
+      .replace(/[_-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+    if (!normalized) return "Document";
+    return normalized
+      .split(" ")
+      .map((word) =>
+        word.length > 1
+          ? `${word[0].toUpperCase()}${word.slice(1)}`
+          : word.toUpperCase()
+      )
+      .join(" ");
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -464,6 +545,70 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                         </button>
                       )}
                   </div>
+                </div>
+              )}
+
+              {product.aqid && (
+                <div className="mt-6 pt-6 border-t">
+                  <button
+                    onClick={() => setShowResources((prev) => !prev)}
+                    className="w-full flex items-center justify-between text-left"
+                    aria-expanded={showResources}
+                  >
+                    <span className="text-lg font-semibold text-gray-900">
+                      Resources
+                    </span>
+                    {showResources ? (
+                      <ChevronUpIcon className="h-5 w-5 text-gray-500" />
+                    ) : (
+                      <ChevronDownIcon className="h-5 w-5 text-gray-500" />
+                    )}
+                  </button>
+                  {showResources && (
+                    <div className="mt-3">
+                      {isLoadingDocuments ? (
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <LoadingSpinner />
+                          <span>Loading resources...</span>
+                        </div>
+                      ) : documentsError ? (
+                        <p className="text-sm text-gray-500">
+                          {documentsError}
+                        </p>
+                      ) : aqDocuments.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {aqDocuments.map((doc) => {
+                            const isVideo =
+                              doc.mediaType?.toLowerCase() === "video";
+
+                            return (
+                              <a
+                                key={doc.url}
+                                href={doc.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 hover:border-blue-300 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+                              >
+                                {isVideo ? (
+                                  <PlayCircleIcon className="h-5 w-5 text-gray-500" />
+                                ) : (
+                                  <DocumentTextIcon className="h-5 w-5 text-gray-500" />
+                                )}
+                                <span className="flex-1 truncate">
+                                  {formatDocumentName(doc.name)}
+                                </span>
+                                <ArrowTopRightOnSquareIcon className="h-4 w-4 text-gray-400" />
+                              </a>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500">
+                          No resources available.
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
