@@ -63,6 +63,7 @@ export async function GET(request: NextRequest) {
             { uom: { contains: word } },
             { aqcat: { contains: word } },
             { pattern: { contains: word } },
+            { tags: { contains: word } },
           ],
         });
       });
@@ -94,7 +95,7 @@ export async function GET(request: NextRequest) {
 
     console.log(
       "Where clause structure:",
-      JSON.stringify(whereClause, null, 2)
+      JSON.stringify(whereClause, null, 2),
     );
     console.log("Number of AND conditions:", andConditions.length);
 
@@ -114,6 +115,7 @@ export async function GET(request: NextRequest) {
                 { uom: { contains: searchWords[0] } },
                 { aqcat: { contains: searchWords[0] } },
                 { pattern: { contains: searchWords[0] } },
+                { tags: { contains: searchWords[0] } },
               ],
             },
           ],
@@ -128,7 +130,7 @@ export async function GET(request: NextRequest) {
       });
       console.log(
         `\nProducts matching only "${searchWords[0]}" (first 5):`,
-        onlyFirstWord.length
+        onlyFirstWord.length,
       );
     }
 
@@ -163,6 +165,9 @@ export async function GET(request: NextRequest) {
           const productPatterns = product.pattern
             ? product.pattern.split(",").map((p) => p.trim())
             : [];
+          const productTags = product.tags
+            ? product.tags.split(",").map((t) => t.trim())
+            : [];
           const searchableFields = [
             product.title,
             product.sku,
@@ -173,6 +178,7 @@ export async function GET(request: NextRequest) {
             product.uom,
             product.aqcat,
             ...productPatterns,
+            ...productTags,
           ]
             .filter(Boolean)
             .join(" ");
@@ -187,7 +193,7 @@ export async function GET(request: NextRequest) {
     console.log("Total matching products after whole-word filtering:", total);
     const paginatedProducts = products.slice(
       (page - 1) * pageSize,
-      page * pageSize
+      page * pageSize,
     );
 
     // Format product data
@@ -214,7 +220,7 @@ export async function GET(request: NextRequest) {
         console.log("  Description:", product.description?.substring(0, 100));
         console.log(
           "  Long Description:",
-          product.longDescription?.substring(0, 100)
+          product.longDescription?.substring(0, 100),
         );
         console.log("  Category:", product.category);
         console.log("  Pattern:", product.pattern);
@@ -250,7 +256,7 @@ export async function GET(request: NextRequest) {
           console.log(
             `  Contains "${word}":`,
             matches.length > 0,
-            matches.length > 0 ? `(in: ${matches.join(", ")})` : ""
+            matches.length > 0 ? `(in: ${matches.join(", ")})` : "",
           );
 
           // Show the actual field values that match
@@ -310,6 +316,7 @@ export async function GET(request: NextRequest) {
         description: true,
         longDescription: true,
         uom: true,
+        tags: true,
       },
     });
 
@@ -326,6 +333,9 @@ export async function GET(request: NextRequest) {
           const productPatterns = product.pattern
             ? product.pattern.split(",").map((p) => p.trim())
             : [];
+          const productTags = product.tags
+            ? product.tags.split(",").map((t) => t.trim())
+            : [];
           const searchableFields = [
             product.title,
             product.sku,
@@ -336,6 +346,7 @@ export async function GET(request: NextRequest) {
             product.uom,
             product.aqcat,
             ...productPatterns,
+            ...productTags,
           ]
             .filter(Boolean)
             .join(" ");
@@ -361,7 +372,7 @@ export async function GET(request: NextRequest) {
       ].sort(),
       availableManufacturers: [
         ...new Set(
-          allMatchingProducts.map((p) => p.manufacturer).filter(Boolean)
+          allMatchingProducts.map((p) => p.manufacturer).filter(Boolean),
         ),
       ].sort(),
       availablePatterns: [
@@ -372,7 +383,7 @@ export async function GET(request: NextRequest) {
               .split(",")
               .map((pat) => pat.trim())
               .filter(Boolean);
-          })
+          }),
         ),
       ].sort(),
       availableCollections: [
@@ -408,7 +419,7 @@ export async function GET(request: NextRequest) {
     console.error("Error in search:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

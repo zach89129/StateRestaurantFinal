@@ -3,6 +3,7 @@ import { ProductInput } from "@/types/api";
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { convertBigIntToString } from "@/utils/convertBigIntToString";
+import { getTagsForAqcat } from "@/utils/productTags";
 
 const MAX_PAGE_SIZE = 100;
 
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest) {
     console.log("POST /api/products - Missing request body");
     return NextResponse.json(
       { error: "Missing request body" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
     for (const product of body.products) {
       try {
         console.log(
-          `Processing product: ${product.trx_product_id} (SKU: ${product.sku})`
+          `Processing product: ${product.trx_product_id} (SKU: ${product.sku})`,
         );
 
         if (!product.trx_product_id) {
@@ -66,6 +67,9 @@ export async function POST(request: NextRequest) {
         if (existingProduct) {
           console.log(`Updating existing product: ${product.trx_product_id}`);
           // Update existing product
+          const aqcat = product.metaData?.aqcat;
+          const generatedTags = getTagsForAqcat(aqcat);
+
           const updateData: ProductUpdateData = {
             sku: product.sku,
             title: product.title,
@@ -75,8 +79,8 @@ export async function POST(request: NextRequest) {
             category: product.category,
             uom: product.uom,
             qtyAvailable: product.qty_available,
-            tags: product.tags,
-            aqcat: product.metaData?.aqcat,
+            tags: generatedTags || undefined,
+            aqcat: aqcat,
             pattern: product.metaData?.pattern
               ? Array.isArray(product.metaData.pattern)
                 ? product.metaData.pattern.join(",")
@@ -121,7 +125,7 @@ export async function POST(request: NextRequest) {
             {
               sku: updatedProduct.sku,
               imageCount: updatedProduct.images.length,
-            }
+            },
           );
 
           results.push({
@@ -157,10 +161,13 @@ export async function POST(request: NextRequest) {
           if (missingFields.length > 0) {
             throw new Error(
               `Missing required fields for new product: ${missingFields.join(
-                ", "
-              )}`
+                ", ",
+              )}`,
             );
           }
+
+          const aqcat = product.metaData?.aqcat;
+          const generatedTags = getTagsForAqcat(aqcat);
 
           const newProduct = await prisma.product.create({
             data: {
@@ -173,7 +180,8 @@ export async function POST(request: NextRequest) {
               category: product.category,
               uom: product.uom,
               qtyAvailable: product.qty_available,
-              aqcat: product.metaData?.aqcat,
+              tags: generatedTags || undefined,
+              aqcat: aqcat,
               pattern: product.metaData?.pattern
                 ? Array.isArray(product.metaData.pattern)
                   ? product.metaData.pattern.join(",")
@@ -201,7 +209,7 @@ export async function POST(request: NextRequest) {
             {
               sku: newProduct.sku,
               imageCount: newProduct.images.length,
-            }
+            },
           );
 
           results.push({
@@ -218,7 +226,7 @@ export async function POST(request: NextRequest) {
       } catch (err) {
         console.error(
           `Error processing product ${product.trx_product_id}:`,
-          err
+          err,
         );
         errors.push({
           product_id: product.trx_product_id,
@@ -244,7 +252,7 @@ export async function POST(request: NextRequest) {
     console.error("POST /api/products - Fatal error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -407,7 +415,7 @@ export async function GET(request: NextRequest) {
                 .split(",")
                 .map((pat) => pat.trim())
                 .filter(Boolean);
-            })
+            }),
           ),
         ].sort(),
         availableCollections: allCollections
@@ -455,7 +463,7 @@ export async function GET(request: NextRequest) {
               .sort()
           : [
               ...new Set(
-                allFilteredProducts.map((p) => p.category).filter(Boolean)
+                allFilteredProducts.map((p) => p.category).filter(Boolean),
               ),
             ].sort();
 
@@ -463,7 +471,7 @@ export async function GET(request: NextRequest) {
         availableCategories,
         availableManufacturers: [
           ...new Set(
-            allFilteredProducts.map((p) => p.manufacturer).filter(Boolean)
+            allFilteredProducts.map((p) => p.manufacturer).filter(Boolean),
           ),
         ].sort(),
         availablePatterns: [
@@ -474,7 +482,7 @@ export async function GET(request: NextRequest) {
                 .split(",")
                 .map((pat) => pat.trim())
                 .filter(Boolean);
-            })
+            }),
           ),
         ].sort(),
         availableCollections: [
@@ -531,7 +539,7 @@ export async function GET(request: NextRequest) {
         error: "Failed to fetch products",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -543,7 +551,7 @@ export async function DELETE(request: NextRequest) {
     if (!trx_product_ids || !Array.isArray(trx_product_ids)) {
       return NextResponse.json(
         { error: "Invalid request format. Expected array of trx_product_ids" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -559,7 +567,7 @@ export async function DELETE(request: NextRequest) {
     console.error("Error deleting products:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

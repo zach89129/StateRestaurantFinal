@@ -9,7 +9,8 @@
     "start-prod": "NODE_ENV=production node server.js",
     "start-windows": "set NODE_ENV=production && node server.js",
     "lint": "next lint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "migrate:tags": "npx tsx scripts/migrate-product-tags.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
