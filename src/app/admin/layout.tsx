@@ -63,6 +63,14 @@ export default function AdminLayout({
               </li>
               <li>
                 <Link
+                  href="/admin/vendors"
+                  className="block px-4 py-2 rounded-md text-black hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                >
+                  Vendors
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/admin/activity"
                   className="block px-4 py-2 rounded-md text-black hover:bg-blue-50 hover:text-blue-600 transition-colors"
                 >

@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
+        hostname: "blob.vercel-storage.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
         hostname: "api.aq-fes.com",
         port: "",
         pathname: "/products-api/resources/**",

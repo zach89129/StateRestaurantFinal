@@ -1,63 +1,10 @@
 /* eslint-disable @next/next/no-img-element */
 
 import Link from "next/link";
+import VendorCatalogsList from "@/app/vendor-catalogs/VendorCatalogsList";
 
 /* eslint-disable react/no-unescaped-entities */
 export default function VendorCatalogsPage() {
-  const vendors = [
-    { name: "10 Strawberry St", url: "https://tenstrawberrystreet.com/" },
-    { name: "American Metal Craft", url: "https://www.amnow.com/" },
-    { name: "BauscherHepp", url: "https://bauscherhepp.com/" },
-    { name: "Bon Chef, Inc.", url: "https://www.bonchef.com/" },
-    { name: "Cactus Mat Mfg. Co.", url: "https://www.cactusmat.com/" },
-    { name: "Cal-Mil Plastics", url: "https://www.calmil.com/" },
-    { name: "Cambro Manufacturing Co.", url: "https://www.cambro.com/" },
-    { name: "Cardinal Intern'l", url: "https://www.cardinalfoodservice.com/" },
-    { name: "Carlisle", url: "https://www.carlislefsp.com/" },
-    { name: "Cooper Instruments", url: "https://www.cooper-atkins.com/" },
-    { name: "Eastern Tabletop", url: "https://www.easterntabletop.com/" },
-    { name: "EMI Yoshi", url: "https://www.emiyoshi.com/" },
-    { name: "Front Of The House", url: "https://www.frontofthehouse.com/" },
-    { name: "G E T Enterprises, Inc.", url: "https://get-melamine.com/" },
-    { name: "Geneva Carts", url: "https://www.genevadesigns.com/" },
-    { name: "Lakeside Manufacturing", url: "https://www.elakeside.com/" },
-    { name: "Impulse", url: "https://impulseenterprises.com/" },
-    { name: "Libbey", url: "https://foodservice.libbey.com/" },
-    { name: "Mudial", url: "https://mudialinc.com/" },
-    { name: "Myco Tableware", url: "https://www.mycotableware.com/" },
-    { name: "Narumi", url: "https://narumi.co.jp/eng/" },
-    { name: "Oneida", url: "https://www.foodservice.oneida.com/" },
-    {
-      name: "Orion Trading Corporation",
-      url: "https://www.oriontradingcorp.com/",
-    },
-    { name: "Packnwood", url: "https://www.packnwood.com/" },
-    { name: "Paderno World Cuisine", url: "https://www.paderno.com/" },
-    { name: "RCP Design", url: "https://www.rcpdesign.net/" },
-    { name: "RAK Porcelain", url: "https://www.rakporcelain.com/" },
-    { name: "Revol USA", url: "https://www.revol1768.com/" },
-    { name: "Rosenthal", url: "https://www.rosenthal.de/en/" },
-    { name: "San Jamar", url: "https://www.sanjamar.com/" },
-    { name: "Service Ideas Inc.", url: "https://www.serviceideas.com/" },
-    { name: "Spill-Stop", url: "https://www.spillstop.com/" },
-    { name: "Spring USA", url: "https://www.springusa.com/" },
-    { name: "Staub", url: "https://www.zwilling.com/us/staub/" },
-    { name: "Steelite International", url: "https://www.steelite.com/" },
-    { name: "Tablecraft Prod Co", url: "https://www.tablecraft.com/" },
-    { name: "Thunder Group, Inc.", url: "https://www.thundergroup.com/" },
-    { name: "Tuxton", url: "https://www.tuxton.com/" },
-    { name: "Vertex China", url: "https://www.vertexchina.com/" },
-    { name: "Victorinox Swiss Army", url: "https://www.victorinox.com/" },
-    { name: "Villeroy & Boch", url: "https://www.villeroy-boch.com/" },
-    { name: "Vollrath Company", url: "https://www.vollrath.com/" },
-    {
-      name: "Waring Products",
-      url: "https://www.waringcommercialproducts.com/",
-    },
-    { name: "Winco Industries Co.", url: "https://www.wincous.com/" },
-    { name: "Zwilling J.A. Henckels, LLC", url: "https://www.zwilling.com/" },
-  ];
-
   return (
     <div className="min-h-screen bg-white">
       <div className="relative bg-zinc-900 text-white py-12 sm:py-20">
@@ -127,36 +74,7 @@ export default function VendorCatalogsPage() {
               </p>
             </div>
             <div className="p-4 sm:p-8">
-              <div className="max-h-[60vh] overflow-y-auto sm:max-h-full sm:overflow-visible">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
-                  {vendors.map((vendor) => (
-                    <a
-                      key={vendor.name}
-                      href={vendor.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex items-center gap-2 hover:bg-zinc-50 p-3 rounded-lg transition-colors border border-gray-100"
-                    >
-                      <span className="text-sm sm:text-base text-gray-700 group-hover:text-blue-600">
-                        {vendor.name}
-                      </span>
-                      <svg
-                        className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors flex-shrink-0"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                        />
-                      </svg>
-                    </a>
-                  ))}
-                </div>
-              </div>
+              <VendorCatalogsList />
             </div>
           </div>
         </div>

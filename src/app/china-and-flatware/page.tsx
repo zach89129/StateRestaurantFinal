@@ -2,73 +2,8 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-const vendors = [
-  {
-    name: "Arc Cardinal",
-    logo: "/vendor-logos/logo-arc-cardinal.avif",
-    url: "https://www.cardinalfoodservice.com/",
-  },
-  {
-    name: "BauscherHepp",
-    logo: "/vendor-logos/logo-bauscher-hepp.jpg",
-    url: "https://bauscherhepp.com/",
-  },
-  {
-    name: "Front of the House",
-    logo: "/vendor-logos/logo-front-of-the-house.avif",
-    url: "https://www.frontofthehouse.com/",
-  },
-  {
-    name: "Narumi",
-    logo: "/vendor-logos/logo-narumi.avif",
-    url: "https://narumi.co.jp/eng/",
-  },
-  {
-    name: "Oneida",
-    logo: "/vendor-logos/logo-oneida.avif",
-    url: "https://www.foodservice.oneida.com/",
-  },
-  {
-    name: "RAK Porcelain",
-    logo: "/vendor-logos/logo-rakporcelain.avif",
-    url: "https://www.rakporcelain.com/",
-  },
-  {
-    name: "Revol",
-    logo: "/vendor-logos/logo-revol.avif",
-    url: "https://www.revol1768.com/",
-  },
-  {
-    name: "Rosenthal",
-    logo: "/vendor-logos/rosenthal.avif",
-    url: "https://www.rosenthal.de/en/",
-  },
-  {
-    name: "Steelite",
-    logo: "/vendor-logos/logo-steelite.jpg",
-    url: "https://www.steelite.com/",
-  },
-  {
-    name: "10 Strawberry Street",
-    logo: "/vendor-logos/logo-strawberry-street.avif",
-    url: "https://tenstrawberrystreet.com/",
-  },
-  {
-    name: "Tuxton",
-    logo: "/vendor-logos/logo-tuxton.webp",
-    url: "https://www.tuxton.com/",
-  },
-  {
-    name: "Vertex China",
-    logo: "/vendor-logos/logo-vertex.jpg",
-    url: "https://www.vertexchina.com/",
-  },
-  {
-    name: "Villeroy & Boch",
-    logo: "/vendor-logos/villeroy-boch.avif",
-    url: "https://www.villeroy-boch.com/",
-  },
-];
+import { useState, useEffect } from "react";
+import ChinaFlatwareVendors from "@/app/china-and-flatware/ChinaFlatwareVendors";
 
 export default function ChinaAndFlatwarePage() {
   return (
@@ -135,53 +70,7 @@ export default function ChinaAndFlatwarePage() {
           <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
             Our Trusted Partners
           </h2>
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8">
-            {vendors.map((vendor) => (
-              <div
-                key={vendor.name}
-                onClick={() => {
-                  window.open(vendor.url, "_blank");
-                }}
-                className="group bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300"
-              >
-                <div className="h-24 sm:h-32 lg:h-40 bg-white p-3 sm:p-4 flex items-center justify-center">
-                  <img
-                    src={vendor.logo}
-                    alt={vendor.name}
-                    className="max-h-full w-auto object-contain transition-transform duration-300 group-hover:scale-105"
-                  />
-                </div>
-                <div className="p-3 sm:p-6 bg-gradient-to-b from-zinc-50 to-white">
-                  <h3 className="text-sm sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4 text-center truncate px-1">
-                    {vendor.name}
-                  </h3>
-                  <div className="flex justify-center">
-                    <a
-                      href={vendor.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="bg-[#B87B5C] text-white px-3 sm:px-6 py-2 sm:py-3 rounded-lg hover:bg-[#A66D4F] transition-all duration-300 inline-flex items-center gap-1 sm:gap-2 shadow-md hover:shadow-lg text-xs sm:text-base w-full sm:w-auto justify-center"
-                    >
-                      <span>View Catalog</span>
-                      <svg
-                        className="w-3 h-3 sm:w-4 sm:h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                        />
-                      </svg>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <ChinaFlatwareVendors />
         </div>
       </div>
 

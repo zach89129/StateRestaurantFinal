@@ -115,6 +115,22 @@ export default async function AdminDashboard() {
               </li>
             </ul>
           </div>
+
+          <div className="border border-gray-200 rounded-lg p-6">
+            <h4 className="text-base font-medium text-gray-900 mb-2">
+              Vendor Links
+            </h4>
+            <ul className="space-y-2">
+              <li>
+                <Link
+                  href="/admin/vendors"
+                  className="text-amber-600 hover:text-amber-700"
+                >
+                  Manage Manufacturer Websites & China/Flatware Partners
+                </Link>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>

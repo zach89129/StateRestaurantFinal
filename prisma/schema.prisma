@@ -187,3 +187,17 @@ model ManufacturerDetails {
   @@index([sku])
   @@map("manufacturer_details")
 }
+
+model VendorLink {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(255)
+  url       String   @db.VarChar(500)
+  imageUrl  String?  @map("image_url") @db.VarChar(500)
+  type      String   @db.VarChar(50)
+  order     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([type])
+  @@map("vendor_links")
+}
