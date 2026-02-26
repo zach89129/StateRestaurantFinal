@@ -35,6 +35,7 @@ export default function VendorsPage() {
   });
 
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingType, setEditingType] = useState<"manufacturer" | "china_flatware" | null>(null);
   const [editingForm, setEditingForm] = useState({
     name: "",
     url: "",
@@ -45,6 +46,16 @@ export default function VendorsPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && editingId && editingType === "china_flatware") {
+        cancelEdit();
+      }
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [editingId, editingType]);
 
   const fetchData = async () => {
     try {
@@ -141,6 +152,7 @@ export default function VendorsPage() {
 
   const startEdit = (vendor: VendorLink) => {
     setEditingId(vendor.id);
+    setEditingType(vendor.type as "manufacturer" | "china_flatware");
     setEditingForm({
       name: vendor.name,
       url: vendor.url,
@@ -151,6 +163,7 @@ export default function VendorsPage() {
 
   const cancelEdit = () => {
     setEditingId(null);
+    setEditingType(null);
     setEditingForm({ name: "", url: "", order: 0, file: null });
   };
 
@@ -497,123 +510,157 @@ export default function VendorsPage() {
                   className="border border-gray-200 rounded-lg overflow-hidden"
                 >
                   <div className="relative h-32 bg-gray-50 flex items-center justify-center">
-                    {editingId === v.id ? (
-                      <div className="p-4 w-full">
-                        <form
-                          onSubmit={handleEditSubmit}
-                          className="space-y-2"
-                        >
-                          <input
-                            type="text"
-                            value={editingForm.name}
-                            onChange={(e) =>
-                              setEditingForm({
-                                ...editingForm,
-                                name: e.target.value,
-                              })
-                            }
-                            className="block w-full border border-gray-300 text-gray-900 rounded p-2 text-sm"
-                            required
-                          />
-                          <input
-                            type="url"
-                            value={editingForm.url}
-                            onChange={(e) =>
-                              setEditingForm({
-                                ...editingForm,
-                                url: e.target.value,
-                              })
-                            }
-                            className="block w-full border border-gray-300 text-gray-900 rounded p-2 text-sm"
-                            required
-                          />
-                          <input
-                            type="number"
-                            value={editingForm.order}
-                            onChange={(e) =>
-                              setEditingForm({
-                                ...editingForm,
-                                order: parseInt(e.target.value, 10) || 0,
-                              })
-                            }
-                            className="block w-full border border-gray-300 text-gray-900 rounded p-2 text-sm"
-                          />
-                          <div>
-                            <label className="text-xs text-gray-500">
-                              Replace logo
-                            </label>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) =>
-                                setEditingForm({
-                                  ...editingForm,
-                                  file: e.target.files?.[0] || null,
-                                })
-                              }
-                              className="block w-full text-xs"
-                            />
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              type="submit"
-                              className="px-2 py-1 text-sm bg-blue-600 text-white rounded"
-                            >
-                              Save
-                            </button>
-                            <button
-                              type="button"
-                              onClick={cancelEdit}
-                              className="px-2 py-1 text-sm bg-gray-200 text-gray-700 rounded"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </form>
-                      </div>
+                    {v.imageUrl ? (
+                      <Image
+                        src={v.imageUrl}
+                        alt={v.name}
+                        fill
+                        className="object-contain p-2"
+                        unoptimized
+                      />
                     ) : (
-                      <>
-                        {v.imageUrl ? (
-                          <Image
-                            src={v.imageUrl}
-                            alt={v.name}
-                            fill
-                            className="object-contain p-2"
-                            unoptimized
-                          />
-                        ) : (
-                          <span className="text-gray-400 text-sm">
-                            No image
-                          </span>
-                        )}
-                      </>
+                      <span className="text-gray-400 text-sm">No image</span>
+                    )}
+                    {editingId === v.id && editingType === "china_flatware" && (
+                      <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-10">
+                        <span className="bg-white px-3 py-1 rounded text-sm font-medium">
+                          Editing...
+                        </span>
+                      </div>
                     )}
                   </div>
-                  {editingId !== v.id && (
-                    <div className="p-4">
-                      <h4 className="font-medium text-gray-900">{v.name}</h4>
-                      <p className="text-xs text-gray-500">
-                        Order: {v.order} | {v.url}
-                      </p>
-                      <div className="mt-8 flex gap-2">
-                        <button
-                          onClick={() => startEdit(v)}
-                          className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => deleteVendor(v.id)}
-                          className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
-                        >
-                          Delete
-                        </button>
-                      </div>
+                  <div className="p-4">
+                    <h4 className="font-medium text-gray-900">{v.name}</h4>
+                    <p className="text-xs text-gray-500">
+                      Order: {v.order} | {v.url}
+                    </p>
+                    <div className="mt-4 flex gap-2">
+                      <button
+                        onClick={() => startEdit(v)}
+                        className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => deleteVendor(v.id)}
+                        className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+                      >
+                        Delete
+                      </button>
                     </div>
-                  )}
+                  </div>
                 </div>
               ))}
             </div>
+
+            {/* Edit modal for China/Flatware - prevents form from being cut off by footer */}
+            {editingId && editingType === "china_flatware" && (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+                onClick={(e) => e.target === e.currentTarget && cancelEdit()}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="edit-partner-title"
+              >
+                <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+                  <div
+                    className="p-6"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <h3 id="edit-partner-title" className="text-lg font-semibold text-gray-900 mb-4">
+                      Edit Partner
+                    </h3>
+                    <form
+                      onSubmit={handleEditSubmit}
+                      className="space-y-4"
+                    >
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Name
+                        </label>
+                        <input
+                          type="text"
+                          value={editingForm.name}
+                          onChange={(e) =>
+                            setEditingForm({
+                              ...editingForm,
+                              name: e.target.value,
+                            })
+                          }
+                          className="mt-1 block w-full border border-gray-300 text-gray-900 rounded p-2"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          URL
+                        </label>
+                        <input
+                          type="url"
+                          value={editingForm.url}
+                          onChange={(e) =>
+                            setEditingForm({
+                              ...editingForm,
+                              url: e.target.value,
+                            })
+                          }
+                          className="mt-1 block w-full border border-gray-300 text-gray-900 rounded p-2"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Display Order
+                        </label>
+                        <input
+                          type="number"
+                          value={editingForm.order}
+                          onChange={(e) =>
+                            setEditingForm({
+                              ...editingForm,
+                              order: parseInt(e.target.value, 10) || 0,
+                            })
+                          }
+                          min={0}
+                          className="mt-1 block w-full border border-gray-300 text-gray-900 rounded p-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Replace logo (optional)
+                        </label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) =>
+                            setEditingForm({
+                              ...editingForm,
+                              file: e.target.files?.[0] || null,
+                            })
+                          }
+                          className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border file:border-gray-300 file:bg-white file:text-gray-700"
+                        />
+                      </div>
+                      <div className="flex gap-2 pt-2">
+                        <button
+                          type="submit"
+                          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={cancelEdit}
+                          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
