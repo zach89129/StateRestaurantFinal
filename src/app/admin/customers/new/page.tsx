@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { DEFAULT_VENUES } from "@/const/venues";
 
 interface Venue {
   trxVenueId: number;
@@ -15,6 +16,8 @@ export default function NewCustomerPage() {
     phone: "",
     trxCustomerId: "",
     seePrices: false,
+    newOrderGuideEnabled: false,
+    defaultOrderGuideVenueId: "",
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -38,8 +41,12 @@ export default function NewCustomerPage() {
           email: formData.email,
           phone: formData.phone || null,
           trxCustomerId: parseInt(formData.trxCustomerId),
-          seePrices: formData.seePrices,
+          seePrices: formData.seePrices || formData.newOrderGuideEnabled,
           venueIds: selectedVenues.map((v) => v.trxVenueId),
+          newOrderGuideEnabled: formData.newOrderGuideEnabled,
+          defaultOrderGuideVenueId: formData.defaultOrderGuideVenueId
+            ? parseInt(formData.defaultOrderGuideVenueId)
+            : null,
         }),
       });
 
@@ -198,6 +205,48 @@ export default function NewCustomerPage() {
           >
             Can see prices
           </label>
+        </div>
+
+        <div className="rounded-md border border-gray-200 p-4 space-y-4">
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="newOrderGuideEnabled"
+              name="newOrderGuideEnabled"
+              checked={formData.newOrderGuideEnabled}
+              onChange={handleChange}
+              className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+            />
+            <label
+              htmlFor="newOrderGuideEnabled"
+              className="ml-2 block text-sm text-gray-700"
+            >
+              Enable New Customer Order Guide
+            </label>
+          </div>
+
+          <div>
+            <label
+              htmlFor="defaultOrderGuideVenueId"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Default Pricing Venue
+            </label>
+            <select
+              id="defaultOrderGuideVenueId"
+              name="defaultOrderGuideVenueId"
+              value={formData.defaultOrderGuideVenueId}
+              onChange={handleChange}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-gray-900"
+            >
+              <option value="">Select a default venue</option>
+              {DEFAULT_VENUES.map((venue) => (
+                <option key={venue.id} value={venue.id}>
+                  {venue.name} ({venue.id})
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="space-y-4">

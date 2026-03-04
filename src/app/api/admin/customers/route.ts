@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
               venueName: true,
             },
           },
+          orderGuideFeature: true,
         },
       });
 
@@ -94,6 +95,7 @@ export async function GET(request: NextRequest) {
             venueName: true,
           },
         },
+        orderGuideFeature: true,
       },
     });
 
@@ -138,7 +140,28 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await request.json();
-
+    const defaultOrderGuideVenueId =
+      data.defaultOrderGuideVenueId !== undefined &&
+      data.defaultOrderGuideVenueId !== null &&
+      data.defaultOrderGuideVenueId !== ""
+        ? Number(data.defaultOrderGuideVenueId)
+        : null;
+    const newOrderGuideEnabled = Boolean(data.newOrderGuideEnabled);
+    if (
+      defaultOrderGuideVenueId !== null &&
+      Number.isNaN(defaultOrderGuideVenueId)
+    ) {
+      return NextResponse.json(
+        { error: "Invalid defaultOrderGuideVenueId value" },
+        { status: 400 }
+      );
+    }
+    if (newOrderGuideEnabled && defaultOrderGuideVenueId === null) {
+      return NextResponse.json(
+        { error: "Default pricing venue is required when enabling new order guide" },
+        { status: 400 }
+      );
+    }
     // Validate required fields
     const requiredFields = ["email", "trxCustomerId"];
     const missingFields = requiredFields.filter((field) => !data[field]);
@@ -172,15 +195,25 @@ export async function POST(request: NextRequest) {
         email: data.email.toLowerCase(),
         phone: data.phone || null,
         trxCustomerId: data.trxCustomerId,
-        seePrices: data.seePrices || false,
+        seePrices: Boolean(data.seePrices) || newOrderGuideEnabled,
         venues: data.venueIds?.length
           ? {
               connect: data.venueIds.map((id: number) => ({ trxVenueId: id })),
             }
           : undefined,
+        orderGuideFeature:
+          newOrderGuideEnabled || defaultOrderGuideVenueId !== null
+            ? {
+                create: {
+                  enabled: newOrderGuideEnabled,
+                  defaultVenueId: defaultOrderGuideVenueId,
+                },
+              }
+            : undefined,
       },
       include: {
         venues: true,
+        orderGuideFeature: true,
       },
     });
 
@@ -230,16 +263,72 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    const hasNewOrderGuideEnabled = Object.prototype.hasOwnProperty.call(
+      data,
+      "newOrderGuideEnabled"
+    );
+    const hasDefaultOrderGuideVenueId = Object.prototype.hasOwnProperty.call(
+      data,
+      "defaultOrderGuideVenueId"
+    );
+    const shouldUpsertOrderGuideFeature =
+      hasNewOrderGuideEnabled || hasDefaultOrderGuideVenueId;
+    const defaultOrderGuideVenueId =
+      hasDefaultOrderGuideVenueId &&
+      data.defaultOrderGuideVenueId !== undefined &&
+      data.defaultOrderGuideVenueId !== null &&
+      data.defaultOrderGuideVenueId !== ""
+        ? Number(data.defaultOrderGuideVenueId)
+        : null;
+    if (
+      hasDefaultOrderGuideVenueId &&
+      defaultOrderGuideVenueId !== null &&
+      Number.isNaN(defaultOrderGuideVenueId)
+    ) {
+      return NextResponse.json(
+        { error: "Invalid defaultOrderGuideVenueId value" },
+        { status: 400 }
+      );
+    }
+    if (
+      hasNewOrderGuideEnabled &&
+      Boolean(data.newOrderGuideEnabled) &&
+      defaultOrderGuideVenueId === null
+    ) {
+      return NextResponse.json(
+        { error: "Default pricing venue is required when enabling new order guide" },
+        { status: 400 }
+      );
+    }
     // Update customer
     const customer = await prisma.customer.update({
       where: { trxCustomerId: trxCustomerId },
       data: {
         email: data.email?.toLowerCase(),
         phone: data.phone || null,
-        seePrices: Boolean(data.seePrices),
+        seePrices: Boolean(data.seePrices) || Boolean(data.newOrderGuideEnabled),
+        orderGuideFeature: shouldUpsertOrderGuideFeature
+          ? {
+              upsert: {
+                create: {
+                  enabled: Boolean(data.newOrderGuideEnabled),
+                  defaultVenueId: defaultOrderGuideVenueId,
+                },
+                update: {
+                  ...(hasNewOrderGuideEnabled
+                    ? { enabled: Boolean(data.newOrderGuideEnabled) }
+                    : {}),
+                  ...(hasDefaultOrderGuideVenueId
+                    ? { defaultVenueId: defaultOrderGuideVenueId }
+                    : {}),
+                },
+              },
+            }
+          : undefined,
       },
       include: {
         venues: true,
+        orderGuideFeature: true,
       },
     });
 
@@ -253,7 +342,7 @@ export async function PUT(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error updating customer:", error);
+    console.error("Error updating customer:", error ?? "Unknown error");
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       return NextResponse.json(
         { error: "Failed to update customer: " + error.message },

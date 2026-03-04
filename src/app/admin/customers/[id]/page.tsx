@@ -3,6 +3,7 @@
 import { use } from "react";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { DEFAULT_VENUES } from "@/const/venues";
 
 interface Venue {
   trxVenueId: number;
@@ -14,6 +15,8 @@ interface Customer {
   email: string;
   phone: string | null;
   seePrices: boolean;
+  newOrderGuideEnabled: boolean;
+  defaultOrderGuideVenueId: number | null;
   updatedAt: Date;
   venues: Venue[];
 }
@@ -77,7 +80,12 @@ export default function EditCustomerPage({ params }: PageProps) {
         throw new Error(data.error || "Failed to fetch customer");
       }
 
-      setCustomer(data.customer);
+      setCustomer({
+        ...data.customer,
+        newOrderGuideEnabled: Boolean(data.customer.orderGuideFeature?.enabled),
+        defaultOrderGuideVenueId:
+          data.customer.orderGuideFeature?.defaultVenueId ?? null,
+      });
     } catch (error) {
       console.error("Error fetching customer:", error);
       setError(
@@ -185,13 +193,19 @@ export default function EditCustomerPage({ params }: PageProps) {
   };
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
 
     // Handle numeric fields
     if (name === "trxCustomerId") {
       const numValue = value === "" ? 0 : parseInt(value);
+      setCustomer((prev) => (prev ? { ...prev, [name]: numValue } : null));
+      return;
+    }
+
+    if (name === "defaultOrderGuideVenueId") {
+      const numValue = value === "" ? null : parseInt(value);
       setCustomer((prev) => (prev ? { ...prev, [name]: numValue } : null));
       return;
     }
@@ -313,6 +327,48 @@ export default function EditCustomerPage({ params }: PageProps) {
           >
             Can see prices
           </label>
+        </div>
+
+        <div className="rounded-md border border-gray-200 p-4 space-y-4">
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="newOrderGuideEnabled"
+              name="newOrderGuideEnabled"
+              checked={customer.newOrderGuideEnabled}
+              onChange={handleCheckboxChange}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label
+              htmlFor="newOrderGuideEnabled"
+              className="ml-2 block text-sm text-gray-900"
+            >
+              Enable New Customer Order Guide
+            </label>
+          </div>
+
+          <div>
+            <label
+              htmlFor="defaultOrderGuideVenueId"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Default Pricing Venue
+            </label>
+            <select
+              id="defaultOrderGuideVenueId"
+              name="defaultOrderGuideVenueId"
+              value={customer.defaultOrderGuideVenueId ?? ""}
+              onChange={handleInputChange}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            >
+              <option value="">Select a default venue</option>
+              {DEFAULT_VENUES.map((venue) => (
+                <option key={venue.id} value={venue.id}>
+                  {venue.name} ({venue.id})
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="space-y-4">

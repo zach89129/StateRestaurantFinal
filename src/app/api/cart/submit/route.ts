@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/auth-options";
+import { prisma } from "@/lib/prisma";
 
 const transporter = nodemailer.createTransport({
   host: "relay.dnsexit.com",
@@ -38,8 +39,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { items, comment, purchaseOrder, venue, trxCustomerId } =
-      await request.json();
+    const { items, comment, purchaseOrder } = await request.json();
 
     // Group items by venue
     const itemsByVenue = items.reduce(
@@ -225,6 +225,20 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       // Log the error but don't fail the entire checkout
       console.error("Error saving orders to database:", error);
+    }
+
+    const sessionCustomerId = parseInt(session.user.trxCustomerId || "");
+    if (!Number.isNaN(sessionCustomerId)) {
+      await prisma.customerOrderGuideFeature.updateMany({
+        where: {
+          customerId: sessionCustomerId,
+          enabled: true,
+        },
+        data: {
+          enabled: false,
+          defaultVenueId: null,
+        },
+      });
     }
 
     return NextResponse.json({ success: true });

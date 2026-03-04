@@ -1,0 +1,3 @@
+-- Baseline placeholder.
+-- Migration SQL not available in repository.
+-- Marked as applied on existing production database via prisma migrate resolve.

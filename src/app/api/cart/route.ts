@@ -39,6 +39,10 @@ export async function GET(request: NextRequest) {
 
     const trxCustomerId = parseInt(session.user.trxCustomerId as string);
     const canSeePrices = session.user.seePrices === true;
+    const fallbackVenueForMainCatalog =
+      session.user.newOrderGuideEnabled && session.user.defaultOrderGuideVenueId
+        ? String(session.user.defaultOrderGuideVenueId)
+        : null;
 
     try {
       // Get cart for the user
@@ -130,8 +134,14 @@ export async function GET(request: NextRequest) {
           const itemsByVenue: { [venueId: string]: CartItemWithDetails[] } = {};
 
           cartItemsWithDetails.forEach((item) => {
-            // Skip items from the regular catalog (venue "0") as they need a quote
             if (item.venueId === "0") {
+              if (!fallbackVenueForMainCatalog) {
+                return;
+              }
+              if (!itemsByVenue[fallbackVenueForMainCatalog]) {
+                itemsByVenue[fallbackVenueForMainCatalog] = [];
+              }
+              itemsByVenue[fallbackVenueForMainCatalog].push(item);
               return;
             }
 

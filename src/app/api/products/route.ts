@@ -8,6 +8,39 @@ import { getTagsForAqcat } from "@/utils/productTags";
 const MAX_PAGE_SIZE = 100;
 
 type ProductUpdateData = Prisma.ProductUpdateInput;
+type ProductPayload = ProductInput["products"][number];
+
+const getOrderGuideMetadata = (product: ProductPayload) => {
+  const orderGuideGroup = product.metaData?.orderGuideGroup?.trim();
+  const orderGuideQuality = product.metaData?.orderGuideQuality?.trim();
+
+  if (!orderGuideGroup || !orderGuideQuality) {
+    return null;
+  }
+
+  return { orderGuideGroup, orderGuideQuality };
+};
+
+const syncOrderGuideItem = async (productId: bigint, product: ProductPayload) => {
+  const orderGuideMetadata = getOrderGuideMetadata(product);
+  if (!orderGuideMetadata) {
+    return;
+  }
+
+  await prisma.orderGuideItem.upsert({
+    where: { productId },
+    update: {
+      orderGuideGroup: orderGuideMetadata.orderGuideGroup,
+      orderGuideQuality: orderGuideMetadata.orderGuideQuality,
+    },
+    create: {
+      productId,
+      orderGuideGroup: orderGuideMetadata.orderGuideGroup,
+      orderGuideQuality: orderGuideMetadata.orderGuideQuality,
+      included: true,
+    },
+  });
+};
 
 export async function POST(request: NextRequest) {
   console.log("POST /api/products - Starting request processing");
@@ -119,6 +152,7 @@ export async function POST(request: NextRequest) {
             data: updateData,
             include: { images: true },
           });
+          await syncOrderGuideItem(BigInt(product.trx_product_id), product);
 
           console.log(
             `Successfully updated product: ${product.trx_product_id}`,
@@ -203,6 +237,7 @@ export async function POST(request: NextRequest) {
             },
             include: { images: true },
           });
+          await syncOrderGuideItem(BigInt(product.trx_product_id), product);
 
           console.log(
             `Successfully created new product: ${product.trx_product_id}`,

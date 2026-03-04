@@ -25,6 +25,7 @@ model Product {
   dead            Boolean?       @default(false) @map("dead")
   images          ProductImage[]
   venueProducts   VenueProduct[] @relation("ProductToVenueProduct")
+  orderGuideItem  OrderGuideItem?
 
   @@map("products")
 }
@@ -57,6 +58,7 @@ model Customer {
   updatedAt     DateTime @updatedAt
   cart          Cart?
   venues        Venue[]  @relation("CustomerToVenue")
+  orderGuideFeature CustomerOrderGuideFeature?
 
   @@map("customers")
 }
@@ -68,6 +70,33 @@ model VenueProduct {
   products   Product[] @relation("ProductToVenueProduct")
 
   @@map("venue_products")
+}
+
+model CustomerOrderGuideFeature {
+  id             Int      @id @default(autoincrement())
+  customerId     Int      @unique @map("customer_id")
+  enabled        Boolean  @default(false)
+  defaultVenueId Int?     @map("default_venue_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  customer       Customer @relation(fields: [customerId], references: [trxCustomerId], onDelete: Cascade)
+
+  @@index([enabled, defaultVenueId], map: "customer_order_guide_features_enabled_default_venue_idx")
+  @@map("customer_order_guide_features")
+}
+
+model OrderGuideItem {
+  id                Int      @id @default(autoincrement())
+  productId         BigInt   @unique @map("product_id")
+  orderGuideGroup   String   @map("order_guide_group") @db.VarChar(255)
+  orderGuideQuality String   @map("order_guide_quality") @db.VarChar(255)
+  included          Boolean  @default(true)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([included, orderGuideGroup, orderGuideQuality, productId], map: "order_guide_items_lookup_idx")
+  @@map("order_guide_items")
 }
 
 model otp {

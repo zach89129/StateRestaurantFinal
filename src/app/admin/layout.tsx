@@ -55,6 +55,14 @@ export default function AdminLayout({
               </li>
               <li>
                 <Link
+                  href="/admin/order-guide-items"
+                  className="block px-4 py-2 rounded-md text-black hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                >
+                  New Order Guide Items
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/admin/promotions"
                   className="block px-4 py-2 rounded-md text-black hover:bg-blue-50 hover:text-blue-600 transition-colors"
                 >
@@ -81,7 +89,7 @@ export default function AdminLayout({
           </nav>
 
           {/* Main Content */}
-          <main className="flex-1 bg-white shadow rounded-lg p-6">
+          <main className="flex-1 bg-white shadow rounded-lg p-6 [&_input]:text-gray-900 [&_input]:placeholder:text-gray-600 [&_select]:text-gray-900 [&_select]:placeholder:text-gray-600 [&_textarea]:text-gray-900 [&_textarea]:placeholder:text-gray-600">
             {children}
           </main>
         </div>

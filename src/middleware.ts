@@ -127,6 +127,7 @@ export async function middleware(request: NextRequest) {
     const isProtectedRoute =
       request.nextUrl.pathname.startsWith("/reorder") ||
       request.nextUrl.pathname.startsWith("/venues") ||
+      request.nextUrl.pathname.startsWith("/new-order-guide") ||
       (request.nextUrl.pathname.startsWith("/api/venue-products") &&
         request.method === "GET");
 
@@ -184,6 +185,7 @@ export const config = {
     "/api/trx-test/venue-products",
     "/api/trx-test/products",
     "/reorder/:path*",
+    "/new-order-guide/:path*",
     "/admin/:path*",
     "/venues/:path*",
   ],

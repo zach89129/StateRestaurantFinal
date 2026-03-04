@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/auth-options";
+import { prisma } from "@/lib/prisma";
 
 interface PricingSingleRequest {
   customerId: number;
@@ -50,7 +51,22 @@ export async function GET(request: Request) {
       );
     }
 
-    if (!venueId) {
+    let resolvedVenueId = venueId;
+    if (!resolvedVenueId && session?.user?.newOrderGuideEnabled) {
+      if (session.user.defaultOrderGuideVenueId) {
+        resolvedVenueId = String(session.user.defaultOrderGuideVenueId);
+      } else if (session.user.trxCustomerId) {
+        const feature = await prisma.customerOrderGuideFeature.findUnique({
+          where: { customerId: parseInt(session.user.trxCustomerId) },
+          select: { defaultVenueId: true, enabled: true },
+        });
+        if (feature?.enabled && feature.defaultVenueId) {
+          resolvedVenueId = String(feature.defaultVenueId);
+        }
+      }
+    }
+
+    if (!resolvedVenueId) {
       return NextResponse.json(
         { success: false, error: "Venue ID is required" },
         { status: 400 }
@@ -60,7 +76,7 @@ export async function GET(request: Request) {
     // Handle single product request
     if (productId) {
       //the route says customerId but Joe changed it to take venueId instead.
-      const pricingApiUrl = `https://customer-pricing-api.sunsofterp.com/price?customerId=${venueId}&productId=${productId}`;
+      const pricingApiUrl = `https://customer-pricing-api.sunsofterp.com/price?customerId=${resolvedVenueId}&productId=${productId}`;
 
       try {
         const response = await fetch(pricingApiUrl, {
@@ -140,7 +156,7 @@ export async function GET(request: Request) {
         const promises = batch.map(async (productId) => {
           try {
             //the route says customerId but Joe changed it to take venueId instead.
-            const pricingApiUrl = `https://customer-pricing-api.sunsofterp.com/price?customerId=${venueId}&productId=${productId}`;
+            const pricingApiUrl = `https://customer-pricing-api.sunsofterp.com/price?customerId=${resolvedVenueId}&productId=${productId}`;
             const response = await fetch(pricingApiUrl, {
               method: "GET",
               headers: {

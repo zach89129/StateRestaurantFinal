@@ -47,6 +47,9 @@ export default function CartPage() {
   }, {} as Record<string, { venueId: string; venueName: string; items: typeof items; total: number }>);
 
   const getContinueShoppingUrl = () => {
+    if (session?.user?.newOrderGuideEnabled) {
+      return "/new-order-guide";
+    }
     if (session?.user?.venues && session.user.venues.length > 0) {
       return `/venues/${session.user.venues[0].trxVenueId}`;
     }
