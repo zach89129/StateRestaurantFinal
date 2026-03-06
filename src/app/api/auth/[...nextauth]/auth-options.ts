@@ -61,12 +61,6 @@ export const authOptions: AuthOptions = {
                     venueName: true,
                   },
                 },
-                orderGuideFeature: {
-                  select: {
-                    enabled: true,
-                    defaultVenueId: true,
-                  },
-                },
               },
             });
 
@@ -102,9 +96,9 @@ export const authOptions: AuthOptions = {
               isSalesTeam,
               trxCustomerId: customer.trxCustomerId.toString(),
               seePrices: customer.seePrices,
-              newOrderGuideEnabled: customer.orderGuideFeature?.enabled || false,
+              newOrderGuideEnabled: customer.isNewOrderGuideUser || false,
               defaultOrderGuideVenueId:
-                customer.orderGuideFeature?.defaultVenueId ?? null,
+                customer.orderGuidePricingVenueId ?? null,
             } as User;
 
             // Log the user activity

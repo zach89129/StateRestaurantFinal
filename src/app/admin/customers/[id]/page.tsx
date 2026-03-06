@@ -3,7 +3,6 @@
 import { use } from "react";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { DEFAULT_VENUES } from "@/const/venues";
 
 interface Venue {
   trxVenueId: number;
@@ -15,10 +14,18 @@ interface Customer {
   email: string;
   phone: string | null;
   seePrices: boolean;
-  newOrderGuideEnabled: boolean;
-  defaultOrderGuideVenueId: number | null;
+  isNewOrderGuideUser: boolean;
+  orderGuidePricingVenueId: number | null;
   updatedAt: Date;
   venues: Venue[];
+  orderGuideDraft?: {
+    id: number;
+    isLocked: boolean;
+    submittedAt: string | null;
+    _count: {
+      items: number;
+    };
+  } | null;
 }
 
 interface PageProps {
@@ -31,6 +38,7 @@ export default function EditCustomerPage({ params }: PageProps) {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [draftActionLoading, setDraftActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchVenue, setSearchVenue] = useState("");
   const [searchLoading, setSearchLoading] = useState(false);
@@ -71,6 +79,40 @@ export default function EditCustomerPage({ params }: PageProps) {
     }
   }, [searchVenue, searchVenues]);
 
+  useEffect(() => {
+    if (!customer) {
+      return;
+    }
+
+    if (customer.venues.length === 0) {
+      if (customer.orderGuidePricingVenueId !== null) {
+        setCustomer((prev) =>
+          prev ? { ...prev, orderGuidePricingVenueId: null } : null
+        );
+      }
+      return;
+    }
+
+    if (customer.venues.length === 1) {
+      const onlyVenueId = customer.venues[0].trxVenueId;
+      if (customer.orderGuidePricingVenueId !== onlyVenueId) {
+        setCustomer((prev) =>
+          prev ? { ...prev, orderGuidePricingVenueId: onlyVenueId } : null
+        );
+      }
+      return;
+    }
+
+    const hasCurrentSelected = customer.venues.some(
+      (venue) => venue.trxVenueId === customer.orderGuidePricingVenueId
+    );
+    if (!hasCurrentSelected && customer.orderGuidePricingVenueId !== null) {
+      setCustomer((prev) =>
+        prev ? { ...prev, orderGuidePricingVenueId: null } : null
+      );
+    }
+  }, [customer]);
+
   const fetchCustomer = async (customerId: string) => {
     try {
       const response = await fetch(`/api/admin/customers?id=${customerId}`);
@@ -82,9 +124,14 @@ export default function EditCustomerPage({ params }: PageProps) {
 
       setCustomer({
         ...data.customer,
-        newOrderGuideEnabled: Boolean(data.customer.orderGuideFeature?.enabled),
-        defaultOrderGuideVenueId:
-          data.customer.orderGuideFeature?.defaultVenueId ?? null,
+        isNewOrderGuideUser: Boolean(
+          data.customer.isNewOrderGuideUser ??
+            data.customer.orderGuideFeature?.enabled
+        ),
+        orderGuidePricingVenueId:
+          data.customer.orderGuidePricingVenueId ??
+          data.customer.orderGuideFeature?.defaultVenueId ??
+          null,
       });
     } catch (error) {
       console.error("Error fetching customer:", error);
@@ -192,6 +239,35 @@ export default function EditCustomerPage({ params }: PageProps) {
     }
   };
 
+  const handleDraftAction = async (action: "clear" | "reactivate") => {
+    if (!customer) return;
+    setDraftActionLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/admin/customers/order-guide-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerId: customer.trxCustomerId,
+          action,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to update order guide draft");
+      }
+      await fetchCustomer(String(customer.trxCustomerId));
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to update order guide draft"
+      );
+    } finally {
+      setDraftActionLoading(false);
+    }
+  };
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -204,7 +280,7 @@ export default function EditCustomerPage({ params }: PageProps) {
       return;
     }
 
-    if (name === "defaultOrderGuideVenueId") {
+    if (name === "orderGuidePricingVenueId") {
       const numValue = value === "" ? null : parseInt(value);
       setCustomer((prev) => (prev ? { ...prev, [name]: numValue } : null));
       return;
@@ -333,14 +409,14 @@ export default function EditCustomerPage({ params }: PageProps) {
           <div className="flex items-center">
             <input
               type="checkbox"
-              id="newOrderGuideEnabled"
-              name="newOrderGuideEnabled"
-              checked={customer.newOrderGuideEnabled}
+              id="isNewOrderGuideUser"
+              name="isNewOrderGuideUser"
+              checked={customer.isNewOrderGuideUser}
               onChange={handleCheckboxChange}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
             <label
-              htmlFor="newOrderGuideEnabled"
+              htmlFor="isNewOrderGuideUser"
               className="ml-2 block text-sm text-gray-900"
             >
               Enable New Customer Order Guide
@@ -349,25 +425,58 @@ export default function EditCustomerPage({ params }: PageProps) {
 
           <div>
             <label
-              htmlFor="defaultOrderGuideVenueId"
+              htmlFor="orderGuidePricingVenueId"
               className="block text-sm font-medium text-gray-700"
             >
               Default Pricing Venue
             </label>
             <select
-              id="defaultOrderGuideVenueId"
-              name="defaultOrderGuideVenueId"
-              value={customer.defaultOrderGuideVenueId ?? ""}
+              id="orderGuidePricingVenueId"
+              name="orderGuidePricingVenueId"
+              value={customer.orderGuidePricingVenueId ?? ""}
               onChange={handleInputChange}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
             >
               <option value="">Select a default venue</option>
-              {DEFAULT_VENUES.map((venue) => (
-                <option key={venue.id} value={venue.id}>
-                  {venue.name} ({venue.id})
+              {customer.venues.map((venue) => (
+                <option key={venue.trxVenueId} value={venue.trxVenueId}>
+                  {venue.venueName} ({venue.trxVenueId})
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="rounded-md border border-gray-200 p-3 space-y-3">
+            <div className="text-sm text-gray-900">
+              Draft Items: {customer.orderGuideDraft?._count.items ?? 0}
+            </div>
+            <div className="text-sm text-gray-900">
+              Draft Locked: {customer.orderGuideDraft?.isLocked ? "Yes" : "No"}
+            </div>
+            <div className="text-sm text-gray-900">
+              Last Submitted:{" "}
+              {customer.orderGuideDraft?.submittedAt
+                ? new Date(customer.orderGuideDraft.submittedAt).toLocaleString()
+                : "Never"}
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => handleDraftAction("reactivate")}
+                disabled={draftActionLoading}
+                className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              >
+                Reactivate Draft
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDraftAction("clear")}
+                disabled={draftActionLoading}
+                className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+              >
+                Clear Draft
+              </button>
+            </div>
           </div>
         </div>
 

@@ -11,12 +11,15 @@ export async function GET() {
     }
 
     const customerId = parseInt(session.user.trxCustomerId);
-    const feature = await prisma.customerOrderGuideFeature.findUnique({
-      where: { customerId },
-      select: { enabled: true, defaultVenueId: true },
+    const customer = await prisma.customer.findUnique({
+      where: { trxCustomerId: customerId },
+      select: {
+        isNewOrderGuideUser: true,
+        orderGuidePricingVenueId: true,
+      },
     });
 
-    if (!feature?.enabled) {
+    if (!customer?.isNewOrderGuideUser) {
       return NextResponse.json(
         { success: false, error: "Feature not enabled" },
         { status: 403 }
@@ -42,7 +45,7 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      defaultVenueId: feature.defaultVenueId,
+      defaultVenueId: customer.orderGuidePricingVenueId,
       items: items.map((item) => ({
         id: item.id,
         productId: Number(item.productId),
@@ -56,6 +59,7 @@ export async function GET() {
           description: item.product.description,
           manufacturer: item.product.manufacturer,
           category: item.product.category,
+          aqcat: item.product.aqcat,
           uom: item.product.uom,
           qtyAvailable: item.product.qtyAvailable
             ? Number(item.product.qtyAvailable)

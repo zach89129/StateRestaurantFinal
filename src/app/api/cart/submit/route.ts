@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { items, comment, purchaseOrder } = await request.json();
+    const trxCustomerId = parseInt(session.user.trxCustomerId || "");
 
     // Group items by venue
     const itemsByVenue = items.reduce(
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
       Items by Venue:
       ${(Object.entries(itemsByVenue) as [string, VenueGroup][])
         .map(
-          ([_, venueGroup]) => `
+          ([, venueGroup]) => `
         Venue: ${venueGroup.venueName ? venueGroup.venueName : "Main Catalog"}
         ${venueGroup.items
           .map(
@@ -139,7 +140,7 @@ export async function POST(request: NextRequest) {
         Items by Venue:
         ${(Object.entries(itemsByVenue) as [string, VenueGroup][])
           .map(
-            ([_, venueGroup]) => `
+            ([, venueGroup]) => `
           Venue: ${venueGroup.venueName ? venueGroup.venueName : "Main Catalog"}
           ${venueGroup.items
             .map(
@@ -227,11 +228,21 @@ export async function POST(request: NextRequest) {
       console.error("Error saving orders to database:", error);
     }
 
-    const sessionCustomerId = parseInt(session.user.trxCustomerId || "");
-    if (!Number.isNaN(sessionCustomerId)) {
+    if (!Number.isNaN(trxCustomerId)) {
+      await prisma.customer.updateMany({
+        where: {
+          trxCustomerId,
+          isNewOrderGuideUser: true,
+        },
+        data: {
+          isNewOrderGuideUser: false,
+          orderGuidePricingVenueId: null,
+        },
+      });
+
       await prisma.customerOrderGuideFeature.updateMany({
         where: {
-          customerId: sessionCustomerId,
+          customerId: trxCustomerId,
           enabled: true,
         },
         data: {

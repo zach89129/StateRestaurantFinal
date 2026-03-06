@@ -224,7 +224,7 @@ export default function Header() {
                 </button>
                 {session?.user && (
                   <Link
-                    href="/cart"
+                    href={hasNewCustomerGuide ? "/new-order-guide" : "/cart"}
                     className="text-white p-2 hover:text-blue-200"
                   >
                     <div className="relative">
@@ -558,7 +558,7 @@ export default function Header() {
                   </div>
                   {session?.user && (
                     <Link
-                      href="/cart"
+                      href={hasNewCustomerGuide ? "/new-order-guide" : "/cart"}
                       className="flex items-center text-white hover:text-blue-200"
                     >
                       <div className="relative">

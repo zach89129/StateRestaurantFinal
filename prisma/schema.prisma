@@ -26,6 +26,7 @@ model Product {
   images          ProductImage[]
   venueProducts   VenueProduct[] @relation("ProductToVenueProduct")
   orderGuideItem  OrderGuideItem?
+  orderGuideDraftItems OrderGuideDraftItem[]
 
   @@map("products")
 }
@@ -55,10 +56,13 @@ model Customer {
   phone         String?  @unique
   trxCustomerId Int      @id @map("trx_customer_id")
   seePrices     Boolean  @default(false)
+  isNewOrderGuideUser Boolean @default(false) @map("is_new_order_guide_user")
+  orderGuidePricingVenueId Int? @map("order_guide_pricing_venue_id")
   updatedAt     DateTime @updatedAt
   cart          Cart?
   venues        Venue[]  @relation("CustomerToVenue")
   orderGuideFeature CustomerOrderGuideFeature?
+  orderGuideDraft OrderGuideDraft?
 
   @@map("customers")
 }
@@ -97,6 +101,36 @@ model OrderGuideItem {
 
   @@index([included, orderGuideGroup, orderGuideQuality, productId], map: "order_guide_items_lookup_idx")
   @@map("order_guide_items")
+}
+
+model OrderGuideDraft {
+  id         Int                 @id @default(autoincrement())
+  customerId Int                 @unique @map("customer_id")
+  isLocked   Boolean             @default(false) @map("is_locked")
+  submittedAt DateTime?          @map("submitted_at")
+  createdAt  DateTime            @default(now()) @map("created_at")
+  updatedAt  DateTime            @updatedAt @map("updated_at")
+  customer   Customer            @relation(fields: [customerId], references: [trxCustomerId], onDelete: Cascade)
+  items      OrderGuideDraftItem[]
+
+  @@map("order_guide_drafts")
+}
+
+model OrderGuideDraftItem {
+  id         Int             @id @default(autoincrement())
+  draftId    Int             @map("draft_id")
+  productId  BigInt          @map("product_id")
+  quantity   Int
+  sourceType String          @default("ORDER_GUIDE") @map("source_type") @db.VarChar(50)
+  createdAt  DateTime        @default(now()) @map("created_at")
+  updatedAt  DateTime        @updatedAt @map("updated_at")
+  draft      OrderGuideDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  product    Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([draftId, productId], map: "order_guide_draft_items_draft_product_unique")
+  @@index([draftId], map: "order_guide_draft_items_draft_idx")
+  @@index([productId], map: "order_guide_draft_items_product_idx")
+  @@map("order_guide_draft_items")
 }
 
 model otp {

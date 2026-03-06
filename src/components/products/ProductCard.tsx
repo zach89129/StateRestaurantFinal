@@ -164,6 +164,16 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [priceError, setPriceError] = useState<string | null>(null);
 
   const isDeadInventory = product.dead ?? false;
+  const fallbackGuideVenueId =
+    session?.user?.defaultOrderGuideVenueId ??
+    (session?.user?.venues?.length === 1
+      ? session.user.venues[0].trxVenueId
+      : null);
+  const canGetPrice = Boolean(
+    isDeadInventory ||
+      session?.user?.isSalesTeam ||
+      session?.user?.newOrderGuideEnabled
+  );
 
   // Reset price when venue changes
   useEffect(() => {
@@ -175,9 +185,13 @@ export default function ProductCard({ product }: ProductCardProps) {
     e.preventDefault();
     e.stopPropagation();
 
-    const venueId = isDeadInventory ? DEAD_INVENTORY_DEFAULT_VENUE : salesVenue;
+    const resolvedVenueId = isDeadInventory
+      ? DEAD_INVENTORY_DEFAULT_VENUE
+      : salesVenue || (session?.user?.newOrderGuideEnabled ? fallbackGuideVenueId : null);
 
-    if (!venueId) {
+    if (
+      !resolvedVenueId
+    ) {
       setPriceError("No venue selected");
       return;
     }
@@ -186,10 +200,18 @@ export default function ProductCard({ product }: ProductCardProps) {
     setPriceError(null);
 
     try {
-      const deadInventoryParam = isDeadInventory ? "&isDeadInventory=true" : "";
-      const response = await fetch(
-        `/api/pricing?venueId=${venueId}&productId=${product.trx_product_id}${deadInventoryParam}`
-      );
+      const params = new URLSearchParams({
+        productId: String(product.trx_product_id),
+        catalogContext: "general",
+      });
+      if (resolvedVenueId) {
+        params.set("venueId", String(resolvedVenueId));
+      }
+      if (isDeadInventory) {
+        params.set("isDeadInventory", "true");
+      }
+
+      const response = await fetch(`/api/pricing?${params.toString()}`);
 
       if (!response.ok) {
         throw new Error("Failed to fetch price");
@@ -199,6 +221,12 @@ export default function ProductCard({ product }: ProductCardProps) {
 
       if (!data.success) {
         throw new Error(data.error || "Failed to fetch price");
+      }
+
+      if (data.restricted) {
+        setPrice(null);
+        setPriceError("Price unavailable");
+        return;
       }
 
       setPrice(data.price);
@@ -324,7 +352,7 @@ export default function ProductCard({ product }: ProductCardProps) {
               </div>
 
               {/* Price button for mobile - show for sales team or dead inventory */}
-              {(session?.user?.isSalesTeam || isDeadInventory) && (
+              {canGetPrice && (
                 <div className="sm:hidden">
                   <button
                     onClick={handleGetPrice}
@@ -374,7 +402,7 @@ export default function ProductCard({ product }: ProductCardProps) {
               </div>
 
               {/* Price button for desktop - show for sales team or dead inventory */}
-              {(session.user.isSalesTeam || isDeadInventory) && (
+              {canGetPrice && (
                 <div className="hidden sm:block">
                   <button
                     onClick={handleGetPrice}

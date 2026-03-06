@@ -105,6 +105,14 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   const [documentsError, setDocumentsError] = useState<string | null>(null);
   const [showResources, setShowResources] = useState(true);
   const shareMenuRef = useRef<HTMLDivElement>(null);
+  const fallbackGuideVenueId =
+    session?.user?.defaultOrderGuideVenueId ??
+    (session?.user?.venues?.length === 1
+      ? session.user.venues[0].trxVenueId
+      : null);
+  const canGetPrice = Boolean(
+    session?.user?.isSalesTeam || session?.user?.newOrderGuideEnabled
+  );
 
   // Reset price when venue changes
   useEffect(() => {
@@ -234,7 +242,11 @@ export default function ProductDetail({ product }: ProductDetailProps) {
     e.preventDefault();
     e.stopPropagation();
 
-    if (!salesVenue) {
+    const resolvedVenueId =
+      salesVenue ||
+      (session?.user?.newOrderGuideEnabled ? fallbackGuideVenueId : null);
+
+    if (!resolvedVenueId) {
       setPriceError("No venue selected");
       return;
     }
@@ -243,9 +255,12 @@ export default function ProductDetail({ product }: ProductDetailProps) {
     setPriceError(null);
 
     try {
-      const response = await fetch(
-        `/api/pricing?venueId=${salesVenue}&productId=${product.id}`
-      );
+      const params = new URLSearchParams({
+        productId: String(product.id),
+        catalogContext: "general",
+      });
+      params.set("venueId", String(resolvedVenueId));
+      const response = await fetch(`/api/pricing?${params.toString()}`);
 
       if (!response.ok) {
         throw new Error("Failed to fetch price");
@@ -255,6 +270,12 @@ export default function ProductDetail({ product }: ProductDetailProps) {
 
       if (!data.success) {
         throw new Error(data.error || "Failed to fetch price");
+      }
+
+      if (data.restricted) {
+        setPrice(null);
+        setPriceError("Price unavailable");
+        return;
       }
 
       setPrice(data.price);
@@ -764,7 +785,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                       </button>
 
                       {/* Price button for desktop - only show for sales team */}
-                      {session.user.isSalesTeam && (
+                      {canGetPrice && (
                         <div className="hidden sm:block">
                           <button
                             onClick={handleGetPrice}
@@ -785,7 +806,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                     </div>
 
                     {/* Price button for mobile - only show for sales team */}
-                    {session.user.isSalesTeam && (
+                    {canGetPrice && (
                       <div className="sm:hidden w-full">
                         <button
                           onClick={handleGetPrice}

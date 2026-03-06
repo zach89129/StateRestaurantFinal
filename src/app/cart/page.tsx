@@ -3,7 +3,7 @@
 
 import { useCart } from "@/contexts/CartContext";
 import { useSession } from "next-auth/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PageContainer } from "@/components/ui/PageContainer";
@@ -27,6 +27,12 @@ export default function CartPage() {
   const [comment, setComment] = useState("");
   const [purchaseOrder, setPurchaseOrder] = useState("");
   const router = useRouter();
+
+  useEffect(() => {
+    if (session?.user?.newOrderGuideEnabled) {
+      router.replace("/new-order-guide");
+    }
+  }, [router, session?.user?.newOrderGuideEnabled]);
 
   // Group items by venue
   const itemsByVenue = items.reduce((acc, item) => {

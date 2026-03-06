@@ -133,6 +133,24 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     item: Omit<CartItem, "quantity">,
     quantity: number
   ) => {
+    if (session?.user?.newOrderGuideEnabled) {
+      try {
+        await fetch("/api/order-guide-draft/catalog-add", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            productId: Number(item.id),
+            quantity,
+          }),
+        });
+      } catch (error) {
+        console.error("Error adding catalog item to order guide draft:", error);
+      }
+      return;
+    }
+
     const newItems = [...items];
 
     // If user is sales team and has a venue selected, add venueId to the item
