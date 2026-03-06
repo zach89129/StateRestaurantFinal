@@ -113,6 +113,9 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   const canGetPrice = Boolean(
     session?.user?.isSalesTeam || session?.user?.newOrderGuideEnabled
   );
+  const addToOrderLabel = session?.user?.newOrderGuideEnabled
+    ? "Add to New Order Guide"
+    : "Add to Cart";
 
   // Reset price when venue changes
   useEffect(() => {
@@ -781,7 +784,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                         onClick={handleAddToCart}
                         className="bg-blue-600 text-white w-full sm:w-auto px-8 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                       >
-                        Add to Cart
+                        {addToOrderLabel}
                       </button>
 
                       {/* Price button for desktop - only show for sales team */}

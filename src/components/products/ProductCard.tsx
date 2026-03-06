@@ -174,6 +174,9 @@ export default function ProductCard({ product }: ProductCardProps) {
       session?.user?.isSalesTeam ||
       session?.user?.newOrderGuideEnabled
   );
+  const addToOrderLabel = session?.user?.newOrderGuideEnabled
+    ? "Add to New Order Guide"
+    : "Add to Cart";
 
   // Reset price when venue changes
   useEffect(() => {
@@ -397,7 +400,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                   onClick={handleAddToCart}
                   className="flex-shrink-0 bg-blue-600 text-white px-2 sm:px-3 py-1.5 sm:py-2 rounded text-xs sm:text-sm hover:bg-blue-700 transition-colors whitespace-nowrap"
                 >
-                  Add to Cart
+                  {addToOrderLabel}
                 </button>
               </div>
 
