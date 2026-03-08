@@ -158,15 +158,14 @@ export async function GET(request: Request) {
       const errors: PricingError[] = [];
       const restrictedProductIds = new Set<number>();
 
-      const restrictedProducts = await prisma.product.findMany({
-        where: {
-          id: { in: ids.map((id) => BigInt(id)) },
-          category: { equals: "Equipment" },
-        },
-        select: { id: true },
+      const productsInBatch = await prisma.product.findMany({
+        where: { id: { in: ids.map((id) => BigInt(id)) } },
+        select: { id: true, category: true },
       });
-      for (const restrictedProduct of restrictedProducts) {
-        restrictedProductIds.add(Number(restrictedProduct.id));
+      for (const p of productsInBatch) {
+        if ((p.category || "").trim().toLowerCase() === "equipment") {
+          restrictedProductIds.add(Number(p.id));
+        }
       }
 
       const idsToFetch = ids.filter((id) => !restrictedProductIds.has(id));

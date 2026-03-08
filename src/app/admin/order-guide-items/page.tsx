@@ -130,7 +130,7 @@ export default function AdminOrderGuideItemsPage() {
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold text-gray-900">
-        New Customer Order Guide Items
+        Opening Order Guide Items
       </h2>
 
       <form

@@ -366,7 +366,7 @@ export default function Header() {
                       setIsMobileDropdownOpen(false);
                     }}
                   >
-                    New Order Guide
+                    Opening Order Guide
                   </Link>
                 ) : null}
                 {!hasNewCustomerGuide && hasVenueGuides && (
@@ -644,7 +644,7 @@ export default function Header() {
             {hasNewCustomerGuide ? (
               <li>
                 <Link href="/new-order-guide" className="hover:text-blue-200">
-                  New Order Guide
+                  Opening Order Guide
                 </Link>
               </li>
             ) : null}

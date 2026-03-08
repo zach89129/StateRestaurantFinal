@@ -63,6 +63,7 @@ function DetailSection({ title, content }: { title: string; content: string }) {
 
 interface ProductDetailProps {
   product: Product;
+  readOnly?: boolean;
 }
 
 interface AqDocument {
@@ -72,7 +73,7 @@ interface AqDocument {
   mimeType?: string | null;
 }
 
-export default function ProductDetail({ product }: ProductDetailProps) {
+export default function ProductDetail({ product, readOnly = false }: ProductDetailProps) {
   const { data: session } = useSession();
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
@@ -104,17 +105,20 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   const [isLoadingDocuments, setIsLoadingDocuments] = useState(false);
   const [documentsError, setDocumentsError] = useState<string | null>(null);
   const [showResources, setShowResources] = useState(true);
+  const [addSuccess, setAddSuccess] = useState(false);
   const shareMenuRef = useRef<HTMLDivElement>(null);
   const fallbackGuideVenueId =
     session?.user?.defaultOrderGuideVenueId ??
     (session?.user?.venues?.length === 1
       ? session.user.venues[0].trxVenueId
       : null);
+  const isEquipment =
+    (product.category || "").trim().toLowerCase() === "equipment";
   const canGetPrice = Boolean(
     session?.user?.isSalesTeam || session?.user?.newOrderGuideEnabled
   );
   const addToOrderLabel = session?.user?.newOrderGuideEnabled
-    ? "Add to New Order Guide"
+    ? "Add to Opening Order Guide"
     : "Add to Cart";
 
   // Reset price when venue changes
@@ -244,6 +248,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   const handleGetPrice = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (isEquipment) return;
 
     const resolvedVenueId =
       salesVenue ||
@@ -302,8 +307,8 @@ export default function ProductDetail({ product }: ProductDetailProps) {
     );
   };
 
-  const handleAddToCart = () => {
-    addItem(
+  const handleAddToCart = async () => {
+    const success = await addItem(
       {
         id: String(product.id),
         sku: product.sku,
@@ -311,10 +316,14 @@ export default function ProductDetail({ product }: ProductDetailProps) {
         manufacturer: product.manufacturer,
         category: product.category,
         uom: product.uom,
-        imageSrc: product.images[0].url,
+        imageSrc: product.images[0]?.url ?? "",
       },
       quantity
     );
+    if (success) {
+      setAddSuccess(true);
+      setTimeout(() => setAddSuccess(false), 1500);
+    }
   };
 
   const handleMoreOfPattern = (pattern: string) => {
@@ -767,81 +776,95 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                 </div>
               )}
 
-              {/* Add to Cart Section - Only show if logged in */}
-              {session?.user ? (
-                <div className="pt-6 border-t">
-                  <div className="flex flex-col gap-4">
-                    <div className="flex flex-col sm:flex-row gap-4 items-center w-full">
-                      <div className="w-full sm:w-40">
-                        <QuantityInput
-                          onQuantityChange={setQuantity}
-                          initialQuantity={1}
-                          className="w-full"
-                          preventPropagation={true}
-                        />
-                      </div>
-                      <button
-                        onClick={handleAddToCart}
-                        className="bg-blue-600 text-white w-full sm:w-auto px-8 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                      >
-                        {addToOrderLabel}
-                      </button>
-
-                      {/* Price button for desktop - only show for sales team */}
-                      {canGetPrice && (
-                        <div className="hidden sm:block">
+              {!readOnly && (
+                <>
+                  {session?.user ? (
+                    <div className="pt-6 border-t">
+                      <div className="flex flex-col gap-4">
+                        <div className="flex flex-col sm:flex-row gap-4 items-center w-full">
+                          <div className="w-full sm:w-40">
+                            <QuantityInput
+                              onQuantityChange={setQuantity}
+                              initialQuantity={1}
+                              className="w-full"
+                              preventPropagation={true}
+                            />
+                          </div>
                           <button
-                            onClick={handleGetPrice}
-                            className="price-button bg-gray-100 hover:bg-gray-200 px-8 py-2 rounded-lg text-black"
+                            onClick={handleAddToCart}
+                            className={`w-full sm:w-auto px-8 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 min-w-[140px] ${addSuccess ? "bg-green-600 text-white" : "bg-blue-600 text-white hover:bg-blue-700"}`}
                           >
-                            {isLoadingPrice ? (
-                              <LoadingSpinner />
-                            ) : price ? (
-                              `${price.toFixed(2)} per ${product.uom}`
-                            ) : priceError ? (
-                              priceError
+                            {addSuccess ? (
+                              <>
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                                Added!
+                              </>
                             ) : (
-                              "Get Price"
+                              addToOrderLabel
                             )}
                           </button>
-                        </div>
-                      )}
-                    </div>
 
-                    {/* Price button for mobile - only show for sales team */}
-                    {canGetPrice && (
-                      <div className="sm:hidden w-full">
-                        <button
-                          onClick={handleGetPrice}
-                          className="price-button w-full bg-gray-100 hover:bg-gray-200 py-2 rounded-lg text-black"
-                        >
-                          {isLoadingPrice ? (
-                            <LoadingSpinner />
-                          ) : price ? (
-                            `${price.toFixed(2)} per ${product.uom}`
-                          ) : priceError ? (
-                            priceError
-                          ) : (
-                            "Get Price"
+                          {canGetPrice && (
+                            <div className="hidden sm:block">
+                              <button
+                                onClick={handleGetPrice}
+                                className="price-button bg-gray-100 hover:bg-gray-200 px-8 py-2 rounded-lg text-black"
+                              >
+                                {isEquipment ? (
+                                  "Call for quote"
+                                ) : isLoadingPrice ? (
+                                  <LoadingSpinner />
+                                ) : price ? (
+                                  `${price.toFixed(2)} per ${product.uom}`
+                                ) : priceError ? (
+                                  priceError
+                                ) : (
+                                  "Get Price"
+                                )}
+                              </button>
+                            </div>
                           )}
-                        </button>
+                        </div>
+
+                        {canGetPrice && (
+                          <div className="sm:hidden w-full">
+                            <button
+                              onClick={handleGetPrice}
+                              className="price-button w-full bg-gray-100 hover:bg-gray-200 py-2 rounded-lg text-black"
+                            >
+                              {isEquipment ? (
+                                "Call for quote"
+                              ) : isLoadingPrice ? (
+                                <LoadingSpinner />
+                              ) : price ? (
+                                `${price.toFixed(2)} per ${product.uom}`
+                              ) : priceError ? (
+                                priceError
+                              ) : (
+                                "Get Price"
+                              )}
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="pt-6 border-t">
-                  <p className="text-gray-600">
-                    Please{" "}
-                    <Link
-                      href="/login"
-                      className="text-blue-600 hover:underline"
-                    >
-                      log in
-                    </Link>{" "}
-                    to add items to your cart.
-                  </p>
-                </div>
+                    </div>
+                  ) : (
+                    <div className="pt-6 border-t">
+                      <p className="text-gray-600">
+                        Please{" "}
+                        <Link
+                          href="/login"
+                          className="text-blue-600 hover:underline"
+                        >
+                          log in
+                        </Link>{" "}
+                        to add items to your cart.
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

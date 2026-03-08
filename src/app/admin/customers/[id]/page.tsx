@@ -419,7 +419,7 @@ export default function EditCustomerPage({ params }: PageProps) {
               htmlFor="isNewOrderGuideUser"
               className="ml-2 block text-sm text-gray-900"
             >
-              Enable New Customer Order Guide
+              Enable Opening Order Guide
             </label>
           </div>
 

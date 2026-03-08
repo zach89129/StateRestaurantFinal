@@ -242,7 +242,7 @@ export default function NewCustomerPage() {
               htmlFor="isNewOrderGuideUser"
               className="ml-2 block text-sm text-gray-700"
             >
-              Enable New Customer Order Guide
+              Enable Opening Order Guide
             </label>
           </div>
 

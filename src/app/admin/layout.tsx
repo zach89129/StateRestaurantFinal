@@ -58,7 +58,7 @@ export default function AdminLayout({
                   href="/admin/order-guide-items"
                   className="block px-4 py-2 rounded-md text-black hover:bg-blue-50 hover:text-blue-600 transition-colors"
                 >
-                  New Order Guide Items
+                  Opening Order Guide Items
                 </Link>
               </li>
               <li>

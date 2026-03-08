@@ -162,8 +162,11 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [isLoadingPrice, setIsLoadingPrice] = useState(false);
   const [price, setPrice] = useState<number | null>(null);
   const [priceError, setPriceError] = useState<string | null>(null);
+  const [addSuccess, setAddSuccess] = useState(false);
 
   const isDeadInventory = product.dead ?? false;
+  const isEquipment =
+    (product.category || "").trim().toLowerCase() === "equipment";
   const fallbackGuideVenueId =
     session?.user?.defaultOrderGuideVenueId ??
     (session?.user?.venues?.length === 1
@@ -175,7 +178,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       session?.user?.newOrderGuideEnabled
   );
   const addToOrderLabel = session?.user?.newOrderGuideEnabled
-    ? "Add to New Order Guide"
+    ? "Add to Opening Order Guide"
     : "Add to Cart";
 
   // Reset price when venue changes
@@ -187,6 +190,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const handleGetPrice = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (isEquipment) return;
 
     const resolvedVenueId = isDeadInventory
       ? DEAD_INVENTORY_DEFAULT_VENUE
@@ -241,11 +245,10 @@ export default function ProductCard({ product }: ProductCardProps) {
     }
   };
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
-    addItem(
+    const success = await addItem(
       {
         id: String(product.trx_product_id),
         sku: product.sku,
@@ -257,6 +260,10 @@ export default function ProductCard({ product }: ProductCardProps) {
       },
       quantity
     );
+    if (success) {
+      setAddSuccess(true);
+      setTimeout(() => setAddSuccess(false), 1500);
+    }
   };
 
   const handleMoreLikeThis = (e: React.MouseEvent) => {
@@ -290,7 +297,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       onClick={(e) => {
         if (
           (e.target as HTMLElement).closest(
-            ".quantity-input-container, .price-button"
+            ".quantity-input-container, .price-button, .add-button"
           )
         ) {
           e.preventDefault();
@@ -361,7 +368,9 @@ export default function ProductCard({ product }: ProductCardProps) {
                     onClick={handleGetPrice}
                     className="price-button text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded text-black"
                   >
-                    {isLoadingPrice ? (
+                    {isEquipment ? (
+                      "Call for quote"
+                    ) : isLoadingPrice ? (
                       <LoadingSpinner />
                     ) : price ? (
                       `${price.toFixed(2)} per ${product.uom}`
@@ -398,9 +407,18 @@ export default function ProductCard({ product }: ProductCardProps) {
                 </div>
                 <button
                   onClick={handleAddToCart}
-                  className="flex-shrink-0 bg-blue-600 text-white px-2 sm:px-3 py-1.5 sm:py-2 rounded text-xs sm:text-sm hover:bg-blue-700 transition-colors whitespace-nowrap"
+                  className={`add-button flex-shrink-0 text-white px-2 sm:px-3 py-1.5 sm:py-2 rounded text-xs sm:text-sm transition-colors whitespace-nowrap flex items-center justify-center gap-1 min-w-[100px] ${addSuccess ? "bg-green-600" : "bg-blue-600 hover:bg-blue-700"}`}
                 >
-                  {addToOrderLabel}
+                  {addSuccess ? (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Added!
+                    </>
+                  ) : (
+                    addToOrderLabel
+                  )}
                 </button>
               </div>
 
@@ -411,7 +429,9 @@ export default function ProductCard({ product }: ProductCardProps) {
                     onClick={handleGetPrice}
                     className="price-button w-full text-sm bg-gray-100 hover:bg-gray-200 py-1.5 rounded text-black"
                   >
-                    {isLoadingPrice ? (
+                    {isEquipment ? (
+                      "Call for quote"
+                    ) : isLoadingPrice ? (
                       <LoadingSpinner />
                     ) : price ? (
                       `${price.toFixed(2)} per ${product.uom}`
@@ -443,7 +463,9 @@ export default function ProductCard({ product }: ProductCardProps) {
                   onClick={handleGetPrice}
                   className="price-button w-full text-xs sm:text-sm bg-gray-100 hover:bg-gray-200 py-1.5 rounded text-black"
                 >
-                  {isLoadingPrice ? (
+                  {isEquipment ? (
+                    "Call for quote"
+                  ) : isLoadingPrice ? (
                     <LoadingSpinner />
                   ) : price ? (
                     `${price.toFixed(2)} per ${product.uom}`
