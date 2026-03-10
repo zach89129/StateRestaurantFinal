@@ -1,21 +1,16 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/auth-options";
-
-interface PricingSingleRequest {
-  customerId: number;
-  productId: number;
-}
-
-interface PricingBatchRequest {
-  customerId: number;
-  productIds: number[];
-}
+import { prisma } from "@/lib/prisma";
 
 interface PricingError {
   productId: number;
   error: string;
 }
+
+type PricingFetchResult =
+  | { ok: true; productId: number; data: Record<string, unknown> }
+  | { ok: false; productId: number; error: string; details: string };
 
 export async function GET(request: Request) {
   // Get API key from environment variables
@@ -50,17 +45,47 @@ export async function GET(request: Request) {
       );
     }
 
-    if (!venueId) {
+    let resolvedVenueId = venueId;
+    if (!resolvedVenueId && session?.user?.newOrderGuideEnabled) {
+      if (session.user.venues?.length === 1) {
+        resolvedVenueId = String(session.user.venues[0].trxVenueId);
+      } else if (session.user.defaultOrderGuideVenueId) {
+        resolvedVenueId = String(session.user.defaultOrderGuideVenueId);
+      }
+    }
+
+    if (!resolvedVenueId) {
       return NextResponse.json(
         { success: false, error: "Venue ID is required" },
         { status: 400 }
       );
     }
 
+    const isRestrictedCategory = async (targetProductId: number) => {
+      const product = await prisma.product.findUnique({
+        where: { id: BigInt(targetProductId) },
+        select: { category: true },
+      });
+      return (product?.category || "").trim().toLowerCase() === "equipment";
+    };
+
     // Handle single product request
     if (productId) {
+      const parsedProductId = parseInt(productId, 10);
+      if (!Number.isNaN(parsedProductId)) {
+        const isRestricted = await isRestrictedCategory(parsedProductId);
+        if (isRestricted) {
+          return NextResponse.json({
+            success: true,
+            productId: parsedProductId,
+            price: null,
+            restricted: true,
+          });
+        }
+      }
+
       //the route says customerId but Joe changed it to take venueId instead.
-      const pricingApiUrl = `https://customer-pricing-api.sunsofterp.com/price?customerId=${venueId}&productId=${productId}`;
+      const pricingApiUrl = `https://customer-pricing-api.sunsofterp.com/price?customerId=${resolvedVenueId}&productId=${productId}`;
 
       try {
         const response = await fetch(pricingApiUrl, {
@@ -90,7 +115,7 @@ export async function GET(request: Request) {
         let data;
         try {
           data = JSON.parse(responseText);
-        } catch (e) {
+        } catch {
           return NextResponse.json(
             {
               success: false,
@@ -129,76 +154,133 @@ export async function GET(request: Request) {
         );
       }
 
-      // Process requests in batches of maximum 5 at a time to avoid timeouts
-      const batchSize = 5;
       const results = [];
       const errors: PricingError[] = [];
+      const restrictedProductIds = new Set<number>();
 
-      for (let i = 0; i < ids.length; i += batchSize) {
-        const batch = ids.slice(i, i + batchSize);
-
-        const promises = batch.map(async (productId) => {
-          try {
-            //the route says customerId but Joe changed it to take venueId instead.
-            const pricingApiUrl = `https://customer-pricing-api.sunsofterp.com/price?customerId=${venueId}&productId=${productId}`;
-            const response = await fetch(pricingApiUrl, {
-              method: "GET",
-              headers: {
-                "X-API-Key": apiKey,
-                "Content-Type": "application/json",
-                Accept: "application/json",
-                Authorization: `Bearer ${apiKey}`, // Try alternative auth method
-              },
-              cache: "no-store",
-            });
-
-            const responseText = await response.text();
-
-            if (!response.ok) {
-              console.error(
-                `Error response for product ${productId}: ${responseText}`
-              );
-              errors.push({
-                productId,
-                error: `Failed to fetch price for product ${productId}`,
-              });
-              return null;
-            }
-
-            let data;
-            try {
-              data = JSON.parse(responseText);
-              return { productId, ...data };
-            } catch (e) {
-              console.error(
-                `Invalid JSON response for product ${productId}: ${responseText}`
-              );
-              errors.push({
-                productId,
-                error: `Invalid response format for product ${productId}`,
-              });
-              return null;
-            }
-          } catch (error) {
-            console.error(
-              `Error fetching price for product ${productId}:`,
-              error
-            );
-            errors.push({
-              productId,
-              error: error instanceof Error ? error.message : "Unknown error",
-            });
-            return null;
-          }
-        });
-
-        const batchResults = await Promise.all(promises);
-        results.push(...batchResults.filter((r) => r !== null));
-
-        // Add a small delay between batches to avoid rate limiting
-        if (i + batchSize < ids.length) {
-          await new Promise((resolve) => setTimeout(resolve, 100));
+      const productsInBatch = await prisma.product.findMany({
+        where: { id: { in: ids.map((id) => BigInt(id)) } },
+        select: { id: true, category: true },
+      });
+      for (const p of productsInBatch) {
+        if ((p.category || "").trim().toLowerCase() === "equipment") {
+          restrictedProductIds.add(Number(p.id));
         }
+      }
+
+      const idsToFetch = ids.filter((id) => !restrictedProductIds.has(id));
+      const fetchPrice = async (
+        currentProductId: number
+      ): Promise<PricingFetchResult> => {
+        try {
+          const pricingApiUrl = `https://customer-pricing-api.sunsofterp.com/price?customerId=${resolvedVenueId}&productId=${currentProductId}`;
+          const response = await fetch(pricingApiUrl, {
+            method: "GET",
+            headers: {
+              "X-API-Key": apiKey,
+              "Content-Type": "application/json",
+              Accept: "application/json",
+              Authorization: `Bearer ${apiKey}`,
+            },
+            cache: "no-store",
+          });
+
+          const responseText = await response.text();
+          if (!response.ok) {
+            return {
+              ok: false,
+              productId: currentProductId,
+              error: `Failed to fetch price for product ${currentProductId}`,
+              details: responseText,
+            };
+          }
+
+          try {
+            const data = JSON.parse(responseText);
+            return { ok: true, productId: currentProductId, data };
+          } catch {
+            return {
+              ok: false,
+              productId: currentProductId,
+              error: `Invalid response format for product ${currentProductId}`,
+              details: responseText,
+            };
+          }
+        } catch (error) {
+          return {
+            ok: false,
+            productId: currentProductId,
+            error: error instanceof Error ? error.message : "Unknown error",
+            details: "",
+          };
+        }
+      };
+
+      const concurrencySteps = [10, 5, 2];
+      let pendingIds = [...idsToFetch];
+      const failedErrorMap = new Map<number, string>();
+      const failedDetailMap = new Map<number, string>();
+
+      for (const batchSize of concurrencySteps) {
+        if (pendingIds.length === 0) {
+          break;
+        }
+
+        const nextPending: number[] = [];
+        let failedInStep = 0;
+        for (let i = 0; i < pendingIds.length; i += batchSize) {
+          const batch = pendingIds.slice(i, i + batchSize);
+          const batchResults = await Promise.all(batch.map(fetchPrice));
+
+          for (const batchResult of batchResults) {
+            if (batchResult.ok) {
+              results.push({ productId: batchResult.productId, ...batchResult.data });
+            } else {
+              failedInStep += 1;
+              nextPending.push(batchResult.productId);
+              failedErrorMap.set(batchResult.productId, batchResult.error);
+              if (batchResult.details) {
+                failedDetailMap.set(batchResult.productId, batchResult.details);
+              }
+            }
+          }
+
+          if (i + batchSize < pendingIds.length) {
+            await new Promise((resolve) => setTimeout(resolve, 200));
+          }
+        }
+
+        if (failedInStep > 0) {
+          const sampleFailures = Array.from(nextPending)
+            .slice(0, 3)
+            .map((productId) => ({
+              productId,
+              details: failedDetailMap.get(productId) || failedErrorMap.get(productId),
+            }));
+          console.warn(
+            `[pricing] step batchSize=${batchSize} failures=${failedInStep} sample=${JSON.stringify(sampleFailures)}`
+          );
+        }
+
+        pendingIds = nextPending;
+        if (pendingIds.length > 0) {
+          await new Promise((resolve) => setTimeout(resolve, 350));
+        }
+      }
+
+      for (const failedId of pendingIds) {
+        errors.push({
+          productId: failedId,
+          error: failedErrorMap.get(failedId) || `Failed to fetch price for product ${failedId}`,
+        });
+      }
+
+      for (const restrictedProductId of restrictedProductIds) {
+        results.push({
+          productId: restrictedProductId,
+          price: null,
+          restricted: true,
+        });
       }
 
       return NextResponse.json({

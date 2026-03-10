@@ -15,6 +15,8 @@ declare module "next-auth" {
       isSalesTeam: boolean;
       trxCustomerId: string;
       seePrices: boolean;
+      newOrderGuideEnabled: boolean;
+      defaultOrderGuideVenueId: number | null;
     };
   }
 
@@ -31,6 +33,8 @@ declare module "next-auth" {
     isSalesTeam: boolean;
     trxCustomerId: string;
     seePrices: boolean;
+    newOrderGuideEnabled: boolean;
+    defaultOrderGuideVenueId: number | null;
   }
 }
 
@@ -48,5 +52,7 @@ declare module "next-auth/jwt" {
     isSalesTeam: boolean;
     trxCustomerId: string;
     seePrices: boolean;
+    newOrderGuideEnabled: boolean;
+    defaultOrderGuideVenueId: number | null;
   }
 }

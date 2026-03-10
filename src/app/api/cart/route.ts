@@ -39,6 +39,13 @@ export async function GET(request: NextRequest) {
 
     const trxCustomerId = parseInt(session.user.trxCustomerId as string);
     const canSeePrices = session.user.seePrices === true;
+    const fallbackVenueForMainCatalog = session.user.newOrderGuideEnabled
+      ? session.user.venues?.length === 1
+        ? String(session.user.venues[0].trxVenueId)
+        : session.user.defaultOrderGuideVenueId
+        ? String(session.user.defaultOrderGuideVenueId)
+        : null
+      : null;
 
     try {
       // Get cart for the user
@@ -130,8 +137,14 @@ export async function GET(request: NextRequest) {
           const itemsByVenue: { [venueId: string]: CartItemWithDetails[] } = {};
 
           cartItemsWithDetails.forEach((item) => {
-            // Skip items from the regular catalog (venue "0") as they need a quote
             if (item.venueId === "0") {
+              if (!fallbackVenueForMainCatalog) {
+                return;
+              }
+              if (!itemsByVenue[fallbackVenueForMainCatalog]) {
+                itemsByVenue[fallbackVenueForMainCatalog] = [];
+              }
+              itemsByVenue[fallbackVenueForMainCatalog].push(item);
               return;
             }
 
@@ -225,6 +238,12 @@ export async function GET(request: NextRequest) {
         } catch (pricingError) {
           console.error("Error fetching pricing data:", pricingError);
           // Continue without prices if there's an error
+        }
+      }
+
+      for (const item of cartItemsWithDetails) {
+        if ((item.category || "").trim().toLowerCase() === "equipment") {
+          item.price = null;
         }
       }
 

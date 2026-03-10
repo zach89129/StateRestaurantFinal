@@ -28,6 +28,9 @@ export default function Header() {
   const { itemCount } = useCart();
   const pathname = usePathname();
   const isVenuePage = pathname?.includes("/venues/");
+  const hasVenueGuides =
+    Boolean(session?.user?.venues) && (session?.user?.venues?.length || 0) > 0;
+  const hasNewCustomerGuide = Boolean(session?.user?.newOrderGuideEnabled);
   const dropdownRef = useRef<HTMLLIElement>(null);
   const venueDropdownRef = useRef<HTMLLIElement>(null);
   const [selectedVenue, setSelectedVenue] = useState<{
@@ -221,7 +224,7 @@ export default function Header() {
                 </button>
                 {session?.user && (
                   <Link
-                    href="/cart"
+                    href={hasNewCustomerGuide ? "/new-order-guide" : "/cart"}
                     className="text-white p-2 hover:text-blue-200"
                   >
                     <div className="relative">
@@ -354,7 +357,19 @@ export default function Header() {
                 >
                   Contact
                 </Link>
-                {session?.user?.venues && session.user.venues.length > 0 && (
+                {hasNewCustomerGuide ? (
+                  <Link
+                    href="/new-order-guide"
+                    className="block text-gray-300 hover:text-white"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      setIsMobileDropdownOpen(false);
+                    }}
+                  >
+                    Opening Order Guide
+                  </Link>
+                ) : null}
+                {!hasNewCustomerGuide && hasVenueGuides && (
                   <div>
                     <button
                       onClick={() =>
@@ -381,7 +396,7 @@ export default function Header() {
                     </button>
                     {isMobileVenueDropdownOpen && (
                       <div className="pl-4 mt-2 space-y-2">
-                        {session.user.venues.map((venue) => (
+                        {(session?.user?.venues || []).map((venue) => (
                           <Link
                             key={venue.trxVenueId}
                             href={`/venues/${venue.trxVenueId}`}
@@ -543,7 +558,7 @@ export default function Header() {
                   </div>
                   {session?.user && (
                     <Link
-                      href="/cart"
+                      href={hasNewCustomerGuide ? "/new-order-guide" : "/cart"}
                       className="flex items-center text-white hover:text-blue-200"
                     >
                       <div className="relative">
@@ -626,7 +641,14 @@ export default function Header() {
                 Contact
               </Link>
             </li>
-            {session?.user?.venues && session.user.venues.length > 0 && (
+            {hasNewCustomerGuide ? (
+              <li>
+                <Link href="/new-order-guide" className="hover:text-blue-200">
+                  Opening Order Guide
+                </Link>
+              </li>
+            ) : null}
+            {!hasNewCustomerGuide && hasVenueGuides && (
               <li className="relative" ref={venueDropdownRef}>
                 <button
                   onClick={() => setIsVenueDropdownOpen(!isVenueDropdownOpen)}
@@ -652,7 +674,7 @@ export default function Header() {
                 {isVenueDropdownOpen && (
                   <div className="absolute top-full right-0 w-64 bg-zinc-800 shadow-lg rounded-b-lg py-2 z-50">
                     <ul className="py-1">
-                      {session.user.venues.map((venue) => (
+                      {(session?.user?.venues || []).map((venue) => (
                         <li key={venue.trxVenueId}>
                           <Link
                             href={`/venues/${venue.trxVenueId}`}
@@ -669,8 +691,7 @@ export default function Header() {
               </li>
             )}
             {session?.user &&
-              session?.user?.venues &&
-              session.user.venues.length > 0 && (
+              (hasVenueGuides || hasNewCustomerGuide) && (
                 <li>
                   <Link href="/orders" className="hover:text-blue-200">
                     Order History

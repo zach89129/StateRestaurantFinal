@@ -3,11 +3,45 @@ import { ProductInput } from "@/types/api";
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { convertBigIntToString } from "@/utils/convertBigIntToString";
+import { formatProductForClient } from "@/utils/formatProduct";
 import { getTagsForAqcat } from "@/utils/productTags";
 
 const MAX_PAGE_SIZE = 100;
 
 type ProductUpdateData = Prisma.ProductUpdateInput;
+type ProductPayload = ProductInput["products"][number];
+
+const getOrderGuideMetadata = (product: ProductPayload) => {
+  const orderGuideGroup = product.metaData?.orderGuideGroup?.trim();
+  const orderGuideQuality = product.metaData?.orderGuideQuality?.trim();
+
+  if (!orderGuideGroup || !orderGuideQuality) {
+    return null;
+  }
+
+  return { orderGuideGroup, orderGuideQuality };
+};
+
+const syncOrderGuideItem = async (productId: bigint, product: ProductPayload) => {
+  const orderGuideMetadata = getOrderGuideMetadata(product);
+  if (!orderGuideMetadata) {
+    return;
+  }
+
+  await prisma.orderGuideItem.upsert({
+    where: { productId },
+    update: {
+      orderGuideGroup: orderGuideMetadata.orderGuideGroup,
+      orderGuideQuality: orderGuideMetadata.orderGuideQuality,
+    },
+    create: {
+      productId,
+      orderGuideGroup: orderGuideMetadata.orderGuideGroup,
+      orderGuideQuality: orderGuideMetadata.orderGuideQuality,
+      included: true,
+    },
+  });
+};
 
 export async function POST(request: NextRequest) {
   console.log("POST /api/products - Starting request processing");
@@ -119,6 +153,7 @@ export async function POST(request: NextRequest) {
             data: updateData,
             include: { images: true },
           });
+          await syncOrderGuideItem(BigInt(product.trx_product_id), product);
 
           console.log(
             `Successfully updated product: ${product.trx_product_id}`,
@@ -203,6 +238,7 @@ export async function POST(request: NextRequest) {
             },
             include: { images: true },
           });
+          await syncOrderGuideItem(BigInt(product.trx_product_id), product);
 
           console.log(
             `Successfully created new product: ${product.trx_product_id}`,
@@ -260,6 +296,31 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const searchParams = new URL(request.url).searchParams;
+    const idParam = searchParams.get("id");
+    if (idParam) {
+      const productId = parseInt(idParam, 10);
+      if (Number.isNaN(productId) || productId <= 0) {
+        return NextResponse.json(
+          { success: false, error: "Invalid product ID" },
+          { status: 400 }
+        );
+      }
+      const product = await prisma.product.findUnique({
+        where: { id: BigInt(productId) },
+        include: { images: true },
+      });
+      if (!product) {
+        return NextResponse.json(
+          { success: false, error: "Product not found" },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json({
+        success: true,
+        product: formatProductForClient(product),
+      });
+    }
+
     const page = parseInt(searchParams.get("page") || "1");
     const pageSize = parseInt(searchParams.get("pageSize") || "24");
     const sort = searchParams.get("sort") || "";

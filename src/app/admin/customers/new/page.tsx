@@ -15,6 +15,8 @@ export default function NewCustomerPage() {
     phone: "",
     trxCustomerId: "",
     seePrices: false,
+    isNewOrderGuideUser: false,
+    orderGuidePricingVenueId: "",
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -38,8 +40,12 @@ export default function NewCustomerPage() {
           email: formData.email,
           phone: formData.phone || null,
           trxCustomerId: parseInt(formData.trxCustomerId),
-          seePrices: formData.seePrices,
+          seePrices: formData.seePrices || formData.isNewOrderGuideUser,
           venueIds: selectedVenues.map((v) => v.trxVenueId),
+          isNewOrderGuideUser: formData.isNewOrderGuideUser,
+          orderGuidePricingVenueId: formData.orderGuidePricingVenueId
+            ? parseInt(formData.orderGuidePricingVenueId)
+            : null,
         }),
       });
 
@@ -121,6 +127,28 @@ export default function NewCustomerPage() {
     }
   }, [searchVenue]);
 
+  useEffect(() => {
+    if (selectedVenues.length === 0) {
+      setFormData((prev) => ({ ...prev, orderGuidePricingVenueId: "" }));
+      return;
+    }
+
+    if (selectedVenues.length === 1) {
+      setFormData((prev) => ({
+        ...prev,
+        orderGuidePricingVenueId: String(selectedVenues[0].trxVenueId),
+      }));
+      return;
+    }
+
+    setFormData((prev) => {
+      const stillValid = selectedVenues.some(
+        (venue) => String(venue.trxVenueId) === prev.orderGuidePricingVenueId
+      );
+      return stillValid ? prev : { ...prev, orderGuidePricingVenueId: "" };
+    });
+  }, [selectedVenues]);
+
   return (
     <div className="max-w-2xl mx-auto p-6">
       <div className="mb-6">
@@ -198,6 +226,48 @@ export default function NewCustomerPage() {
           >
             Can see prices
           </label>
+        </div>
+
+        <div className="rounded-md border border-gray-200 p-4 space-y-4">
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="isNewOrderGuideUser"
+              name="isNewOrderGuideUser"
+              checked={formData.isNewOrderGuideUser}
+              onChange={handleChange}
+              className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+            />
+            <label
+              htmlFor="isNewOrderGuideUser"
+              className="ml-2 block text-sm text-gray-700"
+            >
+              Enable Opening Order Guide
+            </label>
+          </div>
+
+          <div>
+            <label
+              htmlFor="orderGuidePricingVenueId"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Default Pricing Venue
+            </label>
+            <select
+              id="orderGuidePricingVenueId"
+              name="orderGuidePricingVenueId"
+              value={formData.orderGuidePricingVenueId}
+              onChange={handleChange}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-gray-900"
+            >
+              <option value="">Select a default venue</option>
+              {selectedVenues.map((venue) => (
+                <option key={venue.trxVenueId} value={venue.trxVenueId}>
+                  {venue.venueName} ({venue.trxVenueId})
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="space-y-4">

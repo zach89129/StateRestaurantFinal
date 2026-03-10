@@ -16,6 +16,8 @@ interface User {
   isSalesTeam: boolean;
   trxCustomerId: string;
   seePrices: boolean;
+  newOrderGuideEnabled: boolean;
+  defaultOrderGuideVenueId: number | null;
 }
 
 export const authOptions: AuthOptions = {
@@ -94,6 +96,9 @@ export const authOptions: AuthOptions = {
               isSalesTeam,
               trxCustomerId: customer.trxCustomerId.toString(),
               seePrices: customer.seePrices,
+              newOrderGuideEnabled: customer.isNewOrderGuideUser || false,
+              defaultOrderGuideVenueId:
+                customer.orderGuidePricingVenueId ?? null,
             } as User;
 
             // Log the user activity
@@ -180,6 +185,8 @@ export const authOptions: AuthOptions = {
         token.trxCustomerId = user.trxCustomerId;
         token.name = user.email; // Add name to ensure compatibility
         token.seePrices = user.seePrices;
+        token.newOrderGuideEnabled = user.newOrderGuideEnabled;
+        token.defaultOrderGuideVenueId = user.defaultOrderGuideVenueId;
 
         // Add explicit expiration time
         token.iat = Math.floor(Date.now() / 1000);
@@ -202,6 +209,9 @@ export const authOptions: AuthOptions = {
         session.user.trxCustomerId = token.trxCustomerId as string;
         session.user.name = token.email as string; // Add name to ensure compatibility
         session.user.seePrices = token.seePrices as boolean;
+        session.user.newOrderGuideEnabled = token.newOrderGuideEnabled as boolean;
+        session.user.defaultOrderGuideVenueId =
+          (token.defaultOrderGuideVenueId as number | null) ?? null;
 
         // Add session expiry
         session.expires = new Date(

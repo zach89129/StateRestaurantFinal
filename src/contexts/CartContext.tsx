@@ -20,7 +20,7 @@ interface CartItem {
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (item: Omit<CartItem, "quantity">, quantity: number) => void;
+  addItem: (item: Omit<CartItem, "quantity">, quantity: number) => Promise<boolean>;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
@@ -132,10 +132,29 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const addItem = async (
     item: Omit<CartItem, "quantity">,
     quantity: number
-  ) => {
+  ): Promise<boolean> => {
+    if (session?.user?.newOrderGuideEnabled) {
+      try {
+        const response = await fetch("/api/order-guide-draft/catalog-add", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            productId: Number(item.id),
+            quantity,
+          }),
+        });
+        const data = await response.json();
+        return response.ok && Boolean(data.success);
+      } catch (error) {
+        console.error("Error adding catalog item to order guide draft:", error);
+        return false;
+      }
+    }
+
     const newItems = [...items];
 
-    // If user is sales team and has a venue selected, add venueId to the item
     const shouldAddVenue =
       session?.user?.isSalesTeam && salesVenue > 0 && !item.venueId;
     const itemWithVenue = shouldAddVenue
@@ -143,7 +162,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       : item;
 
     const existingItem = newItems.find((i) => {
-      // Match both id and venueId (if exists) to prevent mixing items from different venues
       if (itemWithVenue.venueId) {
         return i.id === itemWithVenue.id && i.venueId === itemWithVenue.venueId;
       }
@@ -156,7 +174,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       newItems.push({ ...itemWithVenue, quantity });
     }
 
-    await updateCart(newItems);
+    return updateCart(newItems);
   };
 
   const removeItem = async (id: string) => {
