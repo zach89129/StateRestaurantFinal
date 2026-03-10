@@ -98,11 +98,11 @@ export default function AdminCustomersPage() {
     }
 
     try {
-      const deletePromises = selectedCustomers.map((id) =>
+      const deletePromises = selectedCustomers.map((trxCustomerId) =>
         fetch("/api/admin/customers", {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id }),
+          body: JSON.stringify({ trxCustomerId }),
         })
       );
 
