@@ -2,6 +2,7 @@ import { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import { getOTP, deleteOTP } from "@/lib/otpStore";
+import { isSuperuserEmail } from "@/lib/superuser";
 
 // Define custom user type
 interface User {
@@ -69,7 +70,7 @@ export const authOptions: AuthOptions = {
             }
 
             // Check if user is superuser
-            const isSuperuser = customer.email === process.env.SUPERUSER_ACCT;
+            const isSuperuser = isSuperuserEmail(customer.email);
             const isSalesTeam = customer.email.includes("staterestaurant.com");
 
             // Format venues for session

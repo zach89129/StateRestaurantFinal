@@ -6,7 +6,7 @@ import PromotionalBanner from "./PromotionalBanner";
 
 const featuredCollections = [
   {
-    title: "China and Flatware",
+    title: "China, Flatware, and Glassware catalog references",
     body: "Click here to view full manufacturer product catalogs for items beyond our vast online selection.",
     href: "/china-and-flatware",
     buttonText: "View Catalogs",
@@ -62,8 +62,8 @@ export default function CategoryGrid() {
                 index === 0 || index === 3
                   ? "md:col-span-5"
                   : index === 4 || index === 5
-                  ? "md:col-span-4"
-                  : "md:col-span-3"
+                    ? "md:col-span-4"
+                    : "md:col-span-3"
               }`}
             >
               <div className="relative w-full h-full group">

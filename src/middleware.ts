@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { hashApiKey } from "@/lib/api-auth";
+import { isSuperuserEmail } from "@/lib/superuser";
 
 // Secure API key verification function comparing against stored hash
 async function verifyRequestApiKey(request: NextRequest): Promise<boolean> {
@@ -144,7 +145,8 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL("/login", request.url));
       }
 
-      if (token.email !== process.env.SUPERUSER_ACCT) {
+      const tokenEmail = typeof token.email === "string" ? token.email : "";
+      if (!isSuperuserEmail(tokenEmail)) {
         return NextResponse.redirect(new URL("/", request.url));
       }
     }
