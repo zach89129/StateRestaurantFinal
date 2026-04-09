@@ -63,7 +63,8 @@ export async function POST(req: NextRequest) {
     }
 
     const results = [];
-    const errors = [];
+    const errors: { customer_id?: number; error: string; status: number }[] =
+      [];
 
     for (const customerData of body.customers) {
       try {
@@ -74,6 +75,7 @@ export async function POST(req: NextRequest) {
         if (!trx_customer_id) {
           errors.push({
             error: "Missing required field: trx_customer_id",
+            status: 400,
           });
           continue; // Skip to next customer
         }
@@ -94,6 +96,7 @@ export async function POST(req: NextRequest) {
             errors.push({
               customer_id: trx_customer_id,
               error: `Skipped: Phone number ${phone} is already registered to another account`,
+              status: 409,
             });
             continue; // Skip to next customer in the loop
           }
@@ -196,6 +199,7 @@ export async function POST(req: NextRequest) {
         errors.push({
           customer_id: customerData.trx_customer_id,
           error: err instanceof Error ? err.message : "Unknown error",
+          status: 500,
         });
       }
     }
@@ -203,12 +207,37 @@ export async function POST(req: NextRequest) {
     // Convert any remaining BigInt values to strings
     const safeResults = convertBigIntToString(results);
     console.log(safeResults, errors);
-    return NextResponse.json({
-      success: true,
-      processed: results.length,
-      errors: errors.length > 0 ? errors : undefined,
-      results: safeResults,
-    });
+
+    const isSingle = body.customers.length === 1;
+
+    if (isSingle && errors.length === 1) {
+      // Single customer that failed — return its specific status code
+      return NextResponse.json(
+        { success: false, error: errors[0].error },
+        { status: errors[0].status }
+      );
+    }
+
+    // Bulk: use 207 Multi-Status when there are both successes and failures,
+    // or 400/500 when everything failed (use the most common error status).
+    let responseStatus = 200;
+    if (errors.length > 0 && results.length > 0) {
+      responseStatus = 207;
+    } else if (errors.length > 0 && results.length === 0) {
+      // All failed — pick the most representative status
+      const allSame = errors.every((e) => e.status === errors[0].status);
+      responseStatus = allSame ? errors[0].status : 400;
+    }
+
+    return NextResponse.json(
+      {
+        success: errors.length === 0,
+        processed: results.length,
+        errors: errors.length > 0 ? errors : undefined,
+        results: safeResults,
+      },
+      { status: responseStatus }
+    );
   } catch (error) {
     console.error("Error processing request:", error);
     return NextResponse.json(

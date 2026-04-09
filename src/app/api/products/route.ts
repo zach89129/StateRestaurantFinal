@@ -25,6 +25,7 @@ const getOrderGuideMetadata = (product: ProductPayload) => {
 const syncOrderGuideItem = async (productId: bigint, product: ProductPayload) => {
   const orderGuideMetadata = getOrderGuideMetadata(product);
   if (!orderGuideMetadata) {
+    await prisma.orderGuideItem.deleteMany({ where: { productId } });
     return;
   }
 
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
     }
 
     const results = [];
-    const errors = [];
+    const errors: { product_id?: number; sku?: string; error: string; status: number }[] = [];
 
     for (const product of body.products) {
       try {
@@ -90,7 +91,8 @@ export async function POST(request: NextRequest) {
         );
 
         if (!product.trx_product_id) {
-          throw new Error("Missing trx_product_id");
+          errors.push({ error: "Missing trx_product_id", status: 400 });
+          continue;
         }
 
         const existingProduct = await prisma.product.findUnique({
@@ -194,11 +196,13 @@ export async function POST(request: NextRequest) {
           });
 
           if (missingFields.length > 0) {
-            throw new Error(
-              `Missing required fields for new product: ${missingFields.join(
-                ", ",
-              )}`,
-            );
+            errors.push({
+              product_id: product.trx_product_id,
+              sku: product.sku,
+              error: `Missing required fields for new product: ${missingFields.join(", ")}`,
+              status: 400,
+            });
+            continue;
           }
 
           const aqcat = product.metaData?.aqcat;
@@ -268,6 +272,7 @@ export async function POST(request: NextRequest) {
           product_id: product.trx_product_id,
           sku: product.sku,
           error: err instanceof Error ? err.message : "Unknown error",
+          status: 500,
         });
       }
     }
@@ -278,12 +283,32 @@ export async function POST(request: NextRequest) {
       errors: errors.length > 0 ? errors : undefined,
     });
 
-    return NextResponse.json({
-      success: true,
-      processed: results.length,
-      errors: errors.length > 0 ? errors : undefined,
-      results: convertBigIntToString(results),
-    });
+    const isSingle = body.products.length === 1;
+
+    if (isSingle && errors.length === 1) {
+      return NextResponse.json(
+        { success: false, error: errors[0].error },
+        { status: errors[0].status },
+      );
+    }
+
+    let responseStatus = 200;
+    if (errors.length > 0 && results.length > 0) {
+      responseStatus = 207;
+    } else if (errors.length > 0 && results.length === 0) {
+      const allSame = errors.every((e) => e.status === errors[0].status);
+      responseStatus = allSame ? errors[0].status : 400;
+    }
+
+    return NextResponse.json(
+      {
+        success: errors.length === 0,
+        processed: results.length,
+        errors: errors.length > 0 ? errors : undefined,
+        results: convertBigIntToString(results),
+      },
+      { status: responseStatus },
+    );
   } catch (error) {
     console.error("POST /api/products - Fatal error:", error);
     return NextResponse.json(
