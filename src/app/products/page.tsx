@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import FilterSidebar from "@/components/products/FilterSidebar";
+import PatternBrowseCallout from "@/components/products/PatternBrowseCallout";
 import ProductCard from "@/components/products/ProductCard";
 import SortOptions from "@/components/products/SortOptions";
 import Link from "next/link";
@@ -263,6 +264,8 @@ function ProductsContent() {
             Products
           </span>
         </nav>
+
+        <PatternBrowseCallout />
 
         <div className="flex flex-col lg:flex-row gap-8 w-full overflow-hidden">
           {/* Left Sidebar - Make visible on lg screens by default (not hidden) */}

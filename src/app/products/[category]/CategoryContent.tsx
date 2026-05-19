@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import FilterSidebar from "@/components/products/FilterSidebar";
+import PatternBrowseCallout from "@/components/products/PatternBrowseCallout";
 import ProductCard from "@/components/products/ProductCard";
 import Link from "next/link";
 import { useSearch } from "@/contexts/SearchContext";
@@ -265,6 +266,8 @@ export default function CategoryContent({ category }: Props) {
             {categoryTitle}
           </span>
         </nav>
+
+        <PatternBrowseCallout category={category} />
 
         <div className="flex flex-col lg:flex-row gap-8 w-full overflow-hidden">
           {/* Left Sidebar */}
