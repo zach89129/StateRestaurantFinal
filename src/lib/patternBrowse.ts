@@ -16,6 +16,7 @@ export type PatternBrowseProduct = {
 export type PatternBrowseEntry = {
   name: string;
   imageUrl: string | null;
+  productCount: number;
 };
 
 export type PatternBrowseByCategory = Record<
@@ -78,9 +79,14 @@ export function buildPatternBrowseByCategory(
     PatternBrowseCategory,
     Map<string, PatternBrowseProduct>
   >();
+  const productCounts = new Map<
+    PatternBrowseCategory,
+    Map<string, number>
+  >();
 
   for (const category of PATTERN_BROWSE_CATEGORIES) {
     representatives.set(category, new Map());
+    productCounts.set(category, new Map());
   }
 
   for (const product of products) {
@@ -88,7 +94,10 @@ export function buildPatternBrowseByCategory(
     if (!PATTERN_BROWSE_CATEGORIES.includes(category)) continue;
 
     const categoryMap = representatives.get(category)!;
+    const countMap = productCounts.get(category)!;
     for (const patternName of splitPatterns(product.pattern)) {
+      countMap.set(patternName, (countMap.get(patternName) ?? 0) + 1);
+
       const existing = categoryMap.get(patternName);
       categoryMap.set(
         patternName,
@@ -101,10 +110,12 @@ export function buildPatternBrowseByCategory(
 
   for (const category of PATTERN_BROWSE_CATEGORIES) {
     const categoryMap = representatives.get(category)!;
+    const countMap = productCounts.get(category)!;
     result[category] = Array.from(categoryMap.entries())
       .map(([name, product]) => ({
         name,
         imageUrl: product.images[0]?.url ?? null,
+        productCount: countMap.get(name) ?? 0,
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }

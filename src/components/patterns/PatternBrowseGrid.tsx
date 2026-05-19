@@ -42,6 +42,10 @@ function PatternTile({
         <h3 className="text-sm sm:text-base font-semibold text-gray-900 text-center line-clamp-2">
           {pattern.name}
         </h3>
+        <p className="text-xs text-gray-500 text-center mt-1">
+          {pattern.productCount}{" "}
+          {pattern.productCount === 1 ? "product" : "products"}
+        </p>
       </div>
     </Link>
   );

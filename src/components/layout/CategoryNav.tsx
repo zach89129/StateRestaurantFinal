@@ -67,7 +67,7 @@ export default function CategoryNav({
             <li>
               <Link
                 href="/patterns"
-                className="block text-gray-300 hover:text-white"
+                className="block text-copper hover:text-copper-hover"
                 onClick={onClose}
               >
                 Browse Patterns
@@ -120,7 +120,7 @@ export default function CategoryNav({
           <li>
             <Link
               href="/patterns"
-              className="block px-4 py-2 text-gray-300 hover:bg-zinc-700 hover:text-white"
+              className="block px-4 py-2 text-copper hover:bg-zinc-700 hover:text-copper-hover"
               onClick={onClose}
             >
               Browse Patterns

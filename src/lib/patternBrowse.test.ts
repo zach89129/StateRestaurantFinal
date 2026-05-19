@@ -47,6 +47,7 @@ describe("buildPatternBrowseByCategory", () => {
 
     assert.equal(result.China.length, 1);
     assert.equal(result.China[0]?.name, "Willow");
+    assert.equal(result.China[0]?.productCount, 2);
   });
 
   it("assigns comma-separated patterns from one product to separate entries", () => {
@@ -63,6 +64,8 @@ describe("buildPatternBrowseByCategory", () => {
       result.China.map((entry) => entry.name).sort(),
       ["Alpha", "Beta"],
     );
+    assert.equal(result.China.find((e) => e.name === "Alpha")?.productCount, 1);
+    assert.equal(result.China.find((e) => e.name === "Beta")?.productCount, 1);
     assert.equal(
       result.China[0]?.imageUrl,
       "https://example.com/set.jpg",
