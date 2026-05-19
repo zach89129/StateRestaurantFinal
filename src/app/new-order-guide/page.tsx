@@ -81,8 +81,10 @@ export default function NewOrderGuidePage() {
   const [hideEmptyPage, setHideEmptyPage] = useState(false);
   const [hideEmptyByCategory, setHideEmptyByCategory] = useState<Record<string, boolean>>({});
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
+  const [showCommentModal, setShowCommentModal] = useState(false);
   const [productModalId, setProductModalId] = useState<number | null>(null);
   const [isDesktop, setIsDesktop] = useState(true);
+  const [jumpToOpen, setJumpToOpen] = useState(false);
   const saveTimersRef = useRef<Record<number, ReturnType<typeof setTimeout>>>(
     {}
   );
@@ -702,21 +704,31 @@ export default function NewOrderGuidePage() {
           <aside className="hidden lg:block w-64 flex-shrink-0">
             <div className="sticky top-36 space-y-4">
               <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                <h3 className="font-semibold text-gray-900 mb-3">Jump to</h3>
-                <nav className="space-y-1">
-                  {groupNames.map((name) => (
-                    <button
-                      key={name}
-                      type="button"
-                      onClick={() => {
-                        document.getElementById(name.replace(/\s/g, "-"))?.scrollIntoView({ behavior: "smooth" });
-                      }}
-                      className="block w-full text-left text-sm text-blue-600 hover:text-blue-800 hover:underline"
-                    >
-                      {name}
-                    </button>
-                  ))}
-                </nav>
+                <button
+                  type="button"
+                  onClick={() => setJumpToOpen((prev) => !prev)}
+                  aria-expanded={jumpToOpen}
+                  className="w-full flex items-center justify-between font-semibold text-gray-900 hover:text-gray-700"
+                >
+                  <span>Jump to</span>
+                  <span className="text-gray-500 font-normal">{jumpToOpen ? "-" : "+"}</span>
+                </button>
+                {jumpToOpen && (
+                  <nav className="space-y-1 mt-3">
+                    {groupNames.map((name) => (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={() => {
+                          document.getElementById(name.replace(/\s/g, "-"))?.scrollIntoView({ behavior: "smooth" });
+                        }}
+                        className="block w-full text-left text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                      >
+                        {name}
+                      </button>
+                    ))}
+                  </nav>
+                )}
               </div>
               <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
                 <h3 className="font-semibold text-gray-900 mb-3">Color key</h3>
@@ -780,8 +792,11 @@ export default function NewOrderGuidePage() {
                       id="stickyOrderComment"
                       rows={2}
                       value={comment}
-                      onChange={(e) => setComment(e.target.value)}
-                      className="w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm text-gray-900"
+                      readOnly
+                      disabled={draftLocked}
+                      onClick={() => !draftLocked && setShowCommentModal(true)}
+                      onFocus={() => !draftLocked && setShowCommentModal(true)}
+                      className="w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm text-gray-900 cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-50"
                       placeholder="Special instructions..."
                     />
                   </div>
@@ -808,6 +823,36 @@ export default function NewOrderGuidePage() {
           </aside>
         </div>
       </div>
+
+      {showCommentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowCommentModal(false)}
+            aria-hidden
+          />
+          <div className="relative z-10 w-full max-w-2xl mx-4 bg-white rounded-lg shadow-xl p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Comments</h3>
+            <textarea
+              autoFocus
+              rows={12}
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              className="w-full border border-gray-300 rounded-md shadow-sm p-3 text-sm text-gray-900 resize-y min-h-[200px]"
+              placeholder="Special instructions..."
+            />
+            <div className="flex justify-end mt-4">
+              <button
+                type="button"
+                onClick={() => setShowCommentModal(false)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showSubmitConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
