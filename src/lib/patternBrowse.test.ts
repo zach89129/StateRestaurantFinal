@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+  buildManufacturersByCategory,
   buildPatternBrowseByCategory,
   splitPatterns,
   type PatternBrowseProduct,
@@ -11,6 +12,7 @@ function product(
 ): PatternBrowseProduct {
   return {
     category: "China",
+    manufacturer: null,
     images: [],
     ...overrides,
   };
@@ -185,5 +187,98 @@ describe("buildPatternBrowseByCategory", () => {
     assert.equal(result.China.length, 0);
     assert.equal(result.Flatware.length, 0);
     assert.equal(result.Glassware.length, 0);
+  });
+
+  it("counts only products matching a manufacturer when filtered upstream", () => {
+    const all = [
+      product({
+        manufacturer: "Acme",
+        pattern: "Classic",
+        title: "Plate A",
+      }),
+      product({
+        manufacturer: "Acme",
+        pattern: "Classic",
+        title: "Plate B",
+      }),
+      product({
+        manufacturer: "Other Co",
+        pattern: "Classic",
+        title: "Plate C",
+      }),
+    ];
+    const filtered = all.filter((p) => p.manufacturer === "Acme");
+    const result = buildPatternBrowseByCategory(filtered);
+
+    assert.equal(result.China[0]?.productCount, 2);
+  });
+});
+
+describe("buildManufacturersByCategory", () => {
+  it("returns sorted unique manufacturers per category", () => {
+    const result = buildManufacturersByCategory([
+      product({
+        category: "China",
+        manufacturer: "Zebra Mfg",
+        pattern: "A",
+        title: "Plate",
+      }),
+      product({
+        category: "China",
+        manufacturer: "Acme",
+        pattern: "B",
+        title: "Cup",
+      }),
+      product({
+        category: "Flatware",
+        manufacturer: "Acme",
+        pattern: "C",
+        title: "Fork",
+      }),
+      product({
+        category: "China",
+        manufacturer: "Acme",
+        pattern: "D",
+        title: "Bowl",
+      }),
+    ]);
+
+    assert.deepEqual(result.China, ["Acme", "Zebra Mfg"]);
+    assert.deepEqual(result.Flatware, ["Acme"]);
+    assert.deepEqual(result.Glassware, []);
+  });
+
+  it("ignores products outside browse categories", () => {
+    const result = buildManufacturersByCategory([
+      product({
+        category: "Buffet Items",
+        title: "Riser",
+        pattern: "Modern",
+        manufacturer: "Acme",
+      }),
+    ]);
+
+    assert.deepEqual(result.China, []);
+    assert.deepEqual(result.Flatware, []);
+    assert.deepEqual(result.Glassware, []);
+  });
+
+  it("excludes manufacturers whose products have no usable pattern names", () => {
+    const result = buildManufacturersByCategory([
+      product({
+        category: "China",
+        manufacturer: "Ghost Co",
+        pattern: " , ",
+        title: "Plate",
+      }),
+      product({
+        category: "China",
+        manufacturer: "Acme",
+        pattern: "Willow",
+        title: "Dinner Plate",
+      }),
+    ]);
+
+    assert.deepEqual(result.China, ["Acme"]);
   });
 });

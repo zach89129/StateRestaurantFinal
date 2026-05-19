@@ -10,6 +10,7 @@ const PLACEHOLDER_IMAGE = "/noImageState.jpg";
 interface PatternBrowseGridProps {
   category: string;
   patterns: PatternBrowseEntry[];
+  selectedManufacturer?: string;
 }
 
 function PatternTile({
@@ -54,11 +55,14 @@ function PatternTile({
 export default function PatternBrowseGrid({
   category,
   patterns,
+  selectedManufacturer,
 }: PatternBrowseGridProps) {
   if (patterns.length === 0) {
     return (
       <p className="text-gray-600 text-center py-12">
-        No patterns found for this category.
+        {selectedManufacturer
+          ? "No patterns found for this manufacturer."
+          : "No patterns found for this category."}
       </p>
     );
   }

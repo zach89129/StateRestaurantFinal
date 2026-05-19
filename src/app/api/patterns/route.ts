@@ -1,12 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
+  buildManufacturersByCategory,
   buildPatternBrowseByCategory,
   PATTERN_BROWSE_CATEGORIES,
+  type PatternBrowseProduct,
 } from "@/lib/patternBrowse";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const manufacturerFilter =
+      request.nextUrl.searchParams.get("manufacturer")?.trim() || null;
+
     const products = await prisma.product.findMany({
       where: {
         category: { in: [...PATTERN_BROWSE_CATEGORIES] },
@@ -17,6 +22,7 @@ export async function GET() {
         title: true,
         category: true,
         pattern: true,
+        manufacturer: true,
         images: {
           take: 1,
           select: { url: true },
@@ -24,16 +30,30 @@ export async function GET() {
       },
     });
 
-    const patterns = buildPatternBrowseByCategory(
-      products.map((product) => ({
-        title: product.title,
-        category: product.category ?? "",
-        pattern: product.pattern ?? "",
-        images: product.images,
-      })),
-    );
+    const mappedProducts: PatternBrowseProduct[] = products.map((product) => ({
+      title: product.title,
+      category: product.category ?? "",
+      pattern: product.pattern ?? "",
+      manufacturer: product.manufacturer,
+      images: product.images,
+    }));
 
-    return NextResponse.json({ success: true, patterns });
+    const manufacturersByCategory =
+      buildManufacturersByCategory(mappedProducts);
+
+    const filteredProducts = manufacturerFilter
+      ? mappedProducts.filter(
+          (product) => product.manufacturer?.trim() === manufacturerFilter,
+        )
+      : mappedProducts;
+
+    const patterns = buildPatternBrowseByCategory(filteredProducts);
+
+    return NextResponse.json({
+      success: true,
+      patterns,
+      manufacturersByCategory,
+    });
   } catch (error) {
     console.error("Error in GET /api/patterns:", error);
     return NextResponse.json(

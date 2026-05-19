@@ -10,8 +10,14 @@ export type PatternBrowseProduct = {
   title: string;
   category: string;
   pattern: string;
+  manufacturer: string | null;
   images: { url: string }[];
 };
+
+export type ManufacturersByCategory = Record<
+  PatternBrowseCategory,
+  string[]
+>;
 
 export type PatternBrowseEntry = {
   name: string;
@@ -23,6 +29,33 @@ export type PatternBrowseByCategory = Record<
   PatternBrowseCategory,
   PatternBrowseEntry[]
 >;
+
+export function buildManufacturersByCategory(
+  products: PatternBrowseProduct[],
+): ManufacturersByCategory {
+  const manufacturerSets = new Map<PatternBrowseCategory, Set<string>>();
+
+  for (const category of PATTERN_BROWSE_CATEGORIES) {
+    manufacturerSets.set(category, new Set());
+  }
+
+  for (const product of products) {
+    const category = product.category as PatternBrowseCategory;
+    if (!PATTERN_BROWSE_CATEGORIES.includes(category)) continue;
+    if (!product.manufacturer?.trim()) continue;
+    if (splitPatterns(product.pattern).length === 0) continue;
+
+    manufacturerSets.get(category)!.add(product.manufacturer.trim());
+  }
+
+  const result = {} as ManufacturersByCategory;
+  for (const category of PATTERN_BROWSE_CATEGORIES) {
+    result[category] = Array.from(manufacturerSets.get(category)!).sort(
+      (a, b) => a.localeCompare(b),
+    );
+  }
+  return result;
+}
 
 export function splitPatterns(pattern: string): string[] {
   return pattern

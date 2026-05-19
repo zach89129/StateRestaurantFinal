@@ -1,10 +1,11 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import PatternBrowseGrid from "@/components/patterns/PatternBrowseGrid";
 import {
   PATTERN_BROWSE_CATEGORIES,
+  type ManufacturersByCategory,
   type PatternBrowseByCategory,
   type PatternBrowseCategory,
 } from "@/lib/patternBrowse";
@@ -24,33 +25,69 @@ function PatternsContent() {
   const searchParams = useSearchParams();
   const [patternsByCategory, setPatternsByCategory] =
     useState<PatternBrowseByCategory | null>(null);
+  const [manufacturersByCategory, setManufacturersByCategory] =
+    useState<ManufacturersByCategory | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const tabSlug = searchParams.get("tab")?.toLowerCase() ?? "china";
   const activeCategory: PatternBrowseCategory =
     SLUG_TO_CATEGORY[tabSlug] ?? "China";
+  const selectedManufacturer = searchParams.get("manufacturer")?.trim() || "";
+
+  const fetchPatterns = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams();
+      if (selectedManufacturer) {
+        params.set("manufacturer", selectedManufacturer);
+      }
+      const query = params.toString();
+      const response = await fetch(
+        `/api/patterns${query ? `?${query}` : ""}`,
+      );
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to fetch patterns");
+      }
+      setPatternsByCategory(data.patterns);
+      setManufacturersByCategory(data.manufacturersByCategory);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load patterns");
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedManufacturer]);
 
   useEffect(() => {
-    const fetchPatterns = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await fetch("/api/patterns");
-        const data = await response.json();
-        if (!response.ok || !data.success) {
-          throw new Error(data.error || "Failed to fetch patterns");
-        }
-        setPatternsByCategory(data.patterns);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load patterns");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchPatterns();
-  }, []);
+  }, [fetchPatterns]);
+
+  const availableManufacturers = useMemo(
+    () => manufacturersByCategory?.[activeCategory] ?? [],
+    [manufacturersByCategory, activeCategory],
+  );
+
+  useEffect(() => {
+    if (
+      !selectedManufacturer ||
+      !manufacturersByCategory ||
+      availableManufacturers.includes(selectedManufacturer)
+    ) {
+      return;
+    }
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("manufacturer");
+    router.replace(`/patterns?${params.toString()}`, { scroll: false });
+  }, [
+    selectedManufacturer,
+    manufacturersByCategory,
+    availableManufacturers,
+    searchParams,
+    router,
+  ]);
 
   const activePatterns = useMemo(
     () => patternsByCategory?.[activeCategory] ?? [],
@@ -60,6 +97,16 @@ function PatternsContent() {
   const setActiveTab = (category: PatternBrowseCategory) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", TAB_SLUGS[category]);
+    router.push(`/patterns?${params.toString()}`, { scroll: false });
+  };
+
+  const handleManufacturerChange = (manufacturer: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (manufacturer) {
+      params.set("manufacturer", manufacturer);
+    } else {
+      params.delete("manufacturer");
+    }
     router.push(`/patterns?${params.toString()}`, { scroll: false });
   };
 
@@ -76,7 +123,7 @@ function PatternsContent() {
           </p>
         </div>
 
-        <div className="border-b border-gray-200 mb-8 overflow-x-auto">
+        <div className="border-b border-gray-200 mb-6 overflow-x-auto">
           <nav className="-mb-px flex space-x-6 sm:space-x-8 min-w-max">
             {PATTERN_BROWSE_CATEGORIES.map((category) => (
               <button
@@ -95,6 +142,29 @@ function PatternsContent() {
           </nav>
         </div>
 
+        <div className="mb-6 max-w-xs sm:max-w-sm">
+          <label
+            htmlFor="pattern-manufacturer-filter"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            Manufacturer
+          </label>
+          <select
+            id="pattern-manufacturer-filter"
+            value={selectedManufacturer}
+            onChange={(e) => handleManufacturerChange(e.target.value)}
+            disabled={loading || availableManufacturers.length === 0}
+            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-[#B87B5C] focus:outline-none focus:ring-1 focus:ring-[#B87B5C] disabled:bg-gray-100 disabled:text-gray-500"
+          >
+            <option value="">All manufacturers</option>
+            {availableManufacturers.map((manufacturer) => (
+              <option key={manufacturer} value={manufacturer}>
+                {manufacturer}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {loading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
             {Array.from({ length: 10 }).map((_, index) => (
@@ -110,6 +180,7 @@ function PatternsContent() {
           <PatternBrowseGrid
             category={activeCategory}
             patterns={activePatterns}
+            selectedManufacturer={selectedManufacturer || undefined}
           />
         )}
       </div>
