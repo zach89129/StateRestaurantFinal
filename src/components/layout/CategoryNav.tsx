@@ -66,6 +66,15 @@ export default function CategoryNav({
             </li>
             <li>
               <Link
+                href="/patterns"
+                className="block text-copper hover:text-copper-hover"
+                onClick={onClose}
+              >
+                Browse Patterns
+              </Link>
+            </li>
+            <li>
+              <Link
                 href="/products/?dead=true&page=1"
                 className="block text-red-500 underline hover:text-red-400"
                 onClick={onClose}
@@ -106,6 +115,15 @@ export default function CategoryNav({
               onClick={onClose}
             >
               All Products
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/patterns"
+              className="block px-4 py-2 text-copper hover:bg-zinc-700 hover:text-copper-hover"
+              onClick={onClose}
+            >
+              Browse Patterns
             </Link>
           </li>
           <li>
