@@ -23,7 +23,15 @@ export type PatternBrowseEntry = {
   name: string;
   imageUrl: string | null;
   productCount: number;
+  manufacturer: string | null;
 };
+
+function formatPatternManufacturers(manufacturers: Set<string>): string | null {
+  if (manufacturers.size === 0) return null;
+  return Array.from(manufacturers)
+    .sort((a, b) => a.localeCompare(b))
+    .join(", ");
+}
 
 export type PatternBrowseByCategory = Record<
   PatternBrowseCategory,
@@ -116,10 +124,15 @@ export function buildPatternBrowseByCategory(
     PatternBrowseCategory,
     Map<string, number>
   >();
+  const manufacturersByPattern = new Map<
+    PatternBrowseCategory,
+    Map<string, Set<string>>
+  >();
 
   for (const category of PATTERN_BROWSE_CATEGORIES) {
     representatives.set(category, new Map());
     productCounts.set(category, new Map());
+    manufacturersByPattern.set(category, new Map());
   }
 
   for (const product of products) {
@@ -128,8 +141,16 @@ export function buildPatternBrowseByCategory(
 
     const categoryMap = representatives.get(category)!;
     const countMap = productCounts.get(category)!;
+    const manufacturerMap = manufacturersByPattern.get(category)!;
     for (const patternName of splitPatterns(product.pattern)) {
       countMap.set(patternName, (countMap.get(patternName) ?? 0) + 1);
+
+      if (product.manufacturer?.trim()) {
+        const manufacturers =
+          manufacturerMap.get(patternName) ?? new Set<string>();
+        manufacturers.add(product.manufacturer.trim());
+        manufacturerMap.set(patternName, manufacturers);
+      }
 
       const existing = categoryMap.get(patternName);
       categoryMap.set(
@@ -144,11 +165,15 @@ export function buildPatternBrowseByCategory(
   for (const category of PATTERN_BROWSE_CATEGORIES) {
     const categoryMap = representatives.get(category)!;
     const countMap = productCounts.get(category)!;
+    const manufacturerMap = manufacturersByPattern.get(category)!;
     result[category] = Array.from(categoryMap.entries())
       .map(([name, product]) => ({
         name,
         imageUrl: product.images[0]?.url ?? null,
         productCount: countMap.get(name) ?? 0,
+        manufacturer: formatPatternManufacturers(
+          manufacturerMap.get(name) ?? new Set(),
+        ),
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }

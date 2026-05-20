@@ -50,6 +50,19 @@ describe("buildPatternBrowseByCategory", () => {
     assert.equal(result.China.length, 1);
     assert.equal(result.China[0]?.name, "Willow");
     assert.equal(result.China[0]?.productCount, 2);
+    assert.equal(result.China[0]?.manufacturer, null);
+  });
+
+  it("includes manufacturer on pattern entries", () => {
+    const result = buildPatternBrowseByCategory([
+      product({
+        manufacturer: "Acme China",
+        pattern: "Willow",
+        title: "Dinner Plate",
+      }),
+    ]);
+
+    assert.equal(result.China[0]?.manufacturer, "Acme China");
   });
 
   it("assigns comma-separated patterns from one product to separate entries", () => {
