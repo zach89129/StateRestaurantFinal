@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/auth-options";
 import { prisma } from "@/lib/prisma";
-import { verifyApiKey } from "@/lib/api-auth";
+import { requireIntegrationApiKey } from "@/lib/integration-auth";
 
 interface OrderUpdateRequest {
   id: number;
@@ -11,34 +9,11 @@ interface OrderUpdateRequest {
   trx_order_number: string;
 }
 
-// POST: Update orders with vendor information
 export async function POST(request: NextRequest) {
   try {
-    // Check for API key authentication first
-    const apiKey = request.headers.get("x-api-key");
-    const storedHash = process.env.API_KEY_HASH;
+    const authError = await requireIntegrationApiKey(request);
+    if (authError) return authError;
 
-    let authenticated = false;
-
-    // If API key is provided, verify it
-    if (apiKey && storedHash) {
-      try {
-        authenticated = await verifyApiKey(apiKey, storedHash);
-      } catch (error) {
-        console.error("API key verification error:", error);
-      }
-    }
-
-    // If not authenticated with API key, check for session authentication
-    if (!authenticated) {
-      const session = await getServerSession(authOptions);
-      if (!session?.user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      }
-      authenticated = true;
-    }
-
-    // Get the updates from the request body
     const { orders } = await request.json();
 
     if (!orders || !Array.isArray(orders) || orders.length === 0) {
@@ -46,11 +21,10 @@ export async function POST(request: NextRequest) {
         {
           error: "Invalid request: orders array is required",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    // Update each order
     const updateResults = [];
     for (const order of orders) {
       const { id, status, trx_order_id, trx_order_number } =
@@ -66,7 +40,6 @@ export async function POST(request: NextRequest) {
       }
 
       try {
-        // Update the order in the database using Prisma's typed API
         await prisma.order.update({
           where: { id },
           data: {
@@ -100,7 +73,7 @@ export async function POST(request: NextRequest) {
     console.error("Error updating orders:", error);
     return NextResponse.json(
       { error: "Failed to update orders" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

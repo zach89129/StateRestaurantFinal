@@ -10,7 +10,10 @@ export function generateApiKey(): string {
 // Hash an API key for storage
 export async function hashApiKey(apiKey: string): Promise<string> {
   try {
-    const salt = process.env.API_KEY_SALT || "default-salt";
+    const salt = process.env.API_KEY_SALT;
+    if (!salt) {
+      throw new Error("API_KEY_SALT is not configured");
+    }
 
     // Use Web Crypto API which is supported in Edge Runtime
     const encoder = new TextEncoder();

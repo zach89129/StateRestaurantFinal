@@ -11,7 +11,8 @@
     "lint": "next lint",
     "postinstall": "prisma generate",
     "migrate:tags": "npx tsx scripts/migrate-product-tags.ts",
-    "test": "npx tsx --test src/lib/patternBrowse.test.ts"
+    "test": "npx tsx --test src/lib/patternBrowse.test.ts",
+    "hash-api-key": "npx tsx scripts/hash-api-key.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

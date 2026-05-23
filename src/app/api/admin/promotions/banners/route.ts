@@ -1,15 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 import { prisma } from "@/lib/prisma";
+import { requireSuperuser } from "@/lib/admin-auth";
 
 export async function GET() {
   try {
+    await requireSuperuser();
+
     const banners = await prisma.promotionBanner.findMany({
       orderBy: { createdAt: "desc" },
     });
 
     return NextResponse.json(banners);
   } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized access" }, { status: 401 });
+    }
     console.error("Error fetching banners:", error);
     return NextResponse.json(
       { error: "Failed to fetch banners" },
@@ -20,6 +26,8 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    await requireSuperuser();
+
     const formData = await request.formData();
     const file = formData.get("file") as File;
     const name = formData.get("name") as string;
@@ -49,6 +57,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(banner);
   } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized access" }, { status: 401 });
+    }
     console.error("Error creating banner:", error);
     return NextResponse.json(
       { error: "Failed to create banner" },
@@ -59,6 +70,8 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    await requireSuperuser();
+
     const { id, isActive } = await request.json();
 
     if (isActive) {
@@ -76,6 +89,9 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json(banner);
   } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized access" }, { status: 401 });
+    }
     console.error("Error updating banner:", error);
     return NextResponse.json(
       { error: "Failed to update banner" },
@@ -86,6 +102,8 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    await requireSuperuser();
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
@@ -102,6 +120,9 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized access" }, { status: 401 });
+    }
     console.error("Error deleting banner:", error);
     return NextResponse.json(
       { error: "Failed to delete banner" },

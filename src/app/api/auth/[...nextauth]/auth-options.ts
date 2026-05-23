@@ -2,6 +2,11 @@ import { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import { getOTP, deleteOTP } from "@/lib/otpStore";
+import {
+  clearOtpAttempts,
+  isOtpLocked,
+  recordFailedOtpAttempt,
+} from "@/lib/otp-attempts";
 import { isSuperuserEmail } from "@/lib/superuser";
 
 // Define custom user type
@@ -37,19 +42,26 @@ export const authOptions: AuthOptions = {
 
           const normalizedEmail = credentials.email.toLowerCase();
 
-          // Get stored OTP
+          if (isOtpLocked(normalizedEmail)) {
+            throw new Error(
+              "Too many failed attempts. Please request a new code and try again later.",
+            );
+          }
+
           const storedData = await getOTP(normalizedEmail);
 
           if (!storedData) {
             throw new Error("Verification code expired or not found");
           }
 
-          // Validate OTP
           const isValidOTP = storedData.otp === credentials.otp;
 
           if (!isValidOTP) {
+            recordFailedOtpAttempt(normalizedEmail);
             throw new Error("Invalid verification code");
           }
+
+          clearOtpAttempts(normalizedEmail);
 
           try {
             // Get customer data
@@ -71,7 +83,9 @@ export const authOptions: AuthOptions = {
 
             // Check if user is superuser
             const isSuperuser = isSuperuserEmail(customer.email);
-            const isSalesTeam = customer.email.includes("staterestaurant.com");
+            const isSalesTeam = customer.email.includes(
+              process.env.SALES_TEAM_EMAIL_DOMAIN as string,
+            );
 
             // Format venues for session
             const venues = customer.venues.map((venue) => ({
@@ -210,13 +224,14 @@ export const authOptions: AuthOptions = {
         session.user.trxCustomerId = token.trxCustomerId as string;
         session.user.name = token.email as string; // Add name to ensure compatibility
         session.user.seePrices = token.seePrices as boolean;
-        session.user.newOrderGuideEnabled = token.newOrderGuideEnabled as boolean;
+        session.user.newOrderGuideEnabled =
+          token.newOrderGuideEnabled as boolean;
         session.user.defaultOrderGuideVenueId =
           (token.defaultOrderGuideVenueId as number | null) ?? null;
 
         // Add session expiry
         session.expires = new Date(
-          Date.now() + 24 * 60 * 60 * 1000
+          Date.now() + 24 * 60 * 60 * 1000,
         ).toISOString();
       }
 

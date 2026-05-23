@@ -3,6 +3,7 @@ import { CustomerInput, VenueData } from "@/types/api";
 import { NextRequest, NextResponse } from "next/server";
 import { convertBigIntToString } from "@/utils/convertBigIntToString";
 import { sendSMS } from "@/lib/twilio";
+import { requireIntegrationApiKey } from "@/lib/integration-auth";
 
 const sendCustomerSMS = async (phone: string, email: string) => {
   if (!phone) return;
@@ -22,6 +23,9 @@ const sendCustomerSMS = async (phone: string, email: string) => {
 };
 
 export async function POST(req: NextRequest) {
+  const authError = await requireIntegrationApiKey(req);
+  if (authError) return authError;
+
   if (!req.body) {
     return NextResponse.json(
       { error: "Missing request body" },
@@ -333,8 +337,10 @@ export async function GET(req: NextRequest) {
   }
 }
 
-//deleting entire customer record
 export async function DELETE(request: NextRequest) {
+  const authError = await requireIntegrationApiKey(request);
+  if (authError) return authError;
+
   try {
     let body;
     try {
