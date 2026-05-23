@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import CompareSidebarCard from "@/components/products/CompareSidebarCard";
+import ProductCompareModal from "@/components/products/ProductCompareModal";
 import ProductDetailModal from "@/components/products/ProductDetailModal";
+import { useCompareSelection } from "@/hooks/useCompareSelection";
+import { orderGuideItemToComparable } from "@/lib/orderGuideCompare";
+import { ComparableProduct } from "@/types/compare";
 
 interface OrderGuideProduct {
   id: number;
@@ -85,6 +90,8 @@ export default function NewOrderGuidePage() {
   const [productModalId, setProductModalId] = useState<number | null>(null);
   const [isDesktop, setIsDesktop] = useState(true);
   const [jumpToOpen, setJumpToOpen] = useState(false);
+  const [showCompareModal, setShowCompareModal] = useState(false);
+  const compareSelection = useCompareSelection(2);
   const saveTimersRef = useRef<Record<number, ReturnType<typeof setTimeout>>>(
     {}
   );
@@ -475,6 +482,31 @@ export default function NewOrderGuidePage() {
     return total;
   }, [submitConfirmItems, pricingData, quantities]);
 
+  const itemsByProductId = useMemo(() => {
+    const map = new Map<number, OrderGuideItem>();
+    for (const item of items) {
+      map.set(item.productId, item);
+    }
+    return map;
+  }, [items]);
+
+  const compareProducts = useMemo((): [ComparableProduct, ComparableProduct] | null => {
+    if (compareSelection.selectedIds.length !== 2) return null;
+    const first = itemsByProductId.get(compareSelection.selectedIds[0]);
+    const second = itemsByProductId.get(compareSelection.selectedIds[1]);
+    if (!first || !second) return null;
+    return [
+      orderGuideItemToComparable(first, pricingData),
+      orderGuideItemToComparable(second, pricingData),
+    ];
+  }, [compareSelection.selectedIds, itemsByProductId, pricingData]);
+
+  const compareSelectedLabels = useMemo(() => {
+    return compareSelection.selectedIds
+      .map((productId) => itemsByProductId.get(productId)?.product.title)
+      .filter((title): title is string => Boolean(title));
+  }, [compareSelection.selectedIds, itemsByProductId]);
+
   const doSubmitOrder = async () => {
     setShowSubmitConfirm(false);
     if (draftLocked) return;
@@ -621,6 +653,9 @@ export default function NewOrderGuidePage() {
                                   <table className="min-w-full divide-y divide-gray-200 text-sm">
                                     <thead className="bg-gray-100 text-gray-800">
                                       <tr>
+                                        <th className="px-2 py-2 text-left w-8">
+                                          <span className="sr-only">Compare</span>
+                                        </th>
                                         <th className="px-2 py-2 text-left w-12"></th>
                                         <th className="px-3 py-2 text-left">Item</th>
                                         <th className="px-3 py-2 text-left">Description</th>
@@ -633,7 +668,25 @@ export default function NewOrderGuidePage() {
                                     </thead>
                                     <tbody className="divide-y divide-gray-200 bg-white">
                                       {filtered.map((item) => (
-                                        <tr key={item.productId} className={getRowHighlightClass(item)}>
+                                        <tr
+                                          key={item.productId}
+                                          className={`${getRowHighlightClass(item)} ${
+                                            compareSelection.isSelected(item.productId)
+                                              ? "ring-1 ring-inset ring-blue-300"
+                                              : ""
+                                          }`}
+                                        >
+                                          <td className="px-2 py-2">
+                                            <input
+                                              type="checkbox"
+                                              checked={compareSelection.isSelected(item.productId)}
+                                              disabled={compareSelection.isDisabled(item.productId)}
+                                              onChange={() => compareSelection.toggle(item.productId)}
+                                              onClick={(e) => e.stopPropagation()}
+                                              aria-label={`Compare ${item.product.title}`}
+                                              className="rounded border-gray-300"
+                                            />
+                                          </td>
                                           <td className="px-2 py-2">
                                             <button
                                               type="button"
@@ -747,6 +800,14 @@ export default function NewOrderGuidePage() {
                   </div>
                 </div>
               </div>
+              <CompareSidebarCard
+                selectedCount={compareSelection.selectedCount}
+                maxCount={compareSelection.maxCount}
+                selectedLabels={compareSelectedLabels}
+                canCompare={compareSelection.canCompare}
+                onClear={compareSelection.clear}
+                onCompare={() => setShowCompareModal(true)}
+              />
               <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
                 <div className="font-medium text-gray-900">
                   Running Total: ${runningTotals.total.toFixed(2)}
@@ -902,6 +963,14 @@ export default function NewOrderGuidePage() {
           productId={productModalId}
           isOpen={true}
           onClose={() => setProductModalId(null)}
+        />
+      )}
+
+      {showCompareModal && compareProducts && (
+        <ProductCompareModal
+          isOpen={showCompareModal}
+          onClose={() => setShowCompareModal(false)}
+          products={compareProducts}
         />
       )}
     </div>
