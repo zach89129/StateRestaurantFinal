@@ -5,6 +5,7 @@ import { Prisma } from "@prisma/client";
 import { convertBigIntToString } from "@/utils/convertBigIntToString";
 import { formatProductForClient } from "@/utils/formatProduct";
 import { getTagsForAqcat } from "@/utils/productTags";
+import { requireIntegrationApiKey } from "@/lib/integration-auth";
 
 const MAX_PAGE_SIZE = 100;
 
@@ -45,6 +46,9 @@ const syncOrderGuideItem = async (productId: bigint, product: ProductPayload) =>
 };
 
 export async function POST(request: NextRequest) {
+  const authError = await requireIntegrationApiKey(request);
+  if (authError) return authError;
+
   console.log("POST /api/products - Starting request processing");
 
   if (!request.body) {
@@ -631,6 +635,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const authError = await requireIntegrationApiKey(request);
+  if (authError) return authError;
+
   try {
     const { trx_product_ids } = await request.json();
 

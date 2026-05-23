@@ -35,13 +35,11 @@ export async function GET(request: Request) {
     const productIds = url.searchParams.get("productIds");
     const isDeadInventory = url.searchParams.get("isDeadInventory") === "true";
 
-    // Get session to verify user is allowed to see prices
-    // Allow unauthenticated requests only for dead inventory items
     const session = await getServerSession(authOptions);
     if (!session?.user && !isDeadInventory) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 

@@ -4,8 +4,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/auth-options";
 import { convertBigIntToString } from "@/utils/convertBigIntToString";
+import { requireIntegrationApiKey } from "@/lib/integration-auth";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const authError = await requireIntegrationApiKey(request);
+  if (authError) return authError;
+
   if (!request.body) {
     return NextResponse.json(
       { success: false, error: "Missing request body" },
@@ -262,6 +266,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const authError = await requireIntegrationApiKey(request);
+  if (authError) return authError;
+
   try {
     const body = await request.json();
 
