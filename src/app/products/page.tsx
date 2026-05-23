@@ -8,6 +8,13 @@ import ProductCard from "@/components/products/ProductCard";
 import SortOptions from "@/components/products/SortOptions";
 import Link from "next/link";
 import { useSearch } from "@/contexts/SearchContext";
+import { CompareProvider } from "@/contexts/CompareContext";
+import {
+  CatalogCompareBottomSpacer,
+  CatalogCompareMobileBar,
+  CatalogCompareModal,
+  CatalogCompareSidebar,
+} from "@/components/products/CatalogCompareChrome";
 
 interface Product {
   id: number;
@@ -246,6 +253,7 @@ function ProductsContent() {
   };
 
   return (
+    <CompareProvider>
     <div className="min-h-screen bg-white" key="products-page-container">
       <div className="max-w-7xl mx-auto px-4 w-full overflow-hidden">
         {/* Breadcrumb */}
@@ -269,7 +277,8 @@ function ProductsContent() {
 
         <div className="flex flex-col lg:flex-row gap-8 w-full overflow-hidden">
           {/* Left Sidebar - Make visible on lg screens by default (not hidden) */}
-          <div className="lg:w-1/4">
+          <div className="lg:w-64 flex-shrink-0">
+            <CatalogCompareSidebar />
             <FilterSidebar
               key="filter-sidebar"
               sortOptions={sortOptions}
@@ -470,6 +479,10 @@ function ProductsContent() {
           <span className="text-sm font-medium">Filter</span>
         </button>
       </div>
+      <CatalogCompareBottomSpacer />
+      <CatalogCompareMobileBar />
+      <CatalogCompareModal />
     </div>
+    </CompareProvider>
   );
 }

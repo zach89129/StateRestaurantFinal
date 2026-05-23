@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import CompareSidebarCard from "@/components/products/CompareSidebarCard";
+import OrderGuideCompareCheckbox from "@/components/products/OrderGuideCompareCheckbox";
 import ProductCompareModal from "@/components/products/ProductCompareModal";
 import ProductDetailModal from "@/components/products/ProductDetailModal";
 import { useCompareSelection } from "@/hooks/useCompareSelection";
@@ -666,24 +667,29 @@ export default function NewOrderGuidePage() {
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-200 bg-white">
-                                      {filtered.map((item) => (
+                                      {filtered.map((item) => {
+                                        const isCompareChecked =
+                                          compareSelection.selectedIds.includes(
+                                            item.productId
+                                          );
+                                        return (
                                         <tr
                                           key={item.productId}
                                           className={`${getRowHighlightClass(item)} ${
-                                            compareSelection.isSelected(item.productId)
+                                            isCompareChecked
                                               ? "ring-1 ring-inset ring-blue-300"
                                               : ""
                                           }`}
                                         >
                                           <td className="px-2 py-2">
-                                            <input
-                                              type="checkbox"
-                                              checked={compareSelection.isSelected(item.productId)}
-                                              disabled={compareSelection.isDisabled(item.productId)}
-                                              onChange={() => compareSelection.toggle(item.productId)}
-                                              onClick={(e) => e.stopPropagation()}
-                                              aria-label={`Compare ${item.product.title}`}
-                                              className="rounded border-gray-300"
+                                            <OrderGuideCompareCheckbox
+                                              productId={item.productId}
+                                              title={item.product.title}
+                                              checked={isCompareChecked}
+                                              disabled={compareSelection.isDisabled(
+                                                item.productId
+                                              )}
+                                              onToggle={compareSelection.toggle}
                                             />
                                           </td>
                                           <td className="px-2 py-2">
@@ -736,7 +742,8 @@ export default function NewOrderGuidePage() {
                                             />
                                           </td>
                                         </tr>
-                                      ))}
+                                        );
+                                      })}
                                     </tbody>
                                   </table>
                                 </div>

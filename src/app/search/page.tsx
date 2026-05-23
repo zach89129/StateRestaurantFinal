@@ -8,6 +8,13 @@ import FilterSidebar from "@/components/products/FilterSidebar";
 // import Pagination from "@/components/ui/Pagination";
 import Link from "next/link";
 import { useSearch } from "@/contexts/SearchContext";
+import { CompareProvider } from "@/contexts/CompareContext";
+import {
+  CatalogCompareBottomSpacer,
+  CatalogCompareMobileBar,
+  CatalogCompareModal,
+  CatalogCompareSidebar,
+} from "@/components/products/CatalogCompareChrome";
 
 interface Product {
   id: number;
@@ -287,6 +294,7 @@ function SearchContent() {
   };
 
   return (
+    <CompareProvider>
     <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto px-4">
         {/* Breadcrumb */}
@@ -303,25 +311,27 @@ function SearchContent() {
         </nav>
 
         <div className="flex flex-col lg:flex-row gap-8 w-full overflow-hidden">
-          {/* Left Sidebar */}
-          <FilterSidebar
-            sortOptions={sortOptions}
-            selectedCategories={selectedCategories}
-            selectedManufacturers={selectedManufacturers}
-            selectedPatterns={selectedPatterns}
-            selectedCollections={selectedCollections}
-            selectedQuickShip={selectedQuickShip}
-            selectedCloseOut={selectedCloseOut}
-            onCategoryChange={handleCategoryChange}
-            onManufacturerChange={handleManufacturerChange}
-            onPatternChange={handlePatternChange}
-            onCollectionChange={handleCollectionChange}
-            onQuickShipChange={handleQuickShipChange}
-            onCloseOutChange={handleCloseOutChange}
-            onClearAll={handleClearAll}
-            onClose={() => setIsFilterOpen(false)}
-            isOpen={isFilterOpen}
-          />
+          <div className="lg:w-64 flex-shrink-0">
+            <CatalogCompareSidebar />
+            <FilterSidebar
+              sortOptions={sortOptions}
+              selectedCategories={selectedCategories}
+              selectedManufacturers={selectedManufacturers}
+              selectedPatterns={selectedPatterns}
+              selectedCollections={selectedCollections}
+              selectedQuickShip={selectedQuickShip}
+              selectedCloseOut={selectedCloseOut}
+              onCategoryChange={handleCategoryChange}
+              onManufacturerChange={handleManufacturerChange}
+              onPatternChange={handlePatternChange}
+              onCollectionChange={handleCollectionChange}
+              onQuickShipChange={handleQuickShipChange}
+              onCloseOutChange={handleCloseOutChange}
+              onClearAll={handleClearAll}
+              onClose={() => setIsFilterOpen(false)}
+              isOpen={isFilterOpen}
+            />
+          </div>
 
           {/* Main Content */}
           <div className="flex-1 min-h-0 max-w-full overflow-hidden">
@@ -532,7 +542,11 @@ function SearchContent() {
           <span className="text-sm font-medium">Filter</span>
         </button>
       </div>
+      <CatalogCompareBottomSpacer />
+      <CatalogCompareMobileBar />
+      <CatalogCompareModal />
     </div>
+    </CompareProvider>
   );
 }
 

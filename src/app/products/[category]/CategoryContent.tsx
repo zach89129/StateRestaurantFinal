@@ -7,6 +7,13 @@ import PatternBrowseCallout from "@/components/products/PatternBrowseCallout";
 import ProductCard from "@/components/products/ProductCard";
 import Link from "next/link";
 import { useSearch } from "@/contexts/SearchContext";
+import { CompareProvider } from "@/contexts/CompareContext";
+import {
+  CatalogCompareBottomSpacer,
+  CatalogCompareMobileBar,
+  CatalogCompareModal,
+  CatalogCompareSidebar,
+} from "@/components/products/CatalogCompareChrome";
 
 interface Product {
   trx_product_id: number;
@@ -238,6 +245,7 @@ export default function CategoryContent({ category }: Props) {
     .join(" ");
 
   return (
+    <CompareProvider>
     <div className="min-h-screen bg-white" key="products-page-container">
       <div className="max-w-7xl mx-auto px-4 w-full overflow-hidden">
         {/* Breadcrumb */}
@@ -271,7 +279,8 @@ export default function CategoryContent({ category }: Props) {
 
         <div className="flex flex-col lg:flex-row gap-8 w-full overflow-hidden">
           {/* Left Sidebar */}
-          <div className="lg:w-1/4">
+          <div className="lg:w-64 flex-shrink-0">
+            <CatalogCompareSidebar />
             <FilterSidebar
               key="filter-sidebar"
               sortOptions={sortOptions}
@@ -420,6 +429,10 @@ export default function CategoryContent({ category }: Props) {
           <span className="text-sm font-medium">Filter</span>
         </button>
       </div>
+      <CatalogCompareBottomSpacer />
+      <CatalogCompareMobileBar />
+      <CatalogCompareModal />
     </div>
+    </CompareProvider>
   );
 }

@@ -75,6 +75,11 @@ export const DEFAULT_COMPARE_FIELDS: CompareFieldConfig[] = [
   { key: "qtyAvailable", label: "Qty Available" },
 ];
 
+export const CATALOG_COMPARE_FIELDS: CompareFieldConfig[] =
+  DEFAULT_COMPARE_FIELDS.filter(
+    (field) => field.key !== "orderGuideQuality" && field.key !== "sourceType"
+  );
+
 export interface CompareSelectionState {
   selectedIds: number[];
 }

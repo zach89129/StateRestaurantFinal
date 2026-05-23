@@ -8,6 +8,7 @@ import QuantityInput from "./QuantityInput";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSalesTeamVenue } from "@/contexts/SalesTeamVenueContext";
+import ProductCompareCheckbox from "./ProductCompareCheckbox";
 
 // Loading spinner component
 function LoadingSpinner() {
@@ -21,6 +22,7 @@ interface Product {
   sku: string;
   title: string;
   description: string;
+  longDescription?: string | null;
   manufacturer: string;
   category: string;
   uom: string;
@@ -298,7 +300,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       onClick={(e) => {
         if (
           (e.target as HTMLElement).closest(
-            ".quantity-input-container, .price-button, .add-button"
+            ".quantity-input-container, .price-button, .add-button, .compare-checkbox"
           )
         ) {
           e.preventDefault();
@@ -312,7 +314,8 @@ export default function ProductCard({ product }: ProductCardProps) {
         {/* Top content section */}
         <div className="flex flex-row sm:flex-col gap-2 sm:gap-0">
           {/* Image container */}
-          <div className="flex-shrink-0 w-20 h-20 sm:w-full sm:h-44 bg-white flex items-center justify-center overflow-hidden rounded border border-gray-100">
+          <div className="relative flex-shrink-0 w-20 h-20 sm:w-full sm:h-44 bg-white flex items-center justify-center overflow-hidden rounded border border-gray-100">
+            {session?.user && <ProductCompareCheckbox product={product} />}
             <ProductImageCarousel
               images={product.images}
               title={product.title}

@@ -1,34 +1,46 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useReducer } from "react";
 import {
   canCompareSelection,
   clearCompareSelection,
   CompareSelectionState,
   isCompareDisabled,
-  isCompareSelected,
   toggleCompareSelection,
 } from "@/lib/compare";
 
+type SelectionAction =
+  | { type: "toggle"; id: number; maxCount: number }
+  | { type: "clear" };
+
+function selectionReducer(
+  state: CompareSelectionState,
+  action: SelectionAction
+): CompareSelectionState {
+  switch (action.type) {
+    case "clear":
+      return clearCompareSelection();
+    case "toggle":
+      return toggleCompareSelection(state, action.id, action.maxCount);
+    default:
+      return state;
+  }
+}
+
 export function useCompareSelection(maxCount = 3, minCount = 2) {
-  const [state, setState] = useState<CompareSelectionState>({ selectedIds: [] });
+  const [state, dispatch] = useReducer(selectionReducer, { selectedIds: [] });
 
   const toggle = useCallback(
     (id: number) => {
-      setState((current) => toggleCompareSelection(current, id, maxCount));
+      dispatch({ type: "toggle", id: Number(id), maxCount });
     },
     [maxCount]
   );
 
   const clear = useCallback(() => {
-    setState(clearCompareSelection());
+    dispatch({ type: "clear" });
   }, []);
 
-  const isSelected = useCallback(
-    (id: number) => isCompareSelected(state, id),
-    [state]
-  );
-
   const isDisabled = useCallback(
-    (id: number) => isCompareDisabled(state, id, maxCount),
+    (id: number) => isCompareDisabled(state, Number(id), maxCount),
     [state, maxCount]
   );
 
@@ -44,7 +56,6 @@ export function useCompareSelection(maxCount = 3, minCount = 2) {
     maxCount,
     toggle,
     clear,
-    isSelected,
     isDisabled,
     canCompare,
   };
