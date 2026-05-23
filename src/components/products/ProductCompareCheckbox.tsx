@@ -40,7 +40,7 @@ export default function ProductCompareCheckbox({
       className={`compare-checkbox absolute top-1 right-1 z-10 flex items-center justify-center w-7 h-7 rounded border-2 shadow-sm cursor-pointer ${
         checked
           ? "bg-blue-600 border-blue-600 text-white"
-          : "bg-white border-gray-600 text-transparent"
+          : "bg-white border-gray-300 text-transparent"
       } ${disabled && !checked ? "opacity-40 cursor-not-allowed" : "hover:border-blue-500"}`}
     >
       <svg
