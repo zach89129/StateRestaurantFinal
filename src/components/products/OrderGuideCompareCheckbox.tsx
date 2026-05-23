@@ -44,7 +44,7 @@ export default function OrderGuideCompareCheckbox({
       <svg
         viewBox="0 0 20 20"
         fill="currentColor"
-        className="w-3.5 h-3.5"
+        className="w-3.5 h-3.5 block shrink-0 pointer-events-none"
         aria-hidden
       >
         <path

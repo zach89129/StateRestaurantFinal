@@ -315,7 +315,9 @@ export default function ProductCard({ product }: ProductCardProps) {
         <div className="flex flex-row sm:flex-col gap-2 sm:gap-0">
           {/* Image container */}
           <div className="relative flex-shrink-0 w-20 h-20 sm:w-full sm:h-44 bg-white flex items-center justify-center overflow-hidden rounded border border-gray-100">
-            {session?.user && <ProductCompareCheckbox product={product} />}
+            {session?.user && (
+              <ProductCompareCheckbox product={product} placement="image" />
+            )}
             <ProductImageCarousel
               images={product.images}
               title={product.title}
@@ -365,9 +367,11 @@ export default function ProductCard({ product }: ProductCardProps) {
                 </div>
               </div>
 
-              {/* Price button for mobile - show for sales team or dead inventory */}
-              {canGetPrice && (
-                <div className="sm:hidden">
+              <div className="flex flex-col items-end gap-1 flex-shrink-0 sm:hidden">
+                {session?.user && (
+                  <ProductCompareCheckbox product={product} placement="info" />
+                )}
+                {canGetPrice && (
                   <button
                     onClick={handleGetPrice}
                     className="price-button text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded text-black"
@@ -384,8 +388,8 @@ export default function ProductCard({ product }: ProductCardProps) {
                       "Get Price"
                     )}
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </div>

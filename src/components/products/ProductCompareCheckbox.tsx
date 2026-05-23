@@ -5,10 +5,12 @@ import { CatalogCompareSource } from "@/lib/catalogCompare";
 
 interface ProductCompareCheckboxProps {
   product: CatalogCompareSource;
+  placement?: "image" | "info";
 }
 
 export default function ProductCompareCheckbox({
   product,
+  placement = "image",
 }: ProductCompareCheckboxProps) {
   const compare = useCompare();
   if (!compare) return null;
@@ -24,6 +26,11 @@ export default function ProductCompareCheckbox({
     compare.toggleProduct(product);
   };
 
+  const placementClasses =
+    placement === "image"
+      ? "absolute top-1 right-1 z-10 hidden sm:flex"
+      : "relative flex flex-shrink-0 sm:hidden";
+
   return (
     <div
       role="checkbox"
@@ -37,16 +44,16 @@ export default function ProductCompareCheckbox({
           handleToggle(e as unknown as React.MouseEvent);
         }
       }}
-      className={`compare-checkbox absolute top-1 right-1 z-10 flex items-center justify-center w-7 h-7 rounded border-2 shadow-sm cursor-pointer ${
+      className={`compare-checkbox flex items-center justify-center ${placementClasses} w-7 h-7 rounded border-2 shadow-sm cursor-pointer ${
         checked
           ? "bg-blue-600 border-blue-600 text-white"
-          : "bg-white border-gray-300 text-transparent"
+          : "bg-white border-gray-600 text-transparent"
       } ${disabled && !checked ? "opacity-40 cursor-not-allowed" : "hover:border-blue-500"}`}
     >
       <svg
         viewBox="0 0 20 20"
         fill="currentColor"
-        className="w-4 h-4"
+        className="w-4 h-4 block shrink-0 pointer-events-none"
         aria-hidden
       >
         <path
