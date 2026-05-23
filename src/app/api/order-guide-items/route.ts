@@ -57,6 +57,7 @@ export async function GET() {
           sku: item.product.sku,
           title: item.product.title,
           description: item.product.description,
+          longDescription: item.product.longDescription,
           manufacturer: item.product.manufacturer,
           category: item.product.category,
           aqcat: item.product.aqcat,

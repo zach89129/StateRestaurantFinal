@@ -8,6 +8,7 @@ export interface OrderGuideCompareItem {
     sku: string;
     title: string;
     description: string | null;
+    longDescription?: string | null;
     manufacturer: string | null;
     category: string | null;
     aqcat: string | null;
@@ -27,6 +28,7 @@ export function orderGuideItemToComparable(
     sku: item.product.sku,
     title: item.product.title,
     description: item.product.description,
+    longDescription: item.product.longDescription ?? null,
     manufacturer: item.product.manufacturer,
     category: item.product.category,
     aqcat: item.product.aqcat,

@@ -15,6 +15,7 @@ interface OrderGuideProduct {
   sku: string;
   title: string;
   description: string | null;
+  longDescription?: string | null;
   manufacturer: string | null;
   category: string | null;
   aqcat: string | null;
@@ -91,7 +92,7 @@ export default function NewOrderGuidePage() {
   const [isDesktop, setIsDesktop] = useState(true);
   const [jumpToOpen, setJumpToOpen] = useState(false);
   const [showCompareModal, setShowCompareModal] = useState(false);
-  const compareSelection = useCompareSelection(2);
+  const compareSelection = useCompareSelection(3, 2);
   const saveTimersRef = useRef<Record<number, ReturnType<typeof setTimeout>>>(
     {}
   );
@@ -490,16 +491,14 @@ export default function NewOrderGuidePage() {
     return map;
   }, [items]);
 
-  const compareProducts = useMemo((): [ComparableProduct, ComparableProduct] | null => {
-    if (compareSelection.selectedIds.length !== 2) return null;
-    const first = itemsByProductId.get(compareSelection.selectedIds[0]);
-    const second = itemsByProductId.get(compareSelection.selectedIds[1]);
-    if (!first || !second) return null;
-    return [
-      orderGuideItemToComparable(first, pricingData),
-      orderGuideItemToComparable(second, pricingData),
-    ];
-  }, [compareSelection.selectedIds, itemsByProductId, pricingData]);
+  const compareProducts = useMemo((): ComparableProduct[] | null => {
+    if (compareSelection.selectedIds.length < compareSelection.minCount) return null;
+    const selected = compareSelection.selectedIds
+      .map((productId) => itemsByProductId.get(productId))
+      .filter((item): item is OrderGuideItem => Boolean(item));
+    if (selected.length !== compareSelection.selectedIds.length) return null;
+    return selected.map((item) => orderGuideItemToComparable(item, pricingData));
+  }, [compareSelection.selectedIds, compareSelection.minCount, itemsByProductId, pricingData]);
 
   const compareSelectedLabels = useMemo(() => {
     return compareSelection.selectedIds
@@ -802,6 +801,7 @@ export default function NewOrderGuidePage() {
               </div>
               <CompareSidebarCard
                 selectedCount={compareSelection.selectedCount}
+                minCount={compareSelection.minCount}
                 maxCount={compareSelection.maxCount}
                 selectedLabels={compareSelectedLabels}
                 canCompare={compareSelection.canCompare}

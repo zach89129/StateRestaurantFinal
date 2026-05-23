@@ -180,6 +180,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const addToOrderLabel = session?.user?.newOrderGuideEnabled
     ? "Add to Opening Order Guide"
     : "Add to Cart";
+  const useStackedAddButton = Boolean(session?.user?.newOrderGuideEnabled);
 
   // Reset price when venue changes
   useEffect(() => {
@@ -390,9 +391,15 @@ export default function ProductCard({ product }: ProductCardProps) {
         <div className="mt-2 sm:mt-4">
           {session?.user ? (
             <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-1 sm:gap-2">
+              <div
+                className={
+                  useStackedAddButton
+                    ? "flex flex-col gap-2"
+                    : "flex items-center gap-1 sm:gap-2"
+                }
+              >
                 <div
-                  className="flex-1"
+                  className={useStackedAddButton ? "w-full" : "flex-1"}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -407,7 +414,11 @@ export default function ProductCard({ product }: ProductCardProps) {
                 </div>
                 <button
                   onClick={handleAddToCart}
-                  className={`add-button flex-shrink-0 text-white px-2 sm:px-3 py-1.5 sm:py-2 rounded text-xs sm:text-sm transition-colors whitespace-nowrap flex items-center justify-center gap-1 min-w-[100px] ${addSuccess ? "bg-green-600" : "bg-blue-600 hover:bg-blue-700"}`}
+                  className={`add-button text-white px-2 sm:px-3 py-1.5 sm:py-2 rounded text-xs sm:text-sm transition-colors flex items-center justify-center gap-1 ${
+                    useStackedAddButton
+                      ? "w-full text-center"
+                      : "flex-shrink-0 whitespace-nowrap min-w-[100px]"
+                  } ${addSuccess ? "bg-green-600" : "bg-blue-600 hover:bg-blue-700"}`}
                 >
                   {addSuccess ? (
                     <>

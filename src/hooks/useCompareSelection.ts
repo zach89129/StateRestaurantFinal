@@ -8,7 +8,7 @@ import {
   toggleCompareSelection,
 } from "@/lib/compare";
 
-export function useCompareSelection(maxCount = 2) {
+export function useCompareSelection(maxCount = 3, minCount = 2) {
   const [state, setState] = useState<CompareSelectionState>({ selectedIds: [] });
 
   const toggle = useCallback(
@@ -33,13 +33,14 @@ export function useCompareSelection(maxCount = 2) {
   );
 
   const canCompare = useMemo(
-    () => canCompareSelection(state, maxCount),
-    [state, maxCount]
+    () => canCompareSelection(state, minCount, maxCount),
+    [state, minCount, maxCount]
   );
 
   return {
     selectedIds: state.selectedIds,
     selectedCount: state.selectedIds.length,
+    minCount,
     maxCount,
     toggle,
     clear,

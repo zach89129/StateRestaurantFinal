@@ -2,6 +2,7 @@
 
 interface CompareSidebarCardProps {
   selectedCount: number;
+  minCount: number;
   maxCount: number;
   selectedLabels: string[];
   canCompare: boolean;
@@ -16,6 +17,7 @@ function truncateLabel(label: string, maxLength = 28): string {
 
 export default function CompareSidebarCard({
   selectedCount,
+  minCount,
   maxCount,
   selectedLabels,
   canCompare,
@@ -40,7 +42,9 @@ export default function CompareSidebarCard({
           ))}
         </ul>
       ) : (
-        <p className="text-xs text-gray-600">Select two items to compare.</p>
+        <p className="text-xs text-gray-600">
+          Select {minCount}–{maxCount} items to compare.
+        </p>
       )}
 
       <div className="flex gap-2">

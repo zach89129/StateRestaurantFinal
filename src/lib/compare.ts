@@ -23,6 +23,14 @@ export function formatSourceType(
   return "-";
 }
 
+export function formatCompareDescription(product: ComparableProduct): string {
+  const longDescription = product.longDescription?.trim();
+  if (longDescription) return longDescription;
+  const description = product.description?.trim();
+  if (description) return description;
+  return "-";
+}
+
 export function formatFieldValue(
   product: ComparableProduct,
   key: CompareFieldConfig["key"],
@@ -40,21 +48,24 @@ export function formatFieldValue(
 }
 
 export function shouldShowCompareRow(
-  left: ComparableProduct,
-  right: ComparableProduct,
+  products: ComparableProduct[],
   key: CompareFieldConfig["key"],
   format?: CompareFieldConfig["format"]
 ): boolean {
-  const leftValue = formatFieldValue(left, key, format);
-  const rightValue = formatFieldValue(right, key, format);
-  return leftValue !== "-" || rightValue !== "-";
+  return products.some(
+    (product) => formatFieldValue(product, key, format) !== "-"
+  );
+}
+
+export function compareFieldValuesDiffer(values: string[]): boolean {
+  const normalized = values.map((value) => normalizeCompareValue(value));
+  return new Set(normalized).size > 1;
 }
 
 export const DEFAULT_COMPARE_FIELDS: CompareFieldConfig[] = [
   { key: "title", label: "Title" },
-  { key: "sku", label: "SKU" },
   { key: "manufacturer", label: "Manufacturer" },
-  { key: "description", label: "Description" },
+  { key: "description", label: "Description", format: formatCompareDescription },
   { key: "orderGuideQuality", label: "Quality" },
   { key: "sourceType", label: "Source" },
   { key: "category", label: "Category" },
@@ -109,7 +120,11 @@ export function isCompareDisabled(
 
 export function canCompareSelection(
   state: CompareSelectionState,
+  minCount: number,
   maxCount: number
 ): boolean {
-  return state.selectedIds.length === maxCount;
+  return (
+    state.selectedIds.length >= minCount &&
+    state.selectedIds.length <= maxCount
+  );
 }

@@ -2,8 +2,9 @@
 
 import { useEffect } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
+import CompareManufacturerDetailsCell from "./CompareManufacturerDetailsCell";
 import {
-  compareValuesDiffer,
+  compareFieldValuesDiffer,
   DEFAULT_COMPARE_FIELDS,
   formatFieldValue,
   shouldShowCompareRow,
@@ -13,7 +14,7 @@ import { ComparableProduct, CompareFieldConfig } from "@/types/compare";
 interface ProductCompareModalProps {
   isOpen: boolean;
   onClose: () => void;
-  products: [ComparableProduct, ComparableProduct];
+  products: ComparableProduct[];
   fields?: CompareFieldConfig[];
 }
 
@@ -41,8 +42,6 @@ export default function ProductCompareModal({
   products,
   fields = DEFAULT_COMPARE_FIELDS,
 }: ProductCompareModalProps) {
-  const [left, right] = products;
-
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -57,11 +56,13 @@ export default function ProductCompareModal({
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen || products.length < 2) return null;
 
   const visibleFields = fields.filter((field) =>
-    shouldShowCompareRow(left, right, field.key, field.format)
+    shouldShowCompareRow(products, field.key, field.format)
   );
+
+  const productColCount = products.length;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -70,8 +71,8 @@ export default function ProductCompareModal({
         onClick={onClose}
         aria-hidden
       />
-      <div className="relative z-10 w-full max-w-5xl max-h-[90vh] mx-4 bg-white rounded-lg shadow-xl overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+      <div className="relative z-10 w-full max-w-7xl max-h-[90vh] mx-4 bg-white rounded-lg shadow-xl overflow-hidden flex flex-col min-h-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0">
           <h2 className="text-lg font-semibold text-gray-900">Compare items</h2>
           <button
             onClick={onClose}
@@ -82,41 +83,105 @@ export default function ProductCompareModal({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <CompareImage product={left} />
-            <CompareImage product={right} />
-          </div>
-
+        <div className="flex-1 min-h-0 overflow-y-auto p-6">
           <div className="overflow-x-auto border border-gray-200 rounded-md">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
+            <table className="w-full table-fixed text-sm border-collapse">
+              <colgroup>
+                <col className="w-36" />
+                {Array.from({ length: productColCount }).map((_, index) => (
+                  <col key={index} />
+                ))}
+              </colgroup>
               <thead className="bg-gray-100 text-gray-800">
                 <tr>
-                  <th className="px-4 py-2 text-left w-36">Attribute</th>
-                  <th className="px-4 py-2 text-left">{left.title}</th>
-                  <th className="px-4 py-2 text-left">{right.title}</th>
+                  <th className="px-4 py-2 text-left border-b border-gray-200">Attribute</th>
+                  {products.map((product) => (
+                    <th
+                      key={product.id}
+                      className="px-4 py-2 text-left border-b border-gray-200 truncate"
+                      title={product.title}
+                    >
+                      {product.title}
+                    </th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
+              <tbody>
+                <tr className="bg-white">
+                  <td className="px-4 py-4 border-b border-gray-200 align-top" />
+                  {products.map((product) => (
+                    <td
+                      key={product.id}
+                      className="px-4 py-4 border-b border-gray-200 align-top"
+                    >
+                      <CompareImage product={product} />
+                    </td>
+                  ))}
+                </tr>
                 {visibleFields.map((field) => {
-                  const leftValue = formatFieldValue(left, field.key, field.format);
-                  const rightValue = formatFieldValue(right, field.key, field.format);
-                  const differs = compareValuesDiffer(leftValue, rightValue);
+                  const values = products.map((product) =>
+                    formatFieldValue(product, field.key, field.format)
+                  );
+                  const differs = compareFieldValuesDiffer(values);
                   const rowClass = differs ? "bg-amber-50" : "bg-white";
                   const cellClass = differs ? "font-semibold text-gray-900" : "text-gray-900";
 
                   return (
                     <tr key={field.label} className={rowClass}>
-                      <td className="px-4 py-3 font-medium text-gray-700 align-top">
+                      <td className="px-4 py-3 font-medium text-gray-700 align-top border-b border-gray-200">
                         {field.label}
                       </td>
-                      <td className={`px-4 py-3 align-top ${cellClass}`}>{leftValue}</td>
-                      <td className={`px-4 py-3 align-top ${cellClass}`}>{rightValue}</td>
+                      {values.map((value, index) => (
+                        <td
+                          key={`${field.label}-${products[index].id}`}
+                          className={`px-4 py-3 align-top break-words border-b border-gray-200 ${cellClass}`}
+                        >
+                          {value}
+                        </td>
+                      ))}
                     </tr>
                   );
                 })}
               </tbody>
             </table>
+          </div>
+
+          <div className="mt-8">
+            <h3 className="text-base font-semibold text-gray-900 mb-4">
+              Manufacturer Details
+            </h3>
+            <div className="overflow-x-auto border border-gray-200 rounded-md">
+              <table className="w-full table-fixed text-sm border-collapse">
+                <colgroup>
+                  <col className="w-36" />
+                  {Array.from({ length: productColCount }).map((_, index) => (
+                    <col key={index} />
+                  ))}
+                </colgroup>
+                <tbody>
+                  <tr className="bg-white">
+                    <td className="px-4 py-3 font-medium text-gray-700 align-top border-b border-gray-200">
+                      More details
+                    </td>
+                    {products.map((product) => (
+                      <td
+                        key={product.id}
+                        className="px-4 py-4 align-top border-b border-gray-200"
+                      >
+                        <CompareManufacturerDetailsCell product={product} enabled={isOpen} />
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+              <p className="text-xs text-blue-800">
+                <strong>Disclaimer:</strong> Manufacturer information was gathered using
+                OpenAI technology. Please verify any information with the manufacturer or
+                reach out to the State Restaurant sales team for more information.
+              </p>
+            </div>
           </div>
         </div>
       </div>

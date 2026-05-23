@@ -3,6 +3,7 @@ export interface ComparableProduct {
   sku: string;
   title: string;
   description: string | null;
+  longDescription?: string | null;
   manufacturer: string | null;
   category?: string | null;
   aqcat?: string | null;
