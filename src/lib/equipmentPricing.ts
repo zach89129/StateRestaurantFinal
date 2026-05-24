@@ -4,7 +4,7 @@ export function isEquipmentCategory(category?: string | null): boolean {
 
 export function isEquipmentPricingRestricted(
   category?: string | null,
-  dead?: boolean
+  dead?: boolean | null
 ): boolean {
   return isEquipmentCategory(category) && !dead;
 }

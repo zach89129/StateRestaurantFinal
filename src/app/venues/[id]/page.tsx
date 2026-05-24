@@ -12,13 +12,14 @@ import { isEquipmentPricingRestricted } from "@/lib/equipmentPricing";
 
 function formatVenueProductPrice(
   product: VenueProduct,
-  pricingData: Record<string, number>
+  pricingData: Record<string, number | null>
 ): string {
   if (isEquipmentPricingRestricted(product.category, product.dead)) {
     return "Call for quote";
   }
-  if (pricingData[product.id]) {
-    return `$${pricingData[product.id].toFixed(2)}`;
+  const fetchedPrice = pricingData[product.id];
+  if (fetchedPrice != null) {
+    return `$${fetchedPrice.toFixed(2)}`;
   }
   if (product.price) {
     return `$${product.price.toFixed(2)}`;
