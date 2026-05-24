@@ -8,6 +8,23 @@ import QuantityInput from "@/components/products/QuantityInput";
 import VenueFilterSidebar from "@/components/venues/VenueFilterSidebar";
 import Link from "next/link";
 import { useSearch } from "@/contexts/SearchContext";
+import { isEquipmentPricingRestricted } from "@/lib/equipmentPricing";
+
+function formatVenueProductPrice(
+  product: VenueProduct,
+  pricingData: Record<string, number>
+): string {
+  if (isEquipmentPricingRestricted(product.category, product.dead)) {
+    return "Call for quote";
+  }
+  if (pricingData[product.id]) {
+    return `$${pricingData[product.id].toFixed(2)}`;
+  }
+  if (product.price) {
+    return `$${product.price.toFixed(2)}`;
+  }
+  return "-";
+}
 
 interface VenueProduct {
   id: string;
@@ -756,11 +773,7 @@ export default function VenuePage({
                         {product.qtyAvailable || 0}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {pricingData[product.id]
-                          ? `$${pricingData[product.id]?.toFixed(2)}`
-                          : product.price
-                          ? `$${product.price.toFixed(2)}`
-                          : "-"}
+                        {formatVenueProductPrice(product, pricingData)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         {session?.user && (
@@ -834,11 +847,7 @@ export default function VenuePage({
                       </span>
                       <span className="text-gray-500">Price:</span>
                       <span className="text-gray-900">
-                        {pricingData[product.id]
-                          ? `$${pricingData[product.id]?.toFixed(2)}`
-                          : product.price
-                          ? `$${product.price.toFixed(2)}`
-                          : "-"}
+                        {formatVenueProductPrice(product, pricingData)}
                       </span>
                     </div>
                     {session?.user && (

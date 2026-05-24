@@ -1,9 +1,10 @@
 import { Session } from "next-auth";
+import { isEquipmentCategory } from "./equipmentPricing";
 
 const DEAD_INVENTORY_DEFAULT_VENUE = 94670;
 
 export function isCompareEquipmentProduct(category?: string | null): boolean {
-  return (category || "").trim().toLowerCase() === "equipment";
+  return isEquipmentCategory(category);
 }
 
 export function canGetComparePrice(

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/auth-options";
 import { prisma } from "@/lib/prisma";
+import { isEquipmentPricingRestricted } from "@/lib/equipmentPricing";
 
 interface CartItemRequest {
   id: string;
@@ -17,6 +18,7 @@ interface CartItemWithDetails {
   manufacturer: string | null;
   category: string | null;
   uom: string | null;
+  dead: boolean;
   imageSrc: string | null;
   venueId: string;
   venueName: string;
@@ -119,6 +121,7 @@ export async function GET(request: NextRequest) {
             manufacturer: product.manufacturer,
             category: product.category,
             uom: product.uom,
+            dead: product.dead || false,
             imageSrc,
             venueId,
             venueName,
@@ -242,7 +245,7 @@ export async function GET(request: NextRequest) {
       }
 
       for (const item of cartItemsWithDetails) {
-        if ((item.category || "").trim().toLowerCase() === "equipment") {
+        if (isEquipmentPricingRestricted(item.category, item.dead)) {
           item.price = null;
         }
       }

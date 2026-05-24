@@ -7,9 +7,9 @@ import {
   canGetComparePrice,
   fetchCompareProductPrice,
   formatComparePriceDisplay,
-  isCompareEquipmentProduct,
   resolveComparePricingVenueId,
 } from "@/lib/comparePricing";
+import { isEquipmentPricingRestricted } from "@/lib/equipmentPricing";
 import { ComparableProduct } from "@/types/compare";
 
 function LoadingSpinner() {
@@ -34,7 +34,10 @@ export default function ComparePriceCell({
   const [error, setError] = useState<string | null>(null);
 
   const isDeadInventory = product.dead ?? false;
-  const isEquipment = isCompareEquipmentProduct(product.category);
+  const showEquipmentQuoteOnly = isEquipmentPricingRestricted(
+    product.category,
+    isDeadInventory
+  );
   const canGetPrice = canGetComparePrice(session, product);
 
   useEffect(() => {
@@ -46,17 +49,17 @@ export default function ComparePriceCell({
     const displayValue = (() => {
       if (price != null) return formatComparePriceDisplay(price, product.uom);
       if (!canGetPrice) return "Quote";
-      if (isEquipment) return "Call for quote";
+      if (showEquipmentQuoteOnly) return "Call for quote";
       if (error) return error;
       return "Get Price";
     })();
     onPriceChange?.(product.id, displayValue);
-  }, [price, canGetPrice, isEquipment, error, product.id, product.uom, onPriceChange]);
+  }, [price, canGetPrice, showEquipmentQuoteOnly, error, product.id, product.uom, onPriceChange]);
 
   const handleGetPrice = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (isEquipment || loading) return;
+    if (showEquipmentQuoteOnly || loading) return;
 
     const venueId = resolveComparePricingVenueId(
       session,
@@ -106,7 +109,7 @@ export default function ComparePriceCell({
     return <span className="text-gray-900">Quote</span>;
   }
 
-  if (isEquipment) {
+  if (showEquipmentQuoteOnly) {
     return <span className="text-gray-900">Call for quote</span>;
   }
 

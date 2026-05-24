@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSalesTeamVenue } from "@/contexts/SalesTeamVenueContext";
 import ProductCompareCheckbox from "./ProductCompareCheckbox";
+import { isEquipmentPricingRestricted } from "@/lib/equipmentPricing";
 
 // Loading spinner component
 function LoadingSpinner() {
@@ -167,8 +168,10 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [addSuccess, setAddSuccess] = useState(false);
 
   const isDeadInventory = product.dead ?? false;
-  const isEquipment =
-    (product.category || "").trim().toLowerCase() === "equipment";
+  const showEquipmentQuoteOnly = isEquipmentPricingRestricted(
+    product.category,
+    isDeadInventory
+  );
   const fallbackGuideVenueId =
     session?.user?.defaultOrderGuideVenueId ??
     (session?.user?.venues?.length === 1
@@ -193,7 +196,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const handleGetPrice = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (isEquipment) return;
+    if (showEquipmentQuoteOnly) return;
 
     const resolvedVenueId = isDeadInventory
       ? DEAD_INVENTORY_DEFAULT_VENUE
@@ -376,7 +379,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                     onClick={handleGetPrice}
                     className="price-button text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded text-black"
                   >
-                    {isEquipment ? (
+                    {showEquipmentQuoteOnly ? (
                       "Call for quote"
                     ) : isLoadingPrice ? (
                       <LoadingSpinner />
@@ -447,7 +450,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                     onClick={handleGetPrice}
                     className="price-button w-full text-sm bg-gray-100 hover:bg-gray-200 py-1.5 rounded text-black"
                   >
-                    {isEquipment ? (
+                    {showEquipmentQuoteOnly ? (
                       "Call for quote"
                     ) : isLoadingPrice ? (
                       <LoadingSpinner />
@@ -481,7 +484,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                   onClick={handleGetPrice}
                   className="price-button w-full text-xs sm:text-sm bg-gray-100 hover:bg-gray-200 py-1.5 rounded text-black"
                 >
-                  {isEquipment ? (
+                  {showEquipmentQuoteOnly ? (
                     "Call for quote"
                   ) : isLoadingPrice ? (
                     <LoadingSpinner />

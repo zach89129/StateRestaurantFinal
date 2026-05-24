@@ -21,6 +21,9 @@ import {
 import { useRouter } from "next/navigation";
 import { Product } from "@/types/product";
 import { useSalesTeamVenue } from "@/contexts/SalesTeamVenueContext";
+import { isEquipmentPricingRestricted } from "@/lib/equipmentPricing";
+
+const DEAD_INVENTORY_DEFAULT_VENUE = 94670;
 
 // Loading spinner component
 function LoadingSpinner() {
@@ -112,10 +115,15 @@ export default function ProductDetail({ product, readOnly = false }: ProductDeta
     (session?.user?.venues?.length === 1
       ? session.user.venues[0].trxVenueId
       : null);
-  const isEquipment =
-    (product.category || "").trim().toLowerCase() === "equipment";
+  const isDeadInventory = product.dead ?? false;
+  const showEquipmentQuoteOnly = isEquipmentPricingRestricted(
+    product.category,
+    isDeadInventory
+  );
   const canGetPrice = Boolean(
-    session?.user?.isSalesTeam || session?.user?.newOrderGuideEnabled
+    isDeadInventory ||
+      session?.user?.isSalesTeam ||
+      session?.user?.newOrderGuideEnabled
   );
   const addToOrderLabel = session?.user?.newOrderGuideEnabled
     ? "Add to Opening Order Guide"
@@ -248,11 +256,12 @@ export default function ProductDetail({ product, readOnly = false }: ProductDeta
   const handleGetPrice = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (isEquipment) return;
+    if (showEquipmentQuoteOnly) return;
 
-    const resolvedVenueId =
-      salesVenue ||
-      (session?.user?.newOrderGuideEnabled ? fallbackGuideVenueId : null);
+    const resolvedVenueId = isDeadInventory
+      ? DEAD_INVENTORY_DEFAULT_VENUE
+      : salesVenue ||
+        (session?.user?.newOrderGuideEnabled ? fallbackGuideVenueId : null);
 
     if (!resolvedVenueId) {
       setPriceError("No venue selected");
@@ -268,6 +277,9 @@ export default function ProductDetail({ product, readOnly = false }: ProductDeta
         catalogContext: "general",
       });
       params.set("venueId", String(resolvedVenueId));
+      if (isDeadInventory) {
+        params.set("isDeadInventory", "true");
+      }
       const response = await fetch(`/api/pricing?${params.toString()}`);
 
       if (!response.ok) {
@@ -812,7 +824,7 @@ export default function ProductDetail({ product, readOnly = false }: ProductDeta
                                 onClick={handleGetPrice}
                                 className="price-button bg-gray-100 hover:bg-gray-200 px-8 py-2 rounded-lg text-black"
                               >
-                                {isEquipment ? (
+                                {showEquipmentQuoteOnly ? (
                                   "Call for quote"
                                 ) : isLoadingPrice ? (
                                   <LoadingSpinner />
@@ -834,7 +846,7 @@ export default function ProductDetail({ product, readOnly = false }: ProductDeta
                               onClick={handleGetPrice}
                               className="price-button w-full bg-gray-100 hover:bg-gray-200 py-2 rounded-lg text-black"
                             >
-                              {isEquipment ? (
+                              {showEquipmentQuoteOnly ? (
                                 "Call for quote"
                               ) : isLoadingPrice ? (
                                 <LoadingSpinner />

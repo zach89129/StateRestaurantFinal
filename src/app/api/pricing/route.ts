@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/auth-options";
 import { prisma } from "@/lib/prisma";
+import { isEquipmentPricingRestricted } from "@/lib/equipmentPricing";
 
 interface PricingError {
   productId: number;
@@ -62,9 +63,9 @@ export async function GET(request: Request) {
     const isRestrictedCategory = async (targetProductId: number) => {
       const product = await prisma.product.findUnique({
         where: { id: BigInt(targetProductId) },
-        select: { category: true },
+        select: { category: true, dead: true },
       });
-      return (product?.category || "").trim().toLowerCase() === "equipment";
+      return isEquipmentPricingRestricted(product?.category, product?.dead);
     };
 
     // Handle single product request
@@ -158,10 +159,10 @@ export async function GET(request: Request) {
 
       const productsInBatch = await prisma.product.findMany({
         where: { id: { in: ids.map((id) => BigInt(id)) } },
-        select: { id: true, category: true },
+        select: { id: true, category: true, dead: true },
       });
       for (const p of productsInBatch) {
-        if ((p.category || "").trim().toLowerCase() === "equipment") {
+        if (isEquipmentPricingRestricted(p.category, p.dead)) {
           restrictedProductIds.add(Number(p.id));
         }
       }
