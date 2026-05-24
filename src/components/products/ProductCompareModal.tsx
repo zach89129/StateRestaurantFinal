@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import CompareManufacturerDetailsCell from "./CompareManufacturerDetailsCell";
+import ComparePriceCell from "./ComparePriceCell";
 import {
   compareFieldValuesDiffer,
   DEFAULT_COMPARE_FIELDS,
   formatFieldValue,
   shouldShowCompareRow,
 } from "@/lib/compare";
+import { formatComparePriceDisplay } from "@/lib/comparePricing";
 import { ComparableProduct, CompareFieldConfig } from "@/types/compare";
 
 interface ProductCompareModalProps {
@@ -42,6 +44,38 @@ export default function ProductCompareModal({
   products,
   fields = DEFAULT_COMPARE_FIELDS,
 }: ProductCompareModalProps) {
+  const [priceDisplayByProductId, setPriceDisplayByProductId] = useState<
+    Record<number, string>
+  >({});
+
+  const handlePriceChange = useCallback(
+    (productId: number, displayValue: string) => {
+      setPriceDisplayByProductId((prev) => {
+        if (prev[productId] === displayValue) return prev;
+        return { ...prev, [productId]: displayValue };
+      });
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (!isOpen) {
+      setPriceDisplayByProductId({});
+      return;
+    }
+
+    const initial: Record<number, string> = {};
+    for (const product of products) {
+      if (product.price != null) {
+        initial[product.id] = formatComparePriceDisplay(
+          product.price,
+          product.uom
+        );
+      }
+    }
+    setPriceDisplayByProductId(initial);
+  }, [isOpen, products]);
+
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -63,6 +97,67 @@ export default function ProductCompareModal({
   );
 
   const productColCount = products.length;
+
+  const getPriceDisplayValue = (product: ComparableProduct): string => {
+    if (priceDisplayByProductId[product.id]) {
+      return priceDisplayByProductId[product.id];
+    }
+    if (product.price != null) {
+      return formatComparePriceDisplay(product.price, product.uom);
+    }
+    return "Quote";
+  };
+
+  const renderFieldRow = (field: CompareFieldConfig) => {
+    const values = products.map((product) =>
+      formatFieldValue(product, field.key, field.format)
+    );
+    const differs = compareFieldValuesDiffer(values);
+    const rowClass = differs ? "bg-amber-50" : "bg-white";
+    const cellClass = differs ? "font-semibold text-gray-900" : "text-gray-900";
+
+    return (
+      <tr key={field.label} className={rowClass}>
+        <td className="px-4 py-3 font-medium text-gray-700 align-top border-b border-gray-200">
+          {field.label}
+        </td>
+        {values.map((value, index) => (
+          <td
+            key={`${field.label}-${products[index].id}`}
+            className={`px-4 py-3 align-top break-words border-b border-gray-200 ${cellClass}`}
+          >
+            {value}
+          </td>
+        ))}
+      </tr>
+    );
+  };
+
+  const renderPriceRow = () => {
+    const values = products.map((product) => getPriceDisplayValue(product));
+    const differs = compareFieldValuesDiffer(values);
+    const rowClass = differs ? "bg-amber-50" : "bg-white";
+    const cellClass = differs ? "font-semibold text-gray-900" : "text-gray-900";
+
+    return (
+      <tr key="price" className={rowClass}>
+        <td className="px-4 py-3 font-medium text-gray-700 align-top border-b border-gray-200">
+          Price
+        </td>
+        {products.map((product) => (
+          <td
+            key={`price-${product.id}`}
+            className={`px-4 py-3 align-top border-b border-gray-200 ${cellClass}`}
+          >
+            <ComparePriceCell
+              product={product}
+              onPriceChange={handlePriceChange}
+            />
+          </td>
+        ))}
+      </tr>
+    );
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -119,28 +214,10 @@ export default function ProductCompareModal({
                   ))}
                 </tr>
                 {visibleFields.map((field) => {
-                  const values = products.map((product) =>
-                    formatFieldValue(product, field.key, field.format)
-                  );
-                  const differs = compareFieldValuesDiffer(values);
-                  const rowClass = differs ? "bg-amber-50" : "bg-white";
-                  const cellClass = differs ? "font-semibold text-gray-900" : "text-gray-900";
-
-                  return (
-                    <tr key={field.label} className={rowClass}>
-                      <td className="px-4 py-3 font-medium text-gray-700 align-top border-b border-gray-200">
-                        {field.label}
-                      </td>
-                      {values.map((value, index) => (
-                        <td
-                          key={`${field.label}-${products[index].id}`}
-                          className={`px-4 py-3 align-top break-words border-b border-gray-200 ${cellClass}`}
-                        >
-                          {value}
-                        </td>
-                      ))}
-                    </tr>
-                  );
+                  if (field.key === "priceDisplay") {
+                    return renderPriceRow();
+                  }
+                  return renderFieldRow(field);
                 })}
               </tbody>
             </table>

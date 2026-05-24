@@ -12,6 +12,7 @@ export interface CatalogCompareSource {
   qtyAvailable: number;
   aqcat?: string | null;
   images: { url: string }[];
+  dead?: boolean;
 }
 
 export function catalogProductToComparable(
@@ -30,5 +31,6 @@ export function catalogProductToComparable(
     qtyAvailable: product.qtyAvailable ?? null,
     imageUrl: product.images?.[0]?.url ?? null,
     price: null,
+    dead: product.dead ?? false,
   };
 }

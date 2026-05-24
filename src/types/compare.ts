@@ -11,6 +11,7 @@ export interface ComparableProduct {
   qtyAvailable?: number | null;
   imageUrl?: string | null;
   price?: number | null;
+  dead?: boolean;
   orderGuideQuality?: string | null;
   sourceType?: "ORDER_GUIDE" | "GENERAL_CATALOG" | null;
 }
