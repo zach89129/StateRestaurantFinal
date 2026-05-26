@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import CompareManufacturerDetailsCell from "./CompareManufacturerDetailsCell";
 import ComparePriceCell from "./ComparePriceCell";
@@ -44,6 +45,7 @@ export default function ProductCompareModal({
   products,
   fields = DEFAULT_COMPARE_FIELDS,
 }: ProductCompareModalProps) {
+  const { data: session } = useSession();
   const [priceDisplayByProductId, setPriceDisplayByProductId] = useState<
     Record<number, string>
   >({});
@@ -223,43 +225,45 @@ export default function ProductCompareModal({
             </table>
           </div>
 
-          <div className="mt-8">
-            <h3 className="text-base font-semibold text-gray-900 mb-4">
-              Manufacturer Details
-            </h3>
-            <div className="overflow-x-auto border border-gray-200 rounded-md">
-              <table className="w-full table-fixed text-sm border-collapse">
-                <colgroup>
-                  <col className="w-36" />
-                  {Array.from({ length: productColCount }).map((_, index) => (
-                    <col key={index} />
-                  ))}
-                </colgroup>
-                <tbody>
-                  <tr className="bg-white">
-                    <td className="px-4 py-3 font-medium text-gray-700 align-top border-b border-gray-200">
-                      More details
-                    </td>
-                    {products.map((product) => (
-                      <td
-                        key={product.id}
-                        className="px-4 py-4 align-top border-b border-gray-200"
-                      >
-                        <CompareManufacturerDetailsCell product={product} enabled={isOpen} />
-                      </td>
+          {session?.user && (
+            <div className="mt-8">
+              <h3 className="text-base font-semibold text-gray-900 mb-4">
+                Manufacturer Details
+              </h3>
+              <div className="overflow-x-auto border border-gray-200 rounded-md">
+                <table className="w-full table-fixed text-sm border-collapse">
+                  <colgroup>
+                    <col className="w-36" />
+                    {Array.from({ length: productColCount }).map((_, index) => (
+                      <col key={index} />
                     ))}
-                  </tr>
-                </tbody>
-              </table>
+                  </colgroup>
+                  <tbody>
+                    <tr className="bg-white">
+                      <td className="px-4 py-3 font-medium text-gray-700 align-top border-b border-gray-200">
+                        More details
+                      </td>
+                      {products.map((product) => (
+                        <td
+                          key={product.id}
+                          className="px-4 py-4 align-top border-b border-gray-200"
+                        >
+                          <CompareManufacturerDetailsCell product={product} enabled={isOpen} />
+                        </td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                <p className="text-xs text-blue-800">
+                  <strong>Disclaimer:</strong> Manufacturer information was gathered using
+                  OpenAI technology. Please verify any information with the manufacturer or
+                  reach out to the State Restaurant sales team for more information.
+                </p>
+              </div>
             </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
-              <p className="text-xs text-blue-800">
-                <strong>Disclaimer:</strong> Manufacturer information was gathered using
-                OpenAI technology. Please verify any information with the manufacturer or
-                reach out to the State Restaurant sales team for more information.
-              </p>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
