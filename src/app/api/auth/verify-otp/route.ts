@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { findCustomerByEmail, normalizeEmail } from "@/lib/email";
 import { NextRequest, NextResponse } from "next/server";
 import { sendOTP } from "@/lib/twilio";
 import { storeOTP } from "@/lib/otpStore";
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedEmail = normalizeEmail(email);
     const emailLimit = checkRateLimit(
       `verify-otp:email:${normalizedEmail}`,
       5,
@@ -44,9 +44,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const customer = await prisma.customer.findUnique({
-      where: { email: normalizedEmail },
-    });
+    const customer = await findCustomerByEmail(normalizedEmail);
 
     if (!customer) {
       return NextResponse.json(

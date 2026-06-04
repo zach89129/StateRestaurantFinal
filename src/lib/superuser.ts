@@ -1,6 +1,4 @@
-function normalizeEmail(email: string): string {
-  return email.trim().toLowerCase();
-}
+import { normalizeEmail } from "./email";
 
 function parseSuperuserEmails(raw: string): Set<string> {
   const emails = raw
@@ -31,4 +29,3 @@ export function isSuperuserEmail(email: string): boolean {
   if (!normalized) return false;
   return getSuperuserEmailSet().has(normalized);
 }
-

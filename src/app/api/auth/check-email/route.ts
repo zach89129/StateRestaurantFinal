@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { findCustomerByEmail, normalizeEmail } from "@/lib/email";
 import { NextRequest, NextResponse } from "next/server";
 import {
   checkRateLimit,
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedEmail = normalizeEmail(email);
     const emailLimit = checkRateLimit(
       `check-email:email:${normalizedEmail}`,
       10,
@@ -32,8 +32,7 @@ export async function POST(request: NextRequest) {
       return rateLimitResponse(emailLimit.retryAfterSec);
     }
 
-    const customer = await prisma.customer.findUnique({
-      where: { email: normalizedEmail },
+    const customer = await findCustomerByEmail(normalizedEmail, {
       select: {
         trxCustomerId: true,
         email: true,

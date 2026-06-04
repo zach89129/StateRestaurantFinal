@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/auth-options";
-import { prisma } from "@/lib/prisma";
+import { findCustomerByEmail, normalizeEmail } from "@/lib/email";
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,8 +20,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const normalizedEmail = email.toLowerCase();
-    const sessionEmail = session.user.email.toLowerCase();
+    const normalizedEmail = normalizeEmail(email);
+    const sessionEmail = normalizeEmail(session.user.email);
 
     if (
       !session.user.isSuperuser &&
@@ -30,8 +30,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const customer = await prisma.customer.findUnique({
-      where: { email: normalizedEmail },
+    const customer = await findCustomerByEmail(normalizedEmail, {
       select: {
         email: true,
         phone: true,

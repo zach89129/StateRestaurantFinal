@@ -8,6 +8,11 @@ import {
   recordFailedOtpAttempt,
 } from "@/lib/otp-attempts";
 import { isSuperuserEmail } from "@/lib/superuser";
+import {
+  findCustomerByEmail,
+  isSalesTeamEmail,
+  normalizeEmail,
+} from "@/lib/email";
 
 // Define custom user type
 interface User {
@@ -40,7 +45,7 @@ export const authOptions: AuthOptions = {
             throw new Error("Email and verification code required");
           }
 
-          const normalizedEmail = credentials.email.toLowerCase();
+          const normalizedEmail = normalizeEmail(credentials.email);
 
           if (isOtpLocked(normalizedEmail)) {
             throw new Error(
@@ -65,8 +70,7 @@ export const authOptions: AuthOptions = {
 
           try {
             // Get customer data
-            const customer = await prisma.customer.findUnique({
-              where: { email: normalizedEmail },
+            const customer = await findCustomerByEmail(normalizedEmail, {
               include: {
                 venues: {
                   select: {
@@ -83,9 +87,7 @@ export const authOptions: AuthOptions = {
 
             // Check if user is superuser
             const isSuperuser = isSuperuserEmail(customer.email);
-            const isSalesTeam = customer.email.includes(
-              process.env.SALES_TEAM_EMAIL_DOMAIN as string,
-            );
+            const isSalesTeam = isSalesTeamEmail(customer.email);
 
             // Format venues for session
             const venues = customer.venues.map((venue) => ({
@@ -105,7 +107,7 @@ export const authOptions: AuthOptions = {
             // Create the user object to return
             const user = {
               id: customer.trxCustomerId.toString(),
-              email: customer.email,
+              email: normalizeEmail(customer.email),
               venues: venues,
               isSuperuser,
               isSalesTeam,
