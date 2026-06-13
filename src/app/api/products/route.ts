@@ -6,6 +6,10 @@ import { convertBigIntToString } from "@/utils/convertBigIntToString";
 import { formatProductForClient } from "@/utils/formatProduct";
 import { getTagsForAqcat } from "@/utils/productTags";
 import { requireIntegrationApiKey } from "@/lib/integration-auth";
+import {
+  expandCategoryFilter,
+  getDisplayCategories,
+} from "@/lib/categoryGroups";
 
 const MAX_PAGE_SIZE = 100;
 
@@ -369,13 +373,14 @@ export async function GET(request: NextRequest) {
 
     // Handle filters with base64 support
     const categoryParam = searchParams.get("category_b64");
-    const categories = categoryParam
+    const rawCategories = categoryParam
       ? (categoryParam.split(",").map(decodeBase64).filter(Boolean) as string[])
       : searchParams
           .get("category")
           ?.split(",")
           .filter(Boolean)
           .map((c) => decodeURIComponent(c).trim()) || [];
+    const categories = expandCategoryFilter(rawCategories);
 
     const manufacturerParam = searchParams.get("manufacturer_b64");
     const manufacturers = manufacturerParam
@@ -489,10 +494,12 @@ export async function GET(request: NextRequest) {
       ]);
 
       filterOptions = {
-        availableCategories: allCategories
-          .map((c) => c.category)
-          .filter(Boolean)
-          .sort(),
+        availableCategories: getDisplayCategories(
+          allCategories
+            .map((c) => c.category)
+            .filter(Boolean)
+            .sort() as string[]
+        ),
         availableManufacturers: allManufacturers
           .map((m) => m.manufacturer)
           .filter(Boolean)
@@ -558,7 +565,7 @@ export async function GET(request: NextRequest) {
             ].sort();
 
       filterOptions = {
-        availableCategories,
+        availableCategories: getDisplayCategories(availableCategories),
         availableManufacturers: [
           ...new Set(
             allFilteredProducts.map((p) => p.manufacturer).filter(Boolean),

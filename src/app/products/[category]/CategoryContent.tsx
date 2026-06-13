@@ -14,6 +14,12 @@ import {
   CatalogCompareModal,
   CatalogCompareSidebar,
 } from "@/components/products/CatalogCompareChrome";
+import {
+  encodeExpandedCategoryFilter,
+  getCategoryNavSlug,
+  getDisplayCategoryLabel,
+} from "@/lib/categoryGroups";
+import CatalogClearFiltersLink from "@/components/products/CatalogClearFiltersLink";
 
 interface Product {
   trx_product_id: number;
@@ -93,8 +99,7 @@ export default function CategoryContent({ category }: Props) {
       setLoading(true);
       try {
         const params = new URLSearchParams(searchParams);
-        // Add the category to the API call
-        params.set("category_b64", btoa(category));
+        params.set("category_b64", encodeExpandedCategoryFilter([category]));
         const queryString = params.toString();
 
         const response = await fetch(`/api/products?${queryString}`);
@@ -217,9 +222,8 @@ export default function CategoryContent({ category }: Props) {
   };
 
   const handleClearAll = () => {
-    // Reset to category page with only the category filter
     const params = new URLSearchParams();
-    params.set("category_b64", btoa(category));
+    params.set("category_b64", encodeExpandedCategoryFilter([category]));
     router.push(`/products/${category}?${params.toString()}`, {
       scroll: false,
     });
@@ -239,41 +243,41 @@ export default function CategoryContent({ category }: Props) {
     }
   }, [loading]);
 
-  const categoryTitle = category
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+  const categoryTitle = getDisplayCategoryLabel(category);
+  const baseCatalogHref = `/products/${getCategoryNavSlug(categoryTitle)}?page=1`;
 
   return (
     <CompareProvider>
     <div className="min-h-screen bg-white" key="products-page-container">
       <div className="max-w-7xl mx-auto px-4 w-full overflow-hidden">
-        {/* Breadcrumb */}
-        <nav className="flex py-4 text-sm">
-          <Link
-            href="/"
-            className="text-gray-600 hover:text-gray-900"
-            key="home-link"
-          >
-            Home
-          </Link>
-          <span className="mx-2 text-gray-600" key="separator-1">
-            /
-          </span>
-          <Link
-            href="/products"
-            className="text-gray-600 hover:text-gray-900"
-            key="products-link"
-          >
-            Products
-          </Link>
-          <span className="mx-2 text-gray-600" key="separator-2">
-            /
-          </span>
-          <span className="text-gray-900 font-medium" key="category-label">
-            {categoryTitle}
-          </span>
-        </nav>
+        <div className="flex flex-wrap items-center py-4">
+          <nav className="flex text-sm">
+            <Link
+              href="/"
+              className="text-gray-600 hover:text-gray-900"
+              key="home-link"
+            >
+              Home
+            </Link>
+            <span className="mx-2 text-gray-600" key="separator-1">
+              /
+            </span>
+            <Link
+              href="/products"
+              className="text-gray-600 hover:text-gray-900"
+              key="products-link"
+            >
+              Products
+            </Link>
+            <span className="mx-2 text-gray-600" key="separator-2">
+              /
+            </span>
+            <span className="text-gray-900 font-medium" key="category-label">
+              {categoryTitle}
+            </span>
+          </nav>
+          <CatalogClearFiltersLink href={baseCatalogHref} />
+        </div>
 
         <PatternBrowseCallout category={category} />
 
@@ -306,7 +310,7 @@ export default function CategoryContent({ category }: Props) {
           {/* Main Content */}
           <div className="flex-1 min-h-0 max-w-full overflow-hidden">
             <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-bold text-gray-900">{category}</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{categoryTitle}</h1>
               {!loading && (
                 <div className="text-sm text-gray-900">
                   {pagination.total} Products

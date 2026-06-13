@@ -15,6 +15,8 @@ import {
   CatalogCompareModal,
   CatalogCompareSidebar,
 } from "@/components/products/CatalogCompareChrome";
+import { toggleDisplayCategoryInFilter } from "@/lib/categoryGroups";
+import CatalogClearFiltersLink from "@/components/products/CatalogClearFiltersLink";
 
 interface Product {
   id: number;
@@ -149,11 +151,11 @@ function ProductsContent() {
     const params = new URLSearchParams(searchParams.toString());
     const currentCategories =
       params.get("category_b64")?.split(",").filter(Boolean) || [];
-    const base64Category = btoa(category);
 
-    const newCategories = currentCategories.includes(base64Category)
-      ? currentCategories.filter((c) => c !== base64Category)
-      : [...currentCategories, base64Category];
+    const newCategories = toggleDisplayCategoryInFilter(
+      category,
+      currentCategories
+    );
 
     if (newCategories.length > 0) {
       params.set("category_b64", newCategories.join(","));
@@ -256,22 +258,24 @@ function ProductsContent() {
     <CompareProvider>
     <div className="min-h-screen bg-white" key="products-page-container">
       <div className="max-w-7xl mx-auto px-4 w-full overflow-hidden">
-        {/* Breadcrumb */}
-        <nav className="flex py-4 text-sm">
-          <Link
-            href="/"
-            className="text-gray-600 hover:text-gray-900"
-            key="home-link"
-          >
-            Home
-          </Link>
-          <span className="mx-2 text-gray-600" key="separator">
-            /
-          </span>
-          <span className="text-gray-900 font-medium" key="products-label">
-            Products
-          </span>
-        </nav>
+        <div className="flex flex-wrap items-center py-4">
+          <nav className="flex text-sm">
+            <Link
+              href="/"
+              className="text-gray-600 hover:text-gray-900"
+              key="home-link"
+            >
+              Home
+            </Link>
+            <span className="mx-2 text-gray-600" key="separator">
+              /
+            </span>
+            <span className="text-gray-900 font-medium" key="products-label">
+              Products
+            </span>
+          </nav>
+          <CatalogClearFiltersLink href="/products?page=1" />
+        </div>
 
         <PatternBrowseCallout />
 

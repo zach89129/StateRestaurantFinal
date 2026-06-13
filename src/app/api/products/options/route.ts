@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { getDisplayCategories } from "@/lib/categoryGroups";
 
 export async function GET() {
   try {
@@ -51,10 +52,12 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       options: {
-        categories: categories
-          .map((c) => c.category)
-          .filter(Boolean)
-          .sort(),
+        categories: getDisplayCategories(
+          categories
+            .map((c) => c.category)
+            .filter(Boolean)
+            .sort() as string[]
+        ),
         manufacturers: manufacturers
           .map((m) => m.manufacturer)
           .filter(Boolean)

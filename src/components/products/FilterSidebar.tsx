@@ -2,6 +2,10 @@
 
 import { useState, useEffect, useCallback, memo } from "react";
 import CollapsibleSection from "../ui/CollapsibleSection";
+import {
+  getDisplayCategories,
+  isDisplayCategorySelected,
+} from "@/lib/categoryGroups";
 
 // Add custom scrollbar styles at the top of the component
 // ... existing code ...
@@ -151,19 +155,12 @@ const FilterContent = memo(function FilterContent({
   // Helper function to check if a category is selected
   const isCategorySelected = useCallback(
     (category: string) => {
-      const normalizedCategory = normalizeString(category);
-      return selectedCategories.some((c) => {
-        try {
-          const decodedValue = atob(c);
-          return normalizeString(decodedValue) === normalizedCategory;
-        } catch {
-          // If not base64 encoded, try regular comparison
-          return normalizeString(c) === normalizedCategory;
-        }
-      });
+      return isDisplayCategorySelected(category, selectedCategories);
     },
     [selectedCategories]
   );
+
+  const displayCategories = getDisplayCategories(sortOptions?.categories ?? []);
 
   // Helper function to check if a pattern is selected
   const isPatternSelected = useCallback(
@@ -256,7 +253,7 @@ const FilterContent = memo(function FilterContent({
         </div>
       </CollapsibleSection>
 
-      {!isCategoryPage && sortOptions?.categories?.length > 0 && (
+      {!isCategoryPage && displayCategories.length > 0 && (
         <CollapsibleSection title="PRODUCT CATEGORY" defaultOpen={true}>
           <div className="space-y-4">
             <input
@@ -267,7 +264,7 @@ const FilterContent = memo(function FilterContent({
               onChange={(e) => setCategorySearch(e.target.value)}
             />
             <div className="space-y-2 min-h-[120px] max-h-48 custom-scrollbar">
-              {filterItems(sortOptions?.categories, categorySearch).map(
+              {filterItems(displayCategories, categorySearch).map(
                 (category) => (
                   <label key={category} className="flex items-center">
                     <input

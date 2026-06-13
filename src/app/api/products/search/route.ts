@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { expandCategoryFilter } from "@/lib/categoryGroups";
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
     };
 
     // Parse filter parameters
-    const categories = decodeParams("category_b64");
+    const categories = expandCategoryFilter(decodeParams("category_b64"));
     const manufacturers = decodeParams("manufacturer_b64");
     const patterns = decodeParams("pattern_b64");
     const collections = decodeParams("collection_b64");

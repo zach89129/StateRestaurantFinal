@@ -1,5 +1,12 @@
+function normalizeCategory(category?: string | null): string {
+  return (category || "").trim().toLowerCase();
+}
+
 export function isEquipmentCategory(category?: string | null): boolean {
-  return (category || "").trim().toLowerCase() === "equipment";
+  const normalized = normalizeCategory(category);
+  return (
+    normalized === "equipment" || normalized === "light equipment contract"
+  );
 }
 
 export function isEquipmentPricingRestricted(

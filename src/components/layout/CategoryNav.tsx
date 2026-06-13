@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  getCategoryNavSlug,
+  getDisplayCategories,
+} from "@/lib/categoryGroups";
 
 interface CategoryNavProps {
   onClose?: () => void;
@@ -23,7 +27,7 @@ export default function CategoryNav({
         const response = await fetch("/api/products/options");
         const data = await response.json();
         if (data.success) {
-          setCategories(data.options.categories);
+          setCategories(getDisplayCategories(data.options.categories));
         }
       } catch (error) {
         console.error("Error fetching categories:", error);
@@ -36,7 +40,7 @@ export default function CategoryNav({
   }, []);
 
   const handleCategoryClick = (category: string) => {
-    router.push(`/products/${encodeURIComponent(category)}`);
+    router.push(`/products/${getCategoryNavSlug(category)}`);
 
     if (onClose) {
       onClose();
