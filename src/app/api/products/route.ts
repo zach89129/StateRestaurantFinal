@@ -546,7 +546,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Get all categories if category filter is applied
-      const availableCategories =
+      const availableCategories: string[] =
         categories.length > 0
           ? (
               await prisma.product.findMany({
@@ -556,11 +556,13 @@ export async function GET(request: NextRequest) {
               })
             )
               .map((c) => c.category)
-              .filter(Boolean)
+              .filter((category): category is string => Boolean(category))
               .sort()
           : [
               ...new Set(
-                allFilteredProducts.map((p) => p.category).filter(Boolean),
+                allFilteredProducts
+                  .map((p) => p.category)
+                  .filter((category): category is string => Boolean(category)),
               ),
             ].sort();
 
