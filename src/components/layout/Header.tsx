@@ -24,6 +24,7 @@ export default function Header() {
   const [isMobileVenueDropdownOpen, setIsMobileVenueDropdownOpen] =
     useState(false);
   const { isSearchVisible, setIsSearchVisible } = useSearch();
+  const [isMobileSuggestionsOpen, setIsMobileSuggestionsOpen] = useState(false);
   const router = useRouter();
   const { itemCount } = useCart();
   const pathname = usePathname();
@@ -524,13 +525,18 @@ export default function Header() {
 
             {/* Mobile Search - Collapsible */}
             <div
-              className={`lg:hidden transition-all duration-300 overflow-hidden ${
+              className={`lg:hidden transition-all duration-300 ${
                 isSearchVisible
-                  ? "max-h-20 opacity-100 mt-2"
-                  : "max-h-0 opacity-0"
+                  ? isMobileSuggestionsOpen
+                    ? "max-h-96 overflow-visible opacity-100 mt-2"
+                    : "max-h-20 overflow-hidden opacity-100 mt-2"
+                  : "max-h-0 overflow-hidden opacity-0"
               }`}
             >
-              <SearchBar disabled={isVenuePage} />
+              <SearchBar
+                disabled={isVenuePage}
+                onSuggestionsOpenChange={setIsMobileSuggestionsOpen}
+              />
             </div>
 
             {/* Desktop Header - Hidden on mobile */}
