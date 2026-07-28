@@ -197,7 +197,7 @@ export default function OutboundShipmentsPage() {
     setFormSuccess(null);
 
     if (!customerName.trim() || !invoiceNumber.trim()) {
-      setFormError("Customer name and invoice number are required");
+      setFormError("Customer/Manufacturer and Invoice/PO are required");
       return;
     }
 
@@ -236,7 +236,7 @@ export default function OutboundShipmentsPage() {
       setCustomerName("");
       setInvoiceNumber("");
       setFiles([]);
-      setFormSuccess("Outbound shipment created");
+      setFormSuccess("Entry created");
       await loadShipments();
     } catch (err) {
       setFormError(
@@ -253,7 +253,7 @@ export default function OutboundShipmentsPage() {
     }
 
     const confirmed = window.confirm(
-      `Delete shipment for ${detail.customerName} (invoice ${detail.invoiceNumber})? This cannot be undone.`
+      `Delete entry for ${detail.customerName} (Invoice/PO ${detail.invoiceNumber})? This cannot be undone.`
     );
     if (!confirmed) {
       return;
@@ -284,7 +284,7 @@ export default function OutboundShipmentsPage() {
 
   if (status === "loading") {
     return (
-      <PageContainer title="Outbound Shipments">
+      <PageContainer title="Outbound and Damage Tracking">
         <div className="flex justify-center items-center py-20">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900" />
         </div>
@@ -294,13 +294,13 @@ export default function OutboundShipmentsPage() {
 
   if (status === "unauthenticated") {
     return (
-      <PageContainer title="Outbound Shipments">
+      <PageContainer title="Outbound and Damage Tracking">
         <MessageBox type="warning">
           Please{" "}
           <Link href="/login" className="text-blue-600 hover:underline">
             log in
           </Link>{" "}
-          to view outbound shipments.
+          to view outbound and damage tracking.
         </MessageBox>
       </PageContainer>
     );
@@ -308,7 +308,7 @@ export default function OutboundShipmentsPage() {
 
   if (!session?.user?.isSalesTeam) {
     return (
-      <PageContainer title="Outbound Shipments">
+      <PageContainer title="Outbound and Damage Tracking">
         <MessageBox type="error">
           This page is only available to sales team members.
         </MessageBox>
@@ -317,10 +317,10 @@ export default function OutboundShipmentsPage() {
   }
 
   return (
-    <PageContainer title="Outbound Shipments" className="!p-4 sm:!p-8">
+    <PageContainer title="Outbound and Damage Tracking" className="!p-4 sm:!p-8">
       <section className="mb-10">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">
-          Create outbound shipment
+          Create entry
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4 max-w-xl">
           <div>
@@ -328,7 +328,7 @@ export default function OutboundShipmentsPage() {
               htmlFor="customerName"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Customer name
+              Customer/Manufacturer
             </label>
             <input
               id="customerName"
@@ -345,7 +345,7 @@ export default function OutboundShipmentsPage() {
               htmlFor="invoiceNumber"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Invoice number
+              Invoice/PO
             </label>
             <input
               id="invoiceNumber"
@@ -424,7 +424,7 @@ export default function OutboundShipmentsPage() {
             disabled={submitting}
             className="w-full sm:w-auto bg-zinc-800 text-white px-5 py-2.5 rounded-md hover:bg-zinc-700 disabled:opacity-60"
           >
-            {submitting ? "Compressing & saving..." : "Create shipment"}
+            {submitting ? "Compressing & saving..." : "Create entry"}
           </button>
         </form>
       </section>
@@ -432,13 +432,13 @@ export default function OutboundShipmentsPage() {
       <section>
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
           <h2 className="text-xl font-semibold text-gray-900">
-            Recent shipments
+            Recent entries
           </h2>
           <input
             type="search"
             value={filterQuery}
             onChange={(event) => setFilterQuery(event.target.value)}
-            placeholder="Filter by customer, invoice, email, date"
+            placeholder="Filter by customer/manufacturer, invoice/PO, email, date"
             className="w-full sm:max-w-sm border border-gray-300 rounded-md px-3 py-2 text-gray-900"
           />
         </div>
@@ -450,14 +450,14 @@ export default function OutboundShipmentsPage() {
         ) : error ? (
           <MessageBox type="error">{error}</MessageBox>
         ) : filteredShipments.length === 0 ? (
-          <p className="text-gray-500">No outbound shipments found.</p>
+          <p className="text-gray-500">No entries found.</p>
         ) : (
           <div className="overflow-x-auto border border-gray-200 rounded-lg">
             <table className="min-w-full text-left text-sm">
               <thead className="bg-gray-50 text-gray-600">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Customer</th>
-                  <th className="px-4 py-3 font-medium">Invoice</th>
+                  <th className="px-4 py-3 font-medium">Customer/Manufacturer</th>
+                  <th className="px-4 py-3 font-medium">Invoice/PO</th>
                   <th className="px-4 py-3 font-medium">Submitted</th>
                 </tr>
               </thead>
@@ -498,7 +498,7 @@ export default function OutboundShipmentsPage() {
           <div className="relative z-10 w-full sm:max-w-3xl max-h-[92vh] sm:mx-4 bg-white rounded-t-xl sm:rounded-lg shadow-xl overflow-hidden flex flex-col">
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">
-                Shipment details
+                Entry details
               </h3>
               <button
                 type="button"
@@ -520,13 +520,13 @@ export default function OutboundShipmentsPage() {
                 <div className="space-y-4">
                   <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                     <div>
-                      <dt className="text-gray-500">Customer</dt>
+                      <dt className="text-gray-500">Customer/Manufacturer</dt>
                       <dd className="font-medium text-gray-900">
                         {detail.customerName}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-gray-500">Invoice</dt>
+                      <dt className="text-gray-500">Invoice/PO</dt>
                       <dd className="font-medium text-gray-900">
                         {detail.invoiceNumber}
                       </dd>
@@ -580,7 +580,7 @@ export default function OutboundShipmentsPage() {
                       disabled={deleting}
                       className="w-full sm:w-auto bg-red-600 text-white px-4 py-2.5 rounded-md hover:bg-red-700 disabled:opacity-60"
                     >
-                      {deleting ? "Deleting..." : "Delete shipment"}
+                      {deleting ? "Deleting..." : "Delete entry"}
                     </button>
                   </div>
                 </div>

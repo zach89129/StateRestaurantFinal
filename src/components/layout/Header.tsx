@@ -425,7 +425,7 @@ export default function Header() {
                       setIsMobileDropdownOpen(false);
                     }}
                   >
-                    Outbound Shipments
+                    In/Outbound
                   </Link>
                 )}
 
@@ -738,7 +738,7 @@ export default function Header() {
                   href="/outbound-shipments"
                   className="hover:text-blue-200 whitespace-nowrap"
                 >
-                  Outbound
+                  In/Outbound
                 </Link>
               </li>
             )}

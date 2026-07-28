@@ -89,7 +89,7 @@ export async function POST(request: Request) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Customer name and invoice number are required" },
+        { error: "Customer/Manufacturer and Invoice/PO are required" },
         { status: 400 }
       );
     }
