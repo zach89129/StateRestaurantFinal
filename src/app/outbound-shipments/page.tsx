@@ -45,6 +45,7 @@ export default function OutboundShipmentsPage() {
   const [detail, setDetail] = useState<ShipmentDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const loadShipments = useCallback(async () => {
     setLoading(true);
@@ -75,6 +76,7 @@ export default function OutboundShipmentsPage() {
     if (selectedId == null) {
       setDetail(null);
       setDetailError(null);
+      setDeleting(false);
       return;
     }
 
@@ -242,6 +244,41 @@ export default function OutboundShipmentsPage() {
       );
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleDeleteShipment() {
+    if (selectedId == null || detail == null) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete shipment for ${detail.customerName} (invoice ${detail.invoiceNumber})? This cannot be undone.`
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setDeleting(true);
+    setDetailError(null);
+    try {
+      const response = await fetch(`/api/outbound-shipments/${selectedId}`, {
+        method: "DELETE",
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to delete shipment");
+      }
+
+      setSelectedId(null);
+      setDetail(null);
+      await loadShipments();
+    } catch (err) {
+      setDetailError(
+        err instanceof Error ? err.message : "Failed to delete shipment"
+      );
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -535,6 +572,16 @@ export default function OutboundShipmentsPage() {
                         ))}
                       </div>
                     )}
+                  </div>
+                  <div className="pt-2 border-t border-gray-100">
+                    <button
+                      type="button"
+                      onClick={() => void handleDeleteShipment()}
+                      disabled={deleting}
+                      className="w-full sm:w-auto bg-red-600 text-white px-4 py-2.5 rounded-md hover:bg-red-700 disabled:opacity-60"
+                    >
+                      {deleting ? "Deleting..." : "Delete shipment"}
+                    </button>
                   </div>
                 </div>
               ) : null}
