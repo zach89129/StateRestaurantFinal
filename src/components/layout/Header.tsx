@@ -417,6 +417,19 @@ export default function Header() {
                 )}
 
                 {session?.user?.isSalesTeam && (
+                  <Link
+                    href="/outbound-shipments"
+                    className="block text-gray-300 hover:text-white"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      setIsMobileDropdownOpen(false);
+                    }}
+                  >
+                    Outbound Shipments
+                  </Link>
+                )}
+
+                {session?.user?.isSalesTeam && (
                   <div className="mt-4 space-y-2">
                     <div className="text-gray-300 font-semibold">
                       Sales Team Venue Control
@@ -600,16 +613,16 @@ export default function Header() {
       <nav className="bg-zinc-800 text-white w-full">
         <div className="container mx-auto px-4">
           {/* Desktop Navigation */}
-          <ul className="hidden lg:flex gap-8 py-2">
-            <li>
-              <Link href="/" className="hover:text-blue-200">
+          <ul className="hidden lg:flex items-center gap-4 xl:gap-6 py-2 text-sm xl:text-base">
+            <li className="shrink-0">
+              <Link href="/" className="hover:text-blue-200 whitespace-nowrap">
                 Home
               </Link>
             </li>
-            <li className="relative" ref={dropdownRef}>
+            <li className="relative shrink-0" ref={dropdownRef}>
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="hover:text-blue-200 flex items-center gap-1"
+                className="hover:text-blue-200 flex items-center gap-1 whitespace-nowrap"
               >
                 Products
                 <svg
@@ -632,33 +645,45 @@ export default function Header() {
                 <CategoryNav onClose={() => setIsDropdownOpen(false)} />
               )}
             </li>
-            <li>
-              <Link href="/about" className="hover:text-blue-200">
+            <li className="shrink-0">
+              <Link
+                href="/about"
+                className="hover:text-blue-200 whitespace-nowrap"
+              >
                 About Us
               </Link>
             </li>
-            <li>
-              <Link href="/showroom" className="hover:text-blue-200">
+            <li className="shrink-0">
+              <Link
+                href="/showroom"
+                className="hover:text-blue-200 whitespace-nowrap"
+              >
                 Showroom
               </Link>
             </li>
-            <li>
-              <Link href="/contact" className="hover:text-blue-200">
+            <li className="shrink-0">
+              <Link
+                href="/contact"
+                className="hover:text-blue-200 whitespace-nowrap"
+              >
                 Contact
               </Link>
             </li>
             {hasNewCustomerGuide ? (
-              <li>
-                <Link href="/new-order-guide" className="hover:text-blue-200">
+              <li className="shrink-0">
+                <Link
+                  href="/new-order-guide"
+                  className="hover:text-blue-200 whitespace-nowrap"
+                >
                   Opening Order Guide
                 </Link>
               </li>
             ) : null}
             {!hasNewCustomerGuide && hasVenueGuides && (
-              <li className="relative" ref={venueDropdownRef}>
+              <li className="relative shrink-0" ref={venueDropdownRef}>
                 <button
                   onClick={() => setIsVenueDropdownOpen(!isVenueDropdownOpen)}
-                  className="hover:text-blue-200 flex items-center gap-1"
+                  className="hover:text-blue-200 flex items-center gap-1 whitespace-nowrap"
                 >
                   Order Guide(s)
                   <svg
@@ -698,18 +723,31 @@ export default function Header() {
             )}
             {session?.user &&
               (hasVenueGuides || hasNewCustomerGuide) && (
-                <li>
-                  <Link href="/orders" className="hover:text-blue-200">
+                <li className="shrink-0">
+                  <Link
+                    href="/orders"
+                    className="hover:text-blue-200 whitespace-nowrap"
+                  >
                     Order History
                   </Link>
                 </li>
               )}
             {session?.user?.isSalesTeam && (
-              <li className="ml-auto">
+              <li className="shrink-0">
+                <Link
+                  href="/outbound-shipments"
+                  className="hover:text-blue-200 whitespace-nowrap"
+                >
+                  Outbound
+                </Link>
+              </li>
+            )}
+            {session?.user?.isSalesTeam && (
+              <li className="ml-auto pl-4 shrink-0">
                 <div className="flex items-center gap-2">
                   {salesVenue > 0 ? (
                     <>
-                      <div className="text-sm text-gray-400">
+                      <div className="text-xs text-gray-400 whitespace-nowrap">
                         Venue: {salesVenue}
                       </div>
                       <button
@@ -720,12 +758,12 @@ export default function Header() {
                       </button>
                     </>
                   ) : (
-                    <div className="text-sm text-gray-400">
-                      No Venue Selected
+                    <div className="text-xs text-gray-400 whitespace-nowrap">
+                      No venue
                     </div>
                   )}
                   <select
-                    className="border border-gray-300 rounded-md p-1 text-black text-sm"
+                    className="border border-gray-300 rounded-md p-1 text-black text-sm max-w-[140px]"
                     onChange={(e) =>
                       handleDefaultVenueSelect(Number(e.target.value))
                     }
@@ -782,7 +820,7 @@ export default function Header() {
                     clearOnBlur={false}
                     blurOnSelect={true}
                     popupIcon={null}
-                    className="w-[300px]"
+                    className="w-[200px] xl:w-[240px]"
                     key={salesVenue}
                   />
                 </div>
