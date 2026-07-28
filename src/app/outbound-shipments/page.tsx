@@ -148,30 +148,45 @@ export default function OutboundShipmentsPage() {
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const selected = Array.from(event.target.files ?? []);
+    event.target.value = "";
     setFormError(null);
 
-    if (selected.length > MAX_OUTBOUND_SHIPMENT_IMAGES) {
+    if (selected.length === 0) {
+      return;
+    }
+
+    const remainingSlots = MAX_OUTBOUND_SHIPMENT_IMAGES - files.length;
+    if (remainingSlots <= 0) {
       setFormError(
         `A maximum of ${MAX_OUTBOUND_SHIPMENT_IMAGES} images is allowed`
       );
-      event.target.value = "";
       return;
     }
 
     for (const file of selected) {
       if (!isAllowedOutboundShipmentImage(file)) {
         setFormError("Only non-SVG image files are allowed (JPG, PNG, etc.)");
-        event.target.value = "";
         return;
       }
       if (file.size > MAX_OUTBOUND_SHIPMENT_IMAGE_BYTES) {
         setFormError("Each image must be 5MB or smaller before upload");
-        event.target.value = "";
         return;
       }
     }
 
-    setFiles(selected);
+    const toAdd = selected.slice(0, remainingSlots);
+    if (selected.length > remainingSlots) {
+      setFormError(
+        `Only ${remainingSlots} more image${remainingSlots === 1 ? "" : "s"} can be added`
+      );
+    }
+
+    setFiles((previous) => [...previous, ...toAdd]);
+  }
+
+  function removeFile(index: number) {
+    setFormError(null);
+    setFiles((previous) => previous.filter((_, i) => i !== index));
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -336,22 +351,30 @@ export default function OutboundShipmentsPage() {
               className="w-full text-sm text-gray-700"
             />
             <p className="mt-1 text-xs text-gray-500">
-              Up to {MAX_OUTBOUND_SHIPMENT_IMAGES} images. Photos are compressed
-              before upload. SVG files are not allowed. On mobile, you can take
-              a photo.
+              Up to {MAX_OUTBOUND_SHIPMENT_IMAGES} images. Take or add photos one
+              at a time — they stack in the list. Photos are compressed before
+              upload. SVG files are not allowed.
             </p>
             {filePreview.length > 0 && (
               <div className="mt-3 grid grid-cols-3 sm:grid-cols-4 gap-2">
-                {filePreview.map((preview) => (
+                {filePreview.map((preview, index) => (
                   <div
-                    key={preview.url}
-                    className="aspect-square overflow-hidden rounded border border-gray-200 bg-gray-50"
+                    key={`${preview.name}-${index}-${preview.url}`}
+                    className="relative aspect-square overflow-hidden rounded border border-gray-200 bg-gray-50"
                   >
                     <img
                       src={preview.url}
                       alt={preview.name}
                       className="h-full w-full object-cover"
                     />
+                    <button
+                      type="button"
+                      onClick={() => removeFile(index)}
+                      className="absolute top-1 right-1 rounded-full bg-black/70 text-white text-xs px-2 py-1"
+                      aria-label={`Remove ${preview.name}`}
+                    >
+                      Remove
+                    </button>
                   </div>
                 ))}
               </div>
