@@ -520,6 +520,18 @@ export default function Header() {
                       Order History
                     </Link>
                   )}
+                {session?.user?.isSalesTeam && (
+                  <Link
+                    href="/outbound-shipments"
+                    className="block text-gray-300 hover:text-white"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      setIsMobileDropdownOpen(false);
+                    }}
+                  >
+                    Outbound Shipments
+                  </Link>
+                )}
               </div>
             </div>
 
@@ -704,6 +716,13 @@ export default function Header() {
                   </Link>
                 </li>
               )}
+            {session?.user?.isSalesTeam && (
+              <li>
+                <Link href="/outbound-shipments" className="hover:text-blue-200">
+                  Outbound Shipments
+                </Link>
+              </li>
+            )}
             {session?.user?.isSalesTeam && (
               <li className="ml-auto">
                 <div className="flex items-center gap-2">

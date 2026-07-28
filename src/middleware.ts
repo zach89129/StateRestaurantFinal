@@ -95,6 +95,9 @@ export async function middleware(request: NextRequest) {
       request.method === "GET");
 
   const isAdminPath = request.nextUrl.pathname.startsWith("/admin");
+  const isOutboundShipmentsPath = request.nextUrl.pathname.startsWith(
+    "/outbound-shipments"
+  );
   const isApiRoute = request.nextUrl.pathname.startsWith("/api/");
 
   try {
@@ -121,11 +124,23 @@ export async function middleware(request: NextRequest) {
       }
     }
 
+    if (isOutboundShipmentsPath) {
+      if (!token) {
+        const url = new URL("/login", request.url);
+        url.searchParams.set("callbackUrl", request.nextUrl.pathname);
+        return NextResponse.redirect(url);
+      }
+
+      if (token.isSalesTeam !== true) {
+        return NextResponse.redirect(new URL("/", request.url));
+      }
+    }
+
     return NextResponse.next();
   } catch (error) {
     console.error("Error in auth middleware:", error);
 
-    if (isAdminPath || isProtectedRoute) {
+    if (isAdminPath || isProtectedRoute || isOutboundShipmentsPath) {
       if (isApiRoute) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
@@ -152,5 +167,7 @@ export const config = {
     "/new-order-guide/:path*",
     "/admin/:path*",
     "/venues/:path*",
+    "/outbound-shipments",
+    "/outbound-shipments/:path*",
   ],
 };

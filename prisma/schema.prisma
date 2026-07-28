@@ -264,3 +264,29 @@ model VendorLink {
   @@index([type])
   @@map("vendor_links")
 }
+
+model OutboundShipment {
+  id             Int                     @id @default(autoincrement())
+  customerName   String                  @map("customer_name") @db.VarChar(255)
+  invoiceNumber  String                  @map("invoice_number") @db.VarChar(255)
+  createdByEmail String                  @map("created_by_email") @db.VarChar(255)
+  createdAt      DateTime                @default(now()) @map("created_at")
+  updatedAt      DateTime                @updatedAt @map("updated_at")
+  images         OutboundShipmentImage[]
+
+  @@index([createdAt])
+  @@index([invoiceNumber])
+  @@map("outbound_shipments")
+}
+
+model OutboundShipmentImage {
+  id           Int              @id @default(autoincrement())
+  shipmentId   Int              @map("shipment_id")
+  blobPathname String           @map("blob_pathname") @db.VarChar(512)
+  contentType  String?          @map("content_type") @db.VarChar(128)
+  createdAt    DateTime         @default(now()) @map("created_at")
+  shipment     OutboundShipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  @@index([shipmentId])
+  @@map("outbound_shipment_images")
+}
