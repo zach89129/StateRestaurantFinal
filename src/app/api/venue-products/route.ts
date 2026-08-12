@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { deleteVenuesWithRelations } from "@/lib/deleteVenue";
 import { VenueProductInput, VenueProductData } from "@/types/api";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
@@ -282,27 +283,14 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    await prisma.venueProduct.deleteMany({
-      where: {
-        venue: {
-          trxVenueId: {
-            in: body.trx_venue_ids,
-          },
-        },
-      },
-    });
-
-    const result = await prisma.venue.deleteMany({
-      where: {
-        trxVenueId: {
-          in: body.trx_venue_ids,
-        },
-      },
-    });
+    const result = await deleteVenuesWithRelations(
+      prisma,
+      body.trx_venue_ids.map((id: unknown) => Number(id))
+    );
 
     return NextResponse.json({
       success: true,
-      deleted: result.count,
+      deleted: result.deleted,
     });
   } catch (error) {
     console.error("Error deleting venues:", error);

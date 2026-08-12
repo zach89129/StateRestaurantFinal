@@ -71,6 +71,34 @@ export default function AdminVenuesPage() {
     setPage(1);
   };
 
+  const deleteVenue = async (venue: Venue) => {
+    if (
+      !confirm(
+        `Are you sure you want to delete venue "${venue.venueName}" (ID ${venue.trxVenueId})? This cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setError(null);
+      const response = await fetch("/api/admin/venues", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trxVenueId: venue.trxVenueId }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to delete venue");
+      }
+
+      await fetchVenues();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete venue");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -164,9 +192,15 @@ export default function AdminVenuesPage() {
                     onClick={() =>
                       router.push(`/admin/venues/${venue.trxVenueId}/products`)
                     }
-                    className="text-green-600 hover:text-green-900"
+                    className="text-green-600 hover:text-green-900 mr-4"
                   >
                     Manage Products
+                  </button>
+                  <button
+                    onClick={() => deleteVenue(venue)}
+                    className="px-2 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+                  >
+                    Delete
                   </button>
                 </td>
               </tr>

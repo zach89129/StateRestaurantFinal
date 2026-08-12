@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { deleteVenueWithRelations } from "@/lib/deleteVenue";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/auth-options";
@@ -309,10 +310,14 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Delete venue
-    await prisma.venue.delete({
-      where: { trxVenueId: Number(data.trxVenueId) },
-    });
+    const result = await deleteVenueWithRelations(
+      prisma,
+      Number(data.trxVenueId)
+    );
+
+    if (result.deleted === 0) {
+      return NextResponse.json({ error: "Venue not found" }, { status: 404 });
+    }
 
     return NextResponse.json({
       success: true,
